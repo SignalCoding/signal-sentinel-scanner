@@ -1,0 +1,76 @@
+# Signal Sentinel - Default Security Policy
+# This policy provides balanced security for most deployments
+
+version: "1.0"
+name: "Default Security Policy"
+description: "Balanced security policy suitable for commercial deployments"
+
+# Identity and authentication
+identity:
+  require_authentication: true
+  allowed_providers:
+    - entra
+    - aws-iam
+    - google-iam
+    - oci-iam
+  session_timeout_minutes: 60
+
+# Tool access control
+tool_allowlist:
+  enabled: true
+  mode: "blocklist"  # Default allow with blocklist
+  blocked_patterns:
+    - "*delete*"
+    - "*drop*"
+    - "*truncate*"
+    - "*execute_code*"
+    - "*run_command*"
+    - "*shell*"
+
+# Rate limiting
+rate_limiting:
+  enabled: true
+  default_limit: 100
+  window_seconds: 60
+  per_tool_limits:
+    "query_*": 50
+    "send_*": 10
+
+# Cost management
+cost_ceiling:
+  enabled: true
+  max_cost_per_session_usd: 10.00
+  alert_threshold_percent: 80
+
+# Circuit breaker
+circuit_breaker:
+  enabled: true
+  failure_threshold: 5
+  reset_timeout_seconds: 60
+
+# Response sanitisation
+sanitisation:
+  strip_injection_patterns: true
+  redact_pii: true
+  pii_patterns:
+    - email
+    - phone_uk
+    - credit_card
+    - nino
+  max_response_length: 50000
+
+# Anomaly detection
+anomaly_detection:
+  enabled: true
+  baseline_period_hours: 168
+  alert_on_deviation: true
+  kill_switch_enabled: false  # Disabled by default
+  kill_switch_threshold: 3
+
+# Audit logging
+audit:
+  enabled: true
+  log_tool_calls: true
+  log_responses: true
+  log_policy_decisions: true
+  retention_days: 90

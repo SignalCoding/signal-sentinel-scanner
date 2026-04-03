@@ -1,0 +1,58 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+    
+    <!-- Package metadata -->
+    <Authors>Signal Coding Limited</Authors>
+    <Company>Signal Coding Limited</Company>
+    <Copyright>Copyright 2026 Signal Coding Limited. All rights reserved.</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/signal-coding/signal-sentinel</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/signal-coding/signal-sentinel</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    
+    <!-- Security settings -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    
+    <!-- Security hardening -->
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    
+    <!-- Prevent usage of unsafe code -->
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    
+    <!-- Enable deterministic builds for reproducibility -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    
+    <!-- Code analysis settings -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisMode>All</AnalysisMode>
+    
+    <!-- Security: Disable BinaryFormatter (CVE-2024-21404) -->
+    <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+    
+    <!-- Security: Enable strong assembly signing for production -->
+    <!-- <SignAssembly>true</SignAssembly> -->
+    <!-- <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)SignalSentinel.snk</AssemblyOriginatorKeyFile> -->
+  </PropertyGroup>
+
+  <!-- Security: Treat specific warnings as errors -->
+  <PropertyGroup>
+    <!-- CA2100: SQL Injection -->
+    <!-- CA2300-CA2329: BinaryFormatter security -->
+    <!-- CA3001-CA3012: Security vulnerabilities -->
+    <!-- CA5350-CA5403: Cryptography weaknesses -->
+    <WarningsAsErrors>$(WarningsAsErrors);CA2100;CA2300;CA2301;CA2302;CA2305;CA2310;CA2311;CA2312;CA2315;CA2321;CA2322;CA2326;CA2327;CA2328;CA2329;CA3001;CA3002;CA3003;CA3004;CA3005;CA3006;CA3007;CA3008;CA3009;CA3010;CA3011;CA3012;CA5350;CA5351;CA5358;CA5359;CA5360;CA5361;CA5362;CA5363;CA5364;CA5365;CA5366;CA5367;CA5368;CA5369;CA5370;CA5371;CA5372;CA5373;CA5374;CA5375;CA5376;CA5377;CA5378;CA5379;CA5380;CA5381;CA5382;CA5383;CA5384;CA5385;CA5386;CA5387;CA5388;CA5389;CA5390;CA5391;CA5392;CA5393;CA5394;CA5395;CA5396;CA5397;CA5398;CA5399;CA5400;CA5401;CA5402;CA5403</WarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- Note: Security analyzers are included at project level to allow version pinning -->
+</Project>

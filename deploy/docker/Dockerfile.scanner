@@ -1,0 +1,45 @@
+# Signal Sentinel Scanner - Multi-stage Dockerfile
+# Builds a minimal container for running MCP security scans
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Copy project files
+COPY src/SignalSentinel.Core/SignalSentinel.Core.csproj src/SignalSentinel.Core/
+COPY src/SignalSentinel.Scanner/SignalSentinel.Scanner.csproj src/SignalSentinel.Scanner/
+
+# Restore dependencies
+RUN dotnet restore src/SignalSentinel.Scanner/SignalSentinel.Scanner.csproj
+
+# Copy source code
+COPY src/ src/
+
+# Build and publish
+RUN dotnet publish src/SignalSentinel.Scanner/SignalSentinel.Scanner.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore
+
+# Runtime image
+FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine AS runtime
+WORKDIR /app
+
+# Security: Run as non-root user
+RUN adduser -D -u 1000 sentinel
+USER sentinel
+
+# Copy published application
+COPY --from=build /app/publish .
+
+# Set entrypoint
+ENTRYPOINT ["dotnet", "SignalSentinel.Scanner.dll"]
+
+# Default to help if no arguments provided
+CMD ["--help"]
+
+# Labels for container registry
+LABEL org.opencontainers.image.title="Signal Sentinel Scanner"
+LABEL org.opencontainers.image.description="MCP Security Audit Tool"
+LABEL org.opencontainers.image.vendor="Signal Coding Limited"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+LABEL org.opencontainers.image.source="https://github.com/signal-coding/signal-sentinel"

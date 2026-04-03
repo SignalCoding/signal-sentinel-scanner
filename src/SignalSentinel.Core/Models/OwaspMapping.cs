@@ -1,0 +1,61 @@
+namespace SignalSentinel.Core.Models;
+
+/// <summary>
+/// OWASP Agentic AI Security Top 10 (2026) risk codes.
+/// </summary>
+public static class OwaspAsiCodes
+{
+    /// <summary>ASI01: Agent Goal Hijack - Redirecting agent goals via injected instructions.</summary>
+    public const string ASI01 = "ASI01";
+
+    /// <summary>ASI02: Tool Misuse &amp; Exploitation - Misusing legitimate tools via unsafe chaining.</summary>
+    public const string ASI02 = "ASI02";
+
+    /// <summary>ASI03: Identity &amp; Privilege Abuse - Exploiting delegated trust or credentials.</summary>
+    public const string ASI03 = "ASI03";
+
+    /// <summary>ASI04: Supply Chain Vulnerabilities - Compromised third-party tools or plugins.</summary>
+    public const string ASI04 = "ASI04";
+
+    /// <summary>ASI05: Unexpected Code Execution - Unsafe execution of dynamically generated code.</summary>
+    public const string ASI05 = "ASI05";
+
+    /// <summary>ASI06: Memory &amp; Context Poisoning - Poisoning RAG databases or agent memory.</summary>
+    public const string ASI06 = "ASI06";
+
+    /// <summary>ASI07: Insecure Inter-Agent Communication - Compromised agents sending malicious instructions.</summary>
+    public const string ASI07 = "ASI07";
+
+    /// <summary>ASI08: Cascading Failures - Single agent fault propagating via automation.</summary>
+    public const string ASI08 = "ASI08";
+
+    /// <summary>ASI09: Sensitive Data Leakage - Agent inadvertently leaking confidential data.</summary>
+    public const string ASI09 = "ASI09";
+
+    /// <summary>ASI10: Rogue Agents - Agents drifting from intended behaviour with harmful autonomy.</summary>
+    public const string ASI10 = "ASI10";
+
+    /// <summary>
+    /// Gets the description for an OWASP ASI code.
+    /// </summary>
+    public static string GetDescription(string code) => code switch
+    {
+        ASI01 => "Agent Goal Hijack - Redirecting agent goals via injected instructions or poisoned content",
+        ASI02 => "Tool Misuse & Exploitation - Misusing legitimate tools via unsafe chaining or manipulated outputs",
+        ASI03 => "Identity & Privilege Abuse - Exploiting delegated trust or inherited credentials",
+        ASI04 => "Supply Chain Vulnerabilities - Compromised third-party tools, plugins, registries",
+        ASI05 => "Unexpected Code Execution - Unsafe execution of dynamically generated code",
+        ASI06 => "Memory & Context Poisoning - Poisoning RAG databases or agent memory to bias future actions",
+        ASI07 => "Insecure Inter-Agent Communication - Compromised agents sending malicious instructions to peers",
+        ASI08 => "Cascading Failures - Single agent fault propagating via automation",
+        ASI09 => "Sensitive Data Leakage - Agent inadvertently leaking confidential data in responses",
+        ASI10 => "Rogue Agents - Agents drifting from intended behaviour with harmful autonomy",
+        _ => "Unknown OWASP ASI code"
+    };
+
+    /// <summary>
+    /// Gets the URL to the OWASP documentation for an ASI code.
+    /// </summary>
+    public static string GetDocumentationUrl(string code) =>
+        $"https://owasp.org/www-project-agentic-ai-top-10/#{code.ToLowerInvariant()}";
+}

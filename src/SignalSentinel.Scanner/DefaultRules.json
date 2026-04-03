@@ -1,0 +1,75 @@
+{
+  "version": "1.0.0",
+  "rules": [
+    {
+      "id": "SS-001",
+      "name": "Tool Poisoning Detection",
+      "owaspCode": "ASI01",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-002",
+      "name": "Overbroad Permissions Detection",
+      "owaspCode": "ASI02",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-003",
+      "name": "Missing Authentication Detection",
+      "owaspCode": "ASI03",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-004",
+      "name": "Supply Chain Vulnerability Detection",
+      "owaspCode": "ASI04",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-005",
+      "name": "Code Execution Capability Detection",
+      "owaspCode": "ASI05",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-006",
+      "name": "Memory/Context Write Access Detection",
+      "owaspCode": "ASI06",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-007",
+      "name": "Inter-Agent Communication Detection",
+      "owaspCode": "ASI07",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-008",
+      "name": "Sensitive Data Access Detection",
+      "owaspCode": "ASI09",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-009",
+      "name": "Excessive Description Length",
+      "owaspCode": "ASI01",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-010",
+      "name": "Cross-Server Attack Path Analysis",
+      "owaspCode": "ASI02",
+      "enabled": true,
+      "severity": "dynamic"
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+# Signal Sentinel - Defence/Government Security Policy
+# MOD JSP 440/656 aligned, maximum security posture
+
+version: "1.0"
+name: "Defence Security Policy"
+description: "Maximum security policy aligned with MOD JSP 440/656 and UK Government standards"
+
+# Classification
+security_classification:
+  level: "OFFICIAL-SENSITIVE"
+  handling_instructions: "UK EYES ONLY"
+  data_residency: "uk-south"
+
+# Identity and authentication - strictest settings
+identity:
+  require_authentication: true
+  allowed_providers:
+    - entra  # Azure Government / MOD Cloud
+  require_mfa: true
+  session_timeout_minutes: 15
+  allowed_roles:
+    - "MCP.SecureReader"
+    - "MCP.SecureWriter"
+    - "MCP.Admin"
+
+# Tool access control - default deny
+tool_allowlist:
+  enabled: true
+  mode: "allowlist"  # Default deny, only explicitly allowed tools
+  servers: []  # Must be explicitly configured
+
+# Rate limiting - conservative
+rate_limiting:
+  enabled: true
+  default_limit: 50
+  window_seconds: 60
+  per_tool_limits: {}
+
+# Cost management
+cost_ceiling:
+  enabled: true
+  max_cost_per_session_usd: 5.00
+  alert_threshold_percent: 50
+
+# Circuit breaker - aggressive
+circuit_breaker:
+  enabled: true
+  failure_threshold: 3
+  reset_timeout_seconds: 300
+
+# Response sanitisation - maximum
+sanitisation:
+  strip_injection_patterns: true
+  redact_pii: true
+  pii_patterns:
+    - email
+    - phone_uk
+    - phone_international
+    - credit_card
+    - nino
+    - nhs_number
+    - passport
+    - ip_address
+    - api_key
+  max_response_length: 10000
+  classification_check: true
+  block_classified_content: true
+
+# Anomaly detection - full monitoring
+anomaly_detection:
+  enabled: true
+  baseline_period_hours: 336  # 14 days
+  alert_on_deviation: true
+  kill_switch_enabled: true
+  kill_switch_threshold: 2  # Aggressive
+
+# Audit logging - comprehensive
+audit:
+  enabled: true
+  log_tool_calls: true
+  log_responses: true
+  log_policy_decisions: true
+  log_parameter_values: false  # Protect sensitive parameters
+  retention_days: 365  # 1 year retention
+  immutable: true
+  sink: "azure-monitor"  # Azure Government Log Analytics
+
+# Network controls
+network:
+  allowed_egress_domains: []  # No external network access by default
+  require_tls_1_3: true
+  certificate_pinning: true
+
+# Additional JSP 440/656 compliance
+compliance:
+  framework: "MOD_JSP_440_656"
+  audit_trail_required: true
+  human_oversight_required: true
+  automated_decisions_flagged: true
+  incident_response_enabled: true
