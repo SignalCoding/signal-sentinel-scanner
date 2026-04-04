@@ -233,7 +233,7 @@ jobs:
             
             **Docker**
             ```bash
-            docker pull ghcr.io/signalcoding/signal-sentinel:${{ steps.version.outputs.VERSION }}
+            docker pull ghcr.io/signalcoding/signal-sentinel-scanner:${{ steps.version.outputs.VERSION }}
             ```
             
             ### Quick Start
@@ -242,13 +242,14 @@ jobs:
             sentinel-scan --discover
             
             # Or with Docker
-            docker run --rm ghcr.io/signalcoding/signal-sentinel:${{ steps.version.outputs.VERSION }} --help
+            docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:${{ steps.version.outputs.VERSION }} --help
             ```
             
             ### Links
-            - [Documentation](https://github.com/SignalCoding/signal-sentinel#readme)
+            - [Documentation](https://github.com/SignalCoding/signal-sentinel-scanner#readme)
             - [NuGet Package](https://www.nuget.org/packages/SignalSentinel.Scanner)
-            - [Docker Image](https://ghcr.io/signalcoding/signal-sentinel)
+            - [Docker Image](https://ghcr.io/signalcoding/signal-sentinel-scanner)
+            - [Website](https://signalcoding.co.uk/products/sentinel-scanner/)
             
           files: |
             ./artifacts/*.nupkg

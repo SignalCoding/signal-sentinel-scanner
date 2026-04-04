@@ -90,8 +90,8 @@ The Scanner implements 10 security rules aligned with OWASP Agentic AI Top 10:
 ### Build
 
 ```bash
-git clone https://github.com/signal-coding/signal-sentinel.git
-cd signal-sentinel
+git clone https://github.com/SignalCoding/signal-sentinel-scanner.git
+cd signal-sentinel-scanner
 dotnet build
 ```
 

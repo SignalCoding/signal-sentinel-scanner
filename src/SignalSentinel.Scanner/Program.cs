@@ -370,7 +370,7 @@ public static class Program
                 SS-009  Excessive Description Length (ASI01)
                 SS-010  Cross-Server Attack Paths (ASI02)
             
-            For more information: https://github.com/signal-coding/signal-sentinel
+            For more information: https://github.com/SignalCoding/signal-sentinel-scanner
             Report security issues: security@signalcoding.co.uk
             """);
     }

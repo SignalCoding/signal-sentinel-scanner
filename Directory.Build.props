@@ -13,8 +13,8 @@
     <Company>Signal Coding Limited</Company>
     <Copyright>Copyright 2026 Signal Coding Limited. All rights reserved.</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/signal-coding/signal-sentinel</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/signal-coding/signal-sentinel</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/SignalCoding/signal-sentinel-scanner</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SignalCoding/signal-sentinel-scanner</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     
     <!-- Security settings -->

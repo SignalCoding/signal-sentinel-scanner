@@ -89,9 +89,9 @@ LABEL org.opencontainers.image.title="Signal Sentinel Scanner" \
       org.opencontainers.image.description="MCP Security Audit Tool - OWASP Agentic AI Top 10 Compliant" \
       org.opencontainers.image.vendor="Signal Coding Limited" \
       org.opencontainers.image.licenses="Apache-2.0" \
-      org.opencontainers.image.source="https://github.com/SignalCoding/signal-sentinel" \
-      org.opencontainers.image.documentation="https://github.com/SignalCoding/signal-sentinel#readme" \
-      org.opencontainers.image.url="https://signalcoding.co.uk/signal-sentinel" \
+      org.opencontainers.image.source="https://github.com/SignalCoding/signal-sentinel-scanner" \
+      org.opencontainers.image.documentation="https://github.com/SignalCoding/signal-sentinel-scanner#readme" \
+      org.opencontainers.image.url="https://signalcoding.co.uk/products/sentinel-scanner/" \
       org.opencontainers.image.version="1.1.0" \
       org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine"
 
