@@ -7,7 +7,8 @@
 # Compliant with: MOD JSP 440/656, OWASP Container Security
 
 # Build stage - uses full SDK
-FROM mcr.microsoft.com/dotnet/sdk:10.0.201-alpine AS build
+# Note: Using 10.0-alpine (not 10.0.201-alpine) as Microsoft doesn't publish patch-specific Alpine tags
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 
 # Security: Set non-interactive and reduce attack surface
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
@@ -43,7 +44,7 @@ RUN dotnet publish src/SignalSentinel.Scanner/SignalSentinel.Scanner.csproj \
     -p:DebugSymbols=false
 
 # Runtime stage - minimal image without SDK
-FROM mcr.microsoft.com/dotnet/runtime-deps:10.0.201-alpine AS runtime
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine AS runtime
 
 # Security: Install only required packages, then clean up
 RUN apk --no-cache add \
@@ -92,7 +93,7 @@ LABEL org.opencontainers.image.title="Signal Sentinel Scanner" \
       org.opencontainers.image.documentation="https://github.com/SignalCoding/signal-sentinel#readme" \
       org.opencontainers.image.url="https://signalcoding.co.uk/signal-sentinel" \
       org.opencontainers.image.version="1.0.0" \
-      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/runtime-deps:10.0.201-alpine"
+      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine"
 
 # Build-time labels (set via --build-arg)
 ARG BUILD_DATE
