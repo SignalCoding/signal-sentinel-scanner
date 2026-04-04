@@ -1,6 +1,6 @@
 # Signal Sentinel Scanner - Installation and Usage Guide
 
-**Version:** 1.0.1  
+**Version:** 2.1.0  
 **Last Updated:** 2026-04-04  
 **Repository:** https://github.com/SignalCoding/signal-sentinel-scanner
 
@@ -85,7 +85,7 @@ dotnet tool uninstall -g SignalSentinel.Scanner
 ### Pull the Image
 
 ```bash
-docker pull ghcr.io/signalcoding/signal-sentinel-scanner:1.0.1
+docker pull ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0
 ```
 
 ### Available Tags
@@ -100,7 +100,7 @@ docker pull ghcr.io/signalcoding/signal-sentinel-scanner:1.0.1
 ### Verify Installation
 
 ```bash
-docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:1.0.1 --version
+docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 --version
 ```
 
 ### Image Details
@@ -133,7 +133,7 @@ sentinel-scan --discover
 docker run --rm \
   -v "$HOME/.cursor:/home/sentinel/.cursor:ro" \
   -v "$HOME/.config:/home/sentinel/.config:ro" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:1.0.1 --discover
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 --discover
 ```
 
 **Windows Docker:**
@@ -141,7 +141,7 @@ docker run --rm \
 docker run --rm `
   -v "$env:USERPROFILE\.cursor:/home/sentinel/.cursor:ro" `
   -v "$env:APPDATA:/home/sentinel/AppData/Roaming:ro" `
-  ghcr.io/signalcoding/signal-sentinel-scanner:1.0.1 --discover
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 --discover
 ```
 
 ### Scan a Specific Config File
@@ -155,7 +155,7 @@ sentinel-scan --config ~/.cursor/mcp.json
 ```bash
 docker run --rm \
   -v "$HOME/.cursor/mcp.json:/config/mcp.json:ro" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:1.0.1 --config /config/mcp.json
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 --config /config/mcp.json
 ```
 
 ### Scan a Remote MCP Server
@@ -167,7 +167,7 @@ sentinel-scan --remote https://mcp.example.com/sse
 
 **Docker:**
 ```bash
-docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:1.0.1 \
+docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 \
   --remote https://mcp.example.com/sse
 ```
 
@@ -220,7 +220,7 @@ sentinel-scan --discover --format html --output security-report.html
 docker run --rm \
   -v "$HOME/.cursor:/home/sentinel/.cursor:ro" \
   -v "$(pwd):/output" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:1.0.1 \
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 \
   --discover --format html --output /output/security-report.html
 ```
 
@@ -348,7 +348,7 @@ jobs:
   security-scan:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/signalcoding/signal-sentinel-scanner:1.0.1
+      image: ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0
     steps:
       - uses: actions/checkout@v4
       
@@ -383,7 +383,7 @@ steps:
 
 ```yaml
 mcp-security-scan:
-  image: ghcr.io/signalcoding/signal-sentinel-scanner:1.0.1
+  image: ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0
   script:
     - sentinel-scan --config ./mcp-config.json --ci --format json --output gl-sast-report.json
   artifacts:
@@ -493,7 +493,7 @@ sentinel-scan --remote https://slow-server.com/mcp --timeout 120
 ```bash
 docker run --rm \
   -v "/path/to/config:/config:ro" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:1.0.1 --config /config/mcp.json
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 --config /config/mcp.json
 ```
 
 ### "Tool not found" after installation

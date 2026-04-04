@@ -269,7 +269,7 @@ public sealed class McpConnection : IAsyncDisposable
             clientInfo = new
             {
                 name = "SignalSentinel.Scanner",
-                version = "1.0.0"
+                version = "2.1.0"
             }
         };
 
