@@ -5,7 +5,7 @@
     <PackageId>SignalSentinel.Scanner</PackageId>
     <Version>1.0.0</Version>
     <Description>CLI security scanner for MCP (Model Context Protocol) server configurations. Detects prompt injection, tool poisoning, and supply chain vulnerabilities aligned with OWASP Agentic AI Top 10.</Description>
-    <PackageTags>mcp;security;scanner;ai-agents;owasp;agentic-ai;cli</PackageTags>
+    <PackageTags>mcp;security;scanner;ai-agents;owasp;agentic-ai;cli;dotnet-tool</PackageTags>
     
     <!-- Enable as global dotnet tool -->
     <PackAsTool>true</PackAsTool>
@@ -15,21 +15,50 @@
     <AssemblyName>SignalSentinel.Scanner</AssemblyName>
     <RootNamespace>SignalSentinel.Scanner</RootNamespace>
     
+    <!-- NuGet Package Configuration -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- <PackageIcon>icon.png</PackageIcon> -->
+    <PackageReleaseNotes>
+v1.0.0 - Initial Release
+- 10 security rules mapped to OWASP Agentic AI Top 10 (ASI01-ASI10)
+- Auto-discovery for Claude Desktop, Cursor, VS Code, Windsurf, Zed
+- A-F scoring system with OWASP compliance matrix
+- JSON, Markdown, and HTML report generation
+- CI mode with exit codes for automated pipelines
+    </PackageReleaseNotes>
+    
+    <!-- SourceLink for debugging support -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    
     <!-- Security: Generate SBOM for supply chain transparency -->
     <EnableSbomGeneration>true</EnableSbomGeneration>
     
     <!-- Security: Detect unsafe usages -->
     <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
     
-    <!-- Security: Enable invariant globalization for reduced attack surface -->
+    <!-- Security: Invariant globalization disabled for UK PII pattern matching -->
     <InvariantGlobalization>false</InvariantGlobalization>
+    
+    <!-- Package validation -->
+    <EnablePackageValidation>true</EnablePackageValidation>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SignalSentinel.Core\SignalSentinel.Core.csproj" />
   </ItemGroup>
 
-  <!-- Security Analyzers - Microsoft only for now -->
+  <!-- SourceLink for GitHub -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Security Analyzers -->
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
       <PrivateAssets>all</PrivateAssets>
@@ -37,8 +66,19 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- Package content -->
   <ItemGroup>
     <Content Include="DefaultRules.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  
+  <!-- NuGet package assets -->
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  
+  <!-- Package icon (add when available) -->
+  <!-- <ItemGroup Condition="Exists('..\..\assets\icon.png')">
+    <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup> -->
 
 </Project>

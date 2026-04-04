@@ -4,11 +4,28 @@
     <PackageId>SignalSentinel.Core</PackageId>
     <Version>1.0.0</Version>
     <Description>Core library for Signal Sentinel MCP security tools. Contains MCP protocol models, security patterns, and shared utilities.</Description>
-    <PackageTags>mcp;security;ai-agents;owasp;agentic-ai</PackageTags>
+    <PackageTags>mcp;security;ai-agents;owasp;agentic-ai;library</PackageTags>
     <IsPackable>true</IsPackable>
+    
+    <!-- SourceLink for debugging support -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    
+    <!-- Package validation -->
+    <EnablePackageValidation>true</EnablePackageValidation>
   </PropertyGroup>
 
-  <!-- Security Analyzers - Microsoft only for now -->
+  <!-- SourceLink for GitHub -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Security Analyzers -->
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
       <PrivateAssets>all</PrivateAssets>

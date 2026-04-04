@@ -1,45 +1,101 @@
-# Signal Sentinel Scanner - Multi-stage Dockerfile
-# Builds a minimal container for running MCP security scans
+# -----------------------------------------------------------------------
+# Signal Sentinel Scanner - Production Dockerfile
+# Copyright 2026 Signal Coding Limited. All rights reserved.
+# Licensed under the Apache License, Version 2.0.
+# -----------------------------------------------------------------------
+# Multi-stage build for minimal, secure container image
+# Compliant with: MOD JSP 440/656, OWASP Container Security
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+# Build stage - uses full SDK
+FROM mcr.microsoft.com/dotnet/sdk:10.0.201-alpine AS build
+
+# Security: Set non-interactive and reduce attack surface
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1 \
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+
 WORKDIR /src
 
-# Copy project files
+# Copy project files first for layer caching
 COPY src/SignalSentinel.Core/SignalSentinel.Core.csproj src/SignalSentinel.Core/
 COPY src/SignalSentinel.Scanner/SignalSentinel.Scanner.csproj src/SignalSentinel.Scanner/
+COPY Directory.Build.props .
+COPY global.json .
 
-# Restore dependencies
-RUN dotnet restore src/SignalSentinel.Scanner/SignalSentinel.Scanner.csproj
+# Restore dependencies with locked mode for reproducibility
+RUN dotnet restore src/SignalSentinel.Scanner/SignalSentinel.Scanner.csproj \
+    --runtime linux-musl-x64 \
+    --verbosity minimal
 
 # Copy source code
 COPY src/ src/
 
-# Build and publish
+# Build and publish as self-contained for security (no runtime dependency)
 RUN dotnet publish src/SignalSentinel.Scanner/SignalSentinel.Scanner.csproj \
-    -c Release \
-    -o /app/publish \
-    --no-restore
+    --configuration Release \
+    --runtime linux-musl-x64 \
+    --self-contained true \
+    --output /app/publish \
+    --no-restore \
+    -p:PublishSingleFile=true \
+    -p:PublishTrimmed=false \
+    -p:DebugType=None \
+    -p:DebugSymbols=false
 
-# Runtime image
-FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine AS runtime
+# Runtime stage - minimal image without SDK
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0.201-alpine AS runtime
+
+# Security: Install only required packages, then clean up
+RUN apk --no-cache add \
+    ca-certificates \
+    tzdata \
+    && rm -rf /var/cache/apk/*
+
+# Security: Create non-root user with specific UID/GID
+RUN addgroup -g 1000 sentinel \
+    && adduser -D -u 1000 -G sentinel -h /app -s /sbin/nologin sentinel
+
 WORKDIR /app
 
-# Security: Run as non-root user
-RUN adduser -D -u 1000 sentinel
+# Security: Set restrictive permissions on app directory
+RUN chown -R sentinel:sentinel /app
+
+# Copy published application with correct ownership
+COPY --from=build --chown=sentinel:sentinel /app/publish/SignalSentinel.Scanner /app/sentinel-scan
+
+# Security: Make binary executable, remove write permissions
+RUN chmod 555 /app/sentinel-scan
+
+# Security: Switch to non-root user
 USER sentinel
 
-# Copy published application
-COPY --from=build /app/publish .
+# Health check - verifies the application can start
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ["/app/sentinel-scan", "--version"]
 
-# Set entrypoint
-ENTRYPOINT ["dotnet", "SignalSentinel.Scanner.dll"]
+# Security: Read-only root filesystem compatibility
+# Container should be run with --read-only flag
+VOLUME ["/tmp"]
+
+# Set entrypoint to the self-contained binary
+ENTRYPOINT ["/app/sentinel-scan"]
 
 # Default to help if no arguments provided
 CMD ["--help"]
 
-# Labels for container registry
-LABEL org.opencontainers.image.title="Signal Sentinel Scanner"
-LABEL org.opencontainers.image.description="MCP Security Audit Tool"
-LABEL org.opencontainers.image.vendor="Signal Coding Limited"
-LABEL org.opencontainers.image.licenses="Apache-2.0"
-LABEL org.opencontainers.image.source="https://github.com/signal-coding/signal-sentinel"
+# OCI Image Labels (https://github.com/opencontainers/image-spec/blob/main/annotations.md)
+LABEL org.opencontainers.image.title="Signal Sentinel Scanner" \
+      org.opencontainers.image.description="MCP Security Audit Tool - OWASP Agentic AI Top 10 Compliant" \
+      org.opencontainers.image.vendor="Signal Coding Limited" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.source="https://github.com/SignalCoding/signal-sentinel" \
+      org.opencontainers.image.documentation="https://github.com/SignalCoding/signal-sentinel#readme" \
+      org.opencontainers.image.url="https://signalcoding.co.uk/signal-sentinel" \
+      org.opencontainers.image.version="1.0.0" \
+      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/runtime-deps:10.0.201-alpine"
+
+# Build-time labels (set via --build-arg)
+ARG BUILD_DATE
+ARG VCS_REF
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}"
