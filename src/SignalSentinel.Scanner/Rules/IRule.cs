@@ -1,6 +1,8 @@
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.McpClient;
 
+#pragma warning disable CA1002 // Justification: ScanContext is an internal model, not a public API surface
+
 namespace SignalSentinel.Scanner.Rules;
 
 /// <summary>
@@ -56,6 +58,11 @@ public sealed record ScanContext
     /// All enumerated MCP servers and their tools/resources/prompts.
     /// </summary>
     public required IReadOnlyList<ServerEnumeration> Servers { get; init; }
+
+    /// <summary>
+    /// All parsed Agent Skills (empty when skill scanning is not performed).
+    /// </summary>
+    public IReadOnlyList<SkillDefinition> Skills { get; init; } = [];
 
     /// <summary>
     /// Previous scan results for comparison (enables drift detection).

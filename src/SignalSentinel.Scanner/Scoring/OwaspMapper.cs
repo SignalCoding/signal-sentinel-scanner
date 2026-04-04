@@ -66,6 +66,51 @@ public static class OwaspMapper
     }
 
     /// <summary>
+    /// Groups findings by OWASP MCP Top 10 code.
+    /// </summary>
+    public static IReadOnlyDictionary<string, OwaspCategorySummary> GroupByMcpCode(
+        IReadOnlyList<Finding> findings)
+    {
+        var allCodes = new[]
+        {
+            OwaspMcpCodes.MCP01, OwaspMcpCodes.MCP02, OwaspMcpCodes.MCP03,
+            OwaspMcpCodes.MCP04, OwaspMcpCodes.MCP05, OwaspMcpCodes.MCP06,
+            OwaspMcpCodes.MCP07, OwaspMcpCodes.MCP08, OwaspMcpCodes.MCP09,
+            OwaspMcpCodes.MCP10
+        };
+
+        var result = new Dictionary<string, OwaspCategorySummary>();
+
+        foreach (var code in allCodes)
+        {
+            // Include findings that have an explicit McpCode or derive one from rule ID
+            var categoryFindings = findings.Where(f =>
+                f.McpCode == code ||
+                (f.McpCode is null && OwaspMcpCodes.GetCorrespondingMcpCode(f.RuleId) == code))
+                .ToList();
+
+            result[code] = new OwaspCategorySummary
+            {
+                Code = code,
+                Description = OwaspMcpCodes.GetDescription(code),
+                DocumentationUrl = $"https://owasp.org/www-project-mcp-top-10/#{code.ToLowerInvariant()}",
+                TotalFindings = categoryFindings.Count,
+                CriticalCount = categoryFindings.Count(f => f.Severity == Severity.Critical),
+                HighCount = categoryFindings.Count(f => f.Severity == Severity.High),
+                MediumCount = categoryFindings.Count(f => f.Severity == Severity.Medium),
+                LowCount = categoryFindings.Count(f => f.Severity == Severity.Low),
+                InfoCount = categoryFindings.Count(f => f.Severity == Severity.Info),
+                MaxSeverity = categoryFindings.Count > 0
+                    ? categoryFindings.Max(f => f.Severity)
+                    : null,
+                Findings = categoryFindings
+            };
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// Generates a compliance matrix for the scan result.
     /// </summary>
     public static IReadOnlyList<ComplianceMatrixRow> GenerateComplianceMatrix(

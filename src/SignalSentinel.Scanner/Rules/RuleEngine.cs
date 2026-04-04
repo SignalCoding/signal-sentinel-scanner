@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using SignalSentinel.Core.Models;
+using SignalSentinel.Scanner.Rules.SkillRules;
 
 namespace SignalSentinel.Scanner.Rules;
 
@@ -29,6 +30,7 @@ public sealed class RuleEngine
 
         var allRules = new List<IRule>
         {
+            // MCP Rules (SS-001 to SS-010)
             new ToolPoisoningRule(),
             new OverbroadPermissionsRule(),
             new MissingAuthRule(),
@@ -38,7 +40,22 @@ public sealed class RuleEngine
             new InterAgentProxyRule(),
             new SensitiveDataRule(),
             new ExcessiveDescriptionRule(),
-            new CrossServerAttackPathRule()
+            new CrossServerAttackPathRule(),
+
+            // Skill Rules (SS-011 to SS-018)
+            new SkillInjectionRule(),
+            new SkillScopeViolationRule(),
+            new SkillCredentialAccessRule(),
+            new SkillExfiltrationRule(),
+            new SkillObfuscationRule(),
+            new SkillScriptPayloadRule(),
+            new SkillExcessivePermRule(),
+            new SkillHiddenContentRule(),
+
+            // New MCP Rules (SS-019 to SS-021)
+            new CredentialHygieneRule(),
+            new OAuthComplianceRule(),
+            new PackageProvenanceRule()
         };
 
         if (customRules is not null)

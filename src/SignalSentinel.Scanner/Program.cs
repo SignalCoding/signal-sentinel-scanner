@@ -6,6 +6,7 @@ using SignalSentinel.Scanner.McpClient;
 using SignalSentinel.Scanner.Reports;
 using SignalSentinel.Scanner.Rules;
 using SignalSentinel.Scanner.Scoring;
+using SignalSentinel.Scanner.SkillParser;
 
 namespace SignalSentinel.Scanner;
 
@@ -15,7 +16,7 @@ namespace SignalSentinel.Scanner;
 /// </summary>
 public static class Program
 {
-    private const string Version = "1.0.0";
+    private const string Version = "2.0.0";
 
     // Security: Limits for input validation
     private const int MaxPathLength = 4096;
@@ -157,6 +158,24 @@ public static class Program
 
                 case "--verbose" or "-v":
                     config = config with { Verbose = true };
+                    break;
+
+                case "--skills" or "-s":
+                    config = config with { ScanSkills = true };
+                    // Optional: next arg might be a path (if it doesn't start with -)
+                    if (i + 1 < args.Length && !args[i + 1].StartsWith('-'))
+                    {
+                        var skillPath = args[++i];
+                        if (ValidatePath(skillPath))
+                        {
+                            config = config with { SkillsPath = skillPath };
+                        }
+                        else
+                        {
+                            Console.Error.WriteLine("Error: Invalid skills path");
+                            return null;
+                        }
+                    }
                     break;
 
                 case "--timeout" or "-t":
@@ -334,7 +353,7 @@ public static class Program
     {
         Console.WriteLine($"""
             Signal Sentinel Scanner v{Version}
-            MCP Security Audit Tool - OWASP Agentic AI Top 10 Compliant
+            MCP & Agent Skill Security Audit Tool - OWASP Agentic AI Top 10 Compliant
             
             USAGE:
                 sentinel-scan [OPTIONS]
@@ -343,6 +362,7 @@ public static class Program
                 -c, --config <path>     Path to MCP configuration file
                 -r, --remote <url>      Remote MCP server URL (http/https/ws/wss)
                 -d, --discover          Auto-discover MCP configurations
+                -s, --skills [path]     Scan Agent Skills (auto-discover or specify path)
                 -f, --format <format>   Output format: json, markdown, html (default: markdown)
                 -o, --output <path>     Output file path (defaults to stdout)
                     --ci                CI mode - exit code 1 on critical/high findings
@@ -352,13 +372,16 @@ public static class Program
                     --version           Show version information
             
             EXAMPLES:
-                sentinel-scan --discover
+                sentinel-scan --discover                              # MCP auto-discover
+                sentinel-scan --skills                                # Skill auto-discover
+                sentinel-scan --discover --skills                     # Both MCP and Skills
+                sentinel-scan --skills ~/.claude/skills/              # Specific skill directory
                 sentinel-scan --config ~/.cursor/mcp.json
-                sentinel-scan --remote https://mcp.example.com/mcp --format html -o report.html
+                sentinel-scan --remote https://mcp.example.com/mcp
                 sentinel-scan --remote wss://mcp.example.com/ws
-                sentinel-scan --discover --ci --format json
+                sentinel-scan --discover --skills --ci --format json  # CI/CD mode
             
-            SECURITY RULES:
+            MCP SECURITY RULES:
                 SS-001  Tool Poisoning Detection (ASI01)
                 SS-002  Overbroad Permissions (ASI02)
                 SS-003  Missing Authentication (ASI03)
@@ -369,6 +392,19 @@ public static class Program
                 SS-008  Sensitive Data Access (ASI09)
                 SS-009  Excessive Description Length (ASI01)
                 SS-010  Cross-Server Attack Paths (ASI02)
+                SS-019  Credential Hygiene (ASI03)
+                SS-020  OAuth 2.1 Compliance (ASI03)
+                SS-021  Package Provenance (ASI04)
+            
+            SKILL SECURITY RULES:
+                SS-011  Skill Prompt Injection (ASI01)
+                SS-012  Skill Scope Violation (ASI02)
+                SS-013  Skill Credential Access (ASI03)
+                SS-014  Skill Data Exfiltration (ASI09)
+                SS-015  Skill Obfuscation (ASI01)
+                SS-016  Skill Script Payload (ASI05)
+                SS-017  Skill Excessive Permissions (ASI02)
+                SS-018  Skill Hidden Content (ASI01)
             
             For more information: https://github.com/SignalCoding/signal-sentinel-scanner
             Report security issues: security@signalcoding.co.uk
@@ -414,9 +450,9 @@ public static class Program
                 }
             }
 
-            if (configFiles.Count == 0 && config.RemoteUrl is null)
+            if (configFiles.Count == 0 && config.RemoteUrl is null && !config.ScanSkills)
             {
-                Console.Error.WriteLine("Error: No MCP configurations found. Use --discover, --config, or --remote.");
+                Console.Error.WriteLine("Error: No MCP configurations found. Use --discover, --config, --remote, or --skills.");
                 return 2;
             }
 
@@ -454,10 +490,36 @@ public static class Program
             var serverEnumerations = await enumerator.EnumerateServersAsync(configFiles, cancellationToken);
             Log($"Enumerated {serverEnumerations.Count} server(s)");
 
+            // Enumerate skills
+            var allSkills = new List<SkillDefinition>();
+            var skillSources = new List<SkillScanSource>();
+
+            if (config.ScanSkills)
+            {
+                if (config.SkillsPath is not null)
+                {
+                    Log($"Scanning skills: {SanitizeForDisplay(config.SkillsPath)}");
+                    var source = await SkillDiscovery.ScanDirectoryAsync(config.SkillsPath, cancellationToken);
+                    skillSources.Add(source);
+                    allSkills.AddRange(source.Skills);
+                }
+                else
+                {
+                    Log("Discovering Agent Skills...");
+                    var discovered = await SkillDiscovery.DiscoverAllAsync(config.Verbose, Log, cancellationToken);
+                    skillSources.AddRange(discovered);
+                    foreach (var source in discovered)
+                    {
+                        allSkills.AddRange(source.Skills);
+                    }
+                }
+                Log($"Found {allSkills.Count} skill(s) across {skillSources.Count} source(s)");
+            }
+
             // Run rules
             Log("Executing security rules...");
             var ruleEngine = new RuleEngine(verbose: config.Verbose, logger: Log);
-            var context = new ScanContext { Servers = serverEnumerations };
+            var context = new ScanContext { Servers = serverEnumerations, Skills = allSkills };
             var ruleResult = await ruleEngine.ExecuteAsync(context, cancellationToken);
             Log($"Found {ruleResult.Findings.Count} finding(s), {ruleResult.AttackPaths.Count} attack path(s)");
 
@@ -482,6 +544,14 @@ public static class Program
                     ConnectionSuccessful = s.ConnectionSuccessful,
                     ConnectionError = s.ConnectionError
                 }).ToList(),
+                Skills = allSkills.Select(s => new SkillScanSummary
+                {
+                    Name = s.Name,
+                    Platform = s.SourcePlatform,
+                    FilePath = s.FilePath,
+                    ScriptCount = s.Scripts.Count,
+                    IsProjectLevel = s.IsProjectLevel
+                }).ToList(),
                 Findings = ruleResult.Findings,
                 AttackPaths = ruleResult.AttackPaths,
                 Grade = grade,
@@ -499,6 +569,8 @@ public static class Program
                     LowFindings = ruleResult.Findings.Count(f => f.Severity == Severity.Low),
                     InfoFindings = ruleResult.Findings.Count(f => f.Severity == Severity.Info),
                     AttackPathCount = ruleResult.AttackPaths.Count,
+                    TotalSkills = allSkills.Count,
+                    TotalScripts = allSkills.Sum(s => s.Scripts.Count),
                     ScanDurationMs = stopwatch.ElapsedMilliseconds
                 }
             };

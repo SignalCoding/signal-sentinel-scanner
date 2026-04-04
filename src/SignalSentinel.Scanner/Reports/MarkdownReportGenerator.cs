@@ -47,6 +47,11 @@ public sealed class MarkdownReportGenerator : IReportGenerator
         sb.AppendLine($"| Low Findings | {result.Statistics.LowFindings} |");
         sb.AppendLine($"| Info Findings | {result.Statistics.InfoFindings} |");
         sb.AppendLine($"| Attack Paths | {result.Statistics.AttackPathCount} |");
+        if (result.Statistics.TotalSkills > 0)
+        {
+            sb.AppendLine($"| Skills Scanned | {result.Statistics.TotalSkills} |");
+            sb.AppendLine($"| Scripts Analysed | {result.Statistics.TotalScripts} |");
+        }
         sb.AppendLine($"| Scan Duration | {result.Statistics.ScanDurationMs}ms |");
         sb.AppendLine();
 
@@ -78,6 +83,21 @@ public sealed class MarkdownReportGenerator : IReportGenerator
             sb.AppendLine();
         }
 
+        // Skills
+        if (result.Skills.Count > 0)
+        {
+            sb.AppendLine("## Scanned Skills");
+            sb.AppendLine();
+            sb.AppendLine("| Skill | Platform | Scripts | Level |");
+            sb.AppendLine("|-------|----------|---------|-------|");
+            foreach (var skill in result.Skills)
+            {
+                var level = skill.IsProjectLevel ? "Project" : "Personal";
+                sb.AppendLine($"| {skill.Name} | {skill.Platform ?? "Unknown"} | {skill.ScriptCount} | {level} |");
+            }
+            sb.AppendLine();
+        }
+
         // OWASP Compliance Matrix
         var owaspGroups = OwaspMapper.GroupByOwaspCode(result.Findings);
         var matrix = OwaspMapper.GenerateComplianceMatrix(owaspGroups);
@@ -103,6 +123,33 @@ public sealed class MarkdownReportGenerator : IReportGenerator
             sb.AppendLine($"| {row.Code} | {row.Description[..Math.Min(50, row.Description.Length)]} | {statusEmoji} | {row.FindingsCount} |");
         }
         sb.AppendLine();
+
+        // OWASP MCP Top 10 Compliance (dual mapping)
+        var mcpFindings = result.Findings.Where(f => f.Source == FindingSource.Mcp).ToList();
+        if (mcpFindings.Count > 0)
+        {
+            var mcpGroups = OwaspMapper.GroupByMcpCode(mcpFindings);
+            var mcpMatrix = OwaspMapper.GenerateComplianceMatrix(mcpGroups);
+
+            sb.AppendLine("## OWASP MCP Top 10 Compliance");
+            sb.AppendLine();
+            sb.AppendLine("| Code | Risk Category | Status | Findings |");
+            sb.AppendLine("|------|--------------|--------|----------|");
+            foreach (var row in mcpMatrix)
+            {
+                var statusEmoji = row.Status switch
+                {
+                    ComplianceStatus.FullyCompliant => "✅",
+                    ComplianceStatus.Compliant => "✅",
+                    ComplianceStatus.NeedsImprovement => "⚠️",
+                    ComplianceStatus.PartiallyCompliant => "🟡",
+                    ComplianceStatus.NonCompliant => "❌",
+                    _ => "❓"
+                };
+                sb.AppendLine($"| {row.Code} | {row.Description[..Math.Min(50, row.Description.Length)]} | {statusEmoji} | {row.FindingsCount} |");
+            }
+            sb.AppendLine();
+        }
 
         // Attack Paths
         if (result.AttackPaths.Count > 0)
@@ -168,12 +215,17 @@ public sealed class MarkdownReportGenerator : IReportGenerator
             {
                 sb.AppendLine($"#### [{finding.RuleId}] {finding.Title}");
                 sb.AppendLine();
-                sb.AppendLine($"- **Server:** {finding.ServerName}");
+                var sourceLabel = finding.Source == FindingSource.Skill ? "Skill" : "Server";
+                sb.AppendLine($"- **{sourceLabel}:** {finding.ServerName}");
                 if (finding.ToolName is not null)
                 {
                     sb.AppendLine($"- **Tool:** {finding.ToolName}");
                 }
                 sb.AppendLine($"- **OWASP:** {finding.OwaspCode}");
+                if (finding.McpCode is not null)
+                {
+                    sb.AppendLine($"- **MCP Code:** {finding.McpCode}");
+                }
                 if (finding.Confidence.HasValue)
                 {
                     sb.AppendLine($"- **Confidence:** {finding.Confidence:P0}");

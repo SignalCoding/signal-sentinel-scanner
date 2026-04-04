@@ -49,6 +49,16 @@ public sealed record ScanConfig
     /// Connection timeout in seconds.
     /// </summary>
     public int TimeoutSeconds { get; init; } = 30;
+
+    /// <summary>
+    /// Scan Agent Skills. When true without SkillsPath, auto-discovers skill directories.
+    /// </summary>
+    public bool ScanSkills { get; init; }
+
+    /// <summary>
+    /// Optional specific path to a skills directory or SKILL.md file.
+    /// </summary>
+    public string? SkillsPath { get; init; }
 }
 
 /// <summary>

@@ -61,6 +61,31 @@ public sealed record Finding
     /// Confidence score (0.0 to 1.0) for pattern-based detections.
     /// </summary>
     public double? Confidence { get; init; }
+
+    /// <summary>
+    /// OWASP MCP Top 10 code (e.g., "MCP01") for dual mapping.
+    /// Null for skill-only findings that have no MCP protocol mapping.
+    /// </summary>
+    public string? McpCode { get; init; }
+
+    /// <summary>
+    /// Source type indicating whether the finding originated from MCP or Skill scanning.
+    /// </summary>
+    public FindingSource Source { get; init; } = FindingSource.Mcp;
+
+    /// <summary>
+    /// Skill file path (for skill-originated findings).
+    /// </summary>
+    public string? SkillFilePath { get; init; }
+}
+
+/// <summary>
+/// Source type for a finding.
+/// </summary>
+public enum FindingSource
+{
+    Mcp,
+    Skill
 }
 
 /// <summary>

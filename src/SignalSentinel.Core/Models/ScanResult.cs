@@ -44,6 +44,42 @@ public sealed record ScanResult
     /// Summary statistics.
     /// </summary>
     public required ScanStatistics Statistics { get; init; }
+
+    /// <summary>
+    /// Skill scan summaries (empty if skill scanning was not performed).
+    /// </summary>
+    public IReadOnlyList<SkillScanSummary> Skills { get; init; } = [];
+}
+
+/// <summary>
+/// Summary of a single skill scan.
+/// </summary>
+public sealed record SkillScanSummary
+{
+    /// <summary>
+    /// Skill name.
+    /// </summary>
+    public required string Name { get; init; }
+
+    /// <summary>
+    /// Source platform (e.g., "Claude Code", "Cursor").
+    /// </summary>
+    public string? Platform { get; init; }
+
+    /// <summary>
+    /// File path to the SKILL.md file.
+    /// </summary>
+    public required string FilePath { get; init; }
+
+    /// <summary>
+    /// Number of bundled scripts found.
+    /// </summary>
+    public int ScriptCount { get; init; }
+
+    /// <summary>
+    /// Whether the skill is project-level.
+    /// </summary>
+    public bool IsProjectLevel { get; init; }
 }
 
 /// <summary>
@@ -156,6 +192,16 @@ public sealed record ScanStatistics
     /// Number of attack paths detected.
     /// </summary>
     public int AttackPathCount { get; init; }
+
+    /// <summary>
+    /// Total skills scanned.
+    /// </summary>
+    public int TotalSkills { get; init; }
+
+    /// <summary>
+    /// Total bundled scripts analysed across all skills.
+    /// </summary>
+    public int TotalScripts { get; init; }
 
     /// <summary>
     /// Scan duration in milliseconds.

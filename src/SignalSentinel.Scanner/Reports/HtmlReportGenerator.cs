@@ -41,7 +41,7 @@ public sealed class HtmlReportGenerator : IReportGenerator
         sb.AppendLine("  <header>");
         sb.AppendLine("    <div class=\"header-content\">");
         sb.AppendLine("      <h1>&#128737; Signal Sentinel</h1>");
-        sb.AppendLine("      <p class=\"subtitle\">MCP Security Scan Report</p>");
+        sb.AppendLine("      <p class=\"subtitle\">MCP &amp; Agent Skill Security Scan Report</p>");
         sb.AppendLine("    </div>");
         sb.AppendLine("  </header>");
 
@@ -73,6 +73,11 @@ public sealed class HtmlReportGenerator : IReportGenerator
         sb.AppendLine(StatCard("Medium", result.Statistics.MediumFindings.ToString(), null, "#eab308"));
         sb.AppendLine(StatCard("Low", result.Statistics.LowFindings.ToString(), null, "#22c55e"));
         sb.AppendLine(StatCard("Attack Paths", result.Statistics.AttackPathCount.ToString(), null, "#dc2626"));
+        if (result.Statistics.TotalSkills > 0)
+        {
+            sb.AppendLine(StatCard("Skills", result.Statistics.TotalSkills.ToString(), null, "#6366f1"));
+            sb.AppendLine(StatCard("Scripts", result.Statistics.TotalScripts.ToString(), null, "#a855f7"));
+        }
         sb.AppendLine("      </div>");
         sb.AppendLine("    </section>");
 

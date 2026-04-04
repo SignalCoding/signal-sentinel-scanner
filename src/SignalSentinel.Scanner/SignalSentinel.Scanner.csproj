@@ -3,9 +3,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <PackageId>SignalSentinel.Scanner</PackageId>
-    <Version>1.1.0</Version>
-    <Description>CLI security scanner for MCP (Model Context Protocol) server configurations. Detects prompt injection, tool poisoning, and supply chain vulnerabilities aligned with OWASP Agentic AI Top 10. Supports stdio, HTTP/SSE, and WebSocket transports.</Description>
-    <PackageTags>mcp;security;scanner;ai-agents;owasp;agentic-ai;cli;dotnet-tool;websocket</PackageTags>
+    <Version>2.0.0</Version>
+    <Description>CLI security scanner for MCP server configurations AND Agent Skill packages. Detects prompt injection, tool poisoning, credential exposure, data exfiltration, and supply chain vulnerabilities. 21 security rules aligned with OWASP Agentic AI Top 10 + OWASP MCP Top 10. Supports stdio, HTTP/SSE, WebSocket transports and SKILL.md scanning.</Description>
+    <PackageTags>mcp;security;scanner;ai-agents;owasp;agentic-ai;cli;dotnet-tool;websocket;agent-skills;skill-scanning</PackageTags>
     
     <!-- Enable as global dotnet tool -->
     <PackAsTool>true</PackAsTool>
@@ -19,6 +19,19 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- <PackageIcon>icon.png</PackageIcon> -->
     <PackageReleaseNotes>
+v2.0.0 - Agent Skill Scanning + New MCP Rules
+- NEW: Agent Skill scanning (SKILL.md format) with 8 dedicated rules (SS-011 to SS-018)
+- NEW: Skill auto-discovery for Claude Code, Codex CLI, Cursor, Windsurf
+- NEW: Bundled script analysis (.py, .sh, .ps1, .js, .ts)
+- NEW: Credential Hygiene rule (SS-019) - detects hardcoded secrets in MCP configs
+- NEW: OAuth 2.1 Compliance rule (SS-020) - verifies remote server authentication
+- NEW: Package Provenance rule (SS-021) - checks npm/PyPI supply chain
+- NEW: OWASP MCP Top 10 dual mapping alongside ASI01-ASI10
+- NEW: Shared detection patterns (Exfiltration, Credential, Obfuscation)
+- NEW: --skills CLI flag for skill scanning
+- 21 total security rules (13 MCP + 8 Skill)
+- Combined MCP + Skill unified reporting
+
 v1.1.0 - WebSocket Transport Support
 - Added WebSocket transport (ws:// and wss:// URLs)
 - Auto-detection of transport from URL scheme
