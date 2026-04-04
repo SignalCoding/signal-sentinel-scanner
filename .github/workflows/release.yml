@@ -1,0 +1,257 @@
+# -----------------------------------------------------------------------
+# Signal Sentinel - Release Workflow
+# Copyright 2026 Signal Coding Limited. All rights reserved.
+# Licensed under the Apache License, Version 2.0.
+# -----------------------------------------------------------------------
+# Triggered on version tags (v*) - publishes to NuGet and GitHub Container Registry
+# Compliant with: Super Prompt v7.1.0, MOD JSP 440/656
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ==========================================================================
+  # Build and Test
+  # ==========================================================================
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for SourceLink
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      
+      - name: Restore dependencies
+        run: dotnet restore
+      
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+      
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+      
+      - name: Check for vulnerabilities
+        run: dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerability-report.txt
+      
+      - name: Fail on vulnerable packages
+        run: |
+          if grep -q "has the following vulnerable packages" vulnerability-report.txt; then
+            echo "::error::Vulnerable packages detected!"
+            exit 1
+          fi
+
+  # ==========================================================================
+  # Publish NuGet Package
+  # ==========================================================================
+  publish-nuget:
+    name: Publish to NuGet
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Pack Scanner
+        run: |
+          dotnet pack src/SignalSentinel.Scanner/SignalSentinel.Scanner.csproj \
+            --configuration Release \
+            --output ./artifacts \
+            -p:Version=${{ steps.version.outputs.VERSION }} \
+            -p:ContinuousIntegrationBuild=true
+      
+      - name: Pack Core Library
+        run: |
+          dotnet pack src/SignalSentinel.Core/SignalSentinel.Core.csproj \
+            --configuration Release \
+            --output ./artifacts \
+            -p:Version=${{ steps.version.outputs.VERSION }} \
+            -p:ContinuousIntegrationBuild=true
+      
+      - name: Upload NuGet artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./artifacts/*.nupkg
+      
+      - name: Upload Symbol packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: symbol-packages
+          path: ./artifacts/*.snupkg
+      
+      - name: Publish to NuGet.org
+        run: |
+          dotnet nuget push ./artifacts/*.nupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+      
+      - name: Publish symbols to NuGet.org
+        run: |
+          dotnet nuget push ./artifacts/*.snupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+        continue-on-error: true  # Symbol push is non-critical
+
+  # ==========================================================================
+  # Publish Docker Image
+  # ==========================================================================
+  publish-docker:
+    name: Publish to GHCR
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./deploy/docker/Dockerfile.scanner
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+      
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+
+  # ==========================================================================
+  # Create GitHub Release
+  # ==========================================================================
+  create-release:
+    name: Create GitHub Release
+    needs: [publish-nuget, publish-docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Download NuGet artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./artifacts
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Signal Sentinel v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## Signal Sentinel Scanner v${{ steps.version.outputs.VERSION }}
+            
+            MCP Security Audit Tool - OWASP Agentic AI Top 10 Compliant
+            
+            ### Installation
+            
+            **.NET Tool (recommended)**
+            ```bash
+            dotnet tool install -g SignalSentinel.Scanner
+            ```
+            
+            **Docker**
+            ```bash
+            docker pull ghcr.io/signalcoding/signal-sentinel:${{ steps.version.outputs.VERSION }}
+            ```
+            
+            ### Quick Start
+            ```bash
+            # Auto-discover and scan MCP configurations
+            sentinel-scan --discover
+            
+            # Or with Docker
+            docker run --rm ghcr.io/signalcoding/signal-sentinel:${{ steps.version.outputs.VERSION }} --help
+            ```
+            
+            ### Links
+            - [Documentation](https://github.com/SignalCoding/signal-sentinel#readme)
+            - [NuGet Package](https://www.nuget.org/packages/SignalSentinel.Scanner)
+            - [Docker Image](https://ghcr.io/signalcoding/signal-sentinel)
+            
+          files: |
+            ./artifacts/*.nupkg
+          draft: false
+          prerelease: false
+          generate_release_notes: true
