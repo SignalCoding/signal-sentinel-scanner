@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <PackageId>SignalSentinel.Scanner</PackageId>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
     <Description>CLI security scanner for MCP server configurations AND Agent Skill packages. Detects prompt injection, tool poisoning, credential exposure, data exfiltration, and supply chain vulnerabilities. 21 security rules aligned with OWASP Agentic AI Top 10 + OWASP MCP Top 10. Supports stdio, HTTP/SSE, WebSocket transports and SKILL.md scanning.</Description>
     <PackageTags>mcp;security;scanner;ai-agents;owasp;agentic-ai;cli;dotnet-tool;websocket;agent-skills;skill-scanning</PackageTags>
     
@@ -19,6 +19,12 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- <PackageIcon>icon.png</PackageIcon> -->
     <PackageReleaseNotes>
+v2.1.0 - Enhanced Inline Code Block Scanning
+- ENHANCED: SS-016 now scans markdown code blocks (bash, python, etc.) for malicious patterns
+- ENHANCED: SS-016 detects hardcoded absolute user paths (/root/, /home/user/, C:\Users\) in code blocks
+- ENHANCED: SS-012 detects inline code execution (python3 -c, bash -c, node -e) as scope violation
+- These enhancements catch skills that embed executable commands in markdown code fences
+
 v2.0.0 - Agent Skill Scanning + New MCP Rules
 - NEW: Agent Skill scanning (SKILL.md format) with 8 dedicated rules (SS-011 to SS-018)
 - NEW: Skill auto-discovery for Claude Code, Codex CLI, Cursor, Windsurf

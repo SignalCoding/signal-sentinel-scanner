@@ -131,6 +131,7 @@ WEBSITE_UPDATE_*.md
 # Build artifacts
 artifacts/
 
-# Test server and reports (local testing only)
+# Test server, skills and reports (local testing only)
 test-mcp-server/
+test-skills/
 test-report.*

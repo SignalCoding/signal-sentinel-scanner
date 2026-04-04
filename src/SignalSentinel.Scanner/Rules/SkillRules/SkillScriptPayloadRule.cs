@@ -67,6 +67,18 @@ public sealed partial class SkillScriptPayloadRule : IRule
             "Avoid direct process execution. Use safe, sandboxed alternatives where possible."),
     ];
 
+    [GeneratedRegex(
+        @"```(?:bash|sh|shell|powershell|ps1|python|python3|js|javascript|ts|typescript)\s*\n(.*?)```",
+        RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        matchTimeoutMilliseconds: 1000)]
+    private static partial Regex MarkdownCodeBlock();
+
+    [GeneratedRegex(
+        @"(/root/|/home/\w+/|C:\\Users\\|~/)[\w./-]+",
+        RegexOptions.Compiled,
+        matchTimeoutMilliseconds: 500)]
+    private static partial Regex AbsoluteUserPath();
+
     public Task<IEnumerable<Finding>> EvaluateAsync(
         ScanContext context,
         CancellationToken cancellationToken = default)
@@ -77,6 +89,7 @@ public sealed partial class SkillScriptPayloadRule : IRule
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            // Scan bundled script files
             foreach (var script in skill.Scripts)
             {
                 if (script.Content is null) continue;
@@ -126,9 +139,71 @@ public sealed partial class SkillScriptPayloadRule : IRule
                     });
                 }
             }
+
+            // Scan inline code blocks in markdown body
+            ScanMarkdownCodeBlocks(findings, skill);
         }
 
         return Task.FromResult<IEnumerable<Finding>>(findings);
+    }
+
+    private void ScanMarkdownCodeBlocks(List<Finding> findings, SkillDefinition skill)
+    {
+        var codeBlocks = SafeMatches(MarkdownCodeBlock(), skill.InstructionsBody).ToList();
+        if (codeBlocks.Count == 0) return;
+
+        foreach (var block in codeBlocks)
+        {
+            var code = block.Groups[1].Value;
+
+            foreach (var (pattern, name, severity, description, remediation) in ScriptPatterns)
+            {
+                if (SafeIsMatch(pattern, code))
+                {
+                    var match = SafeMatches(pattern, code).FirstOrDefault();
+
+                    findings.Add(new Finding
+                    {
+                        RuleId = Id,
+                        OwaspCode = OwaspCode,
+                        Severity = severity,
+                        Title = $"Skill Inline Code: {name}",
+                        Description = $"{description}. Found in markdown code block of skill '{skill.Name}'.",
+                        Remediation = remediation,
+                        ServerName = skill.Name,
+                        ToolName = "(inline code block)",
+                        Evidence = TruncateEvidence(match?.Value ?? "(matched)"),
+                        Confidence = 0.85,
+                        Source = FindingSource.Skill,
+                        SkillFilePath = skill.FilePath
+                    });
+                }
+            }
+
+            // Check for hardcoded absolute user paths in code blocks
+            if (SafeIsMatch(AbsoluteUserPath(), code))
+            {
+                var match = SafeMatches(AbsoluteUserPath(), code).FirstOrDefault();
+
+                findings.Add(new Finding
+                {
+                    RuleId = Id,
+                    OwaspCode = OwaspCode,
+                    Severity = Severity.Medium,
+                    Title = "Skill Inline Code: Hardcoded User Path",
+                    Description = $"Skill '{skill.Name}' contains hardcoded absolute user paths " +
+                        "in its code blocks. This ties the skill to a specific user/system " +
+                        "and may expose directory structure.",
+                    Remediation = "Use relative paths or environment variables instead of hardcoded absolute paths.",
+                    ServerName = skill.Name,
+                    ToolName = "(inline code block)",
+                    Evidence = TruncateEvidence(match?.Value ?? "(matched)"),
+                    Confidence = 0.8,
+                    Source = FindingSource.Skill,
+                    SkillFilePath = skill.FilePath
+                });
+            }
+        }
     }
 
     private static bool SafeIsMatch(Regex pattern, string? input)

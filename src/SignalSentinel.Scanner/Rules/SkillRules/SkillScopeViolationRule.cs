@@ -46,6 +46,12 @@ public sealed partial class SkillScopeViolationRule : IRule
     private static partial Regex ShellCapability();
 
     [GeneratedRegex(
+        @"\b(python3?\s+-c|bash\s+-c|sh\s+-c|node\s+-e|ruby\s+-e|perl\s+-e|powershell\s+-Command)",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        matchTimeoutMilliseconds: 500)]
+    private static partial Regex InlineCodeExecution();
+
+    [GeneratedRegex(
         @"\b(format|lint|style|beautif|indent|prettif|syntax|highlight|color|theme|render|display|convert|transform)\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]
@@ -56,6 +62,7 @@ public sealed partial class SkillScopeViolationRule : IRule
         (FileSystemCapability(), "filesystem access", Severity.High),
         (NetworkCapability(), "network access", Severity.High),
         (ShellCapability(), "shell/command execution", Severity.Critical),
+        (InlineCodeExecution(), "inline code execution (e.g. python3 -c)", Severity.High),
     ];
 
     public Task<IEnumerable<Finding>> EvaluateAsync(
