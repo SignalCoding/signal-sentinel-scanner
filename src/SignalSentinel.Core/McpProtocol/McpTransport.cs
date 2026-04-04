@@ -18,7 +18,12 @@ public enum McpTransportType
     /// <summary>
     /// Streamable HTTP transport (latest MCP spec).
     /// </summary>
-    StreamableHttp
+    StreamableHttp,
+
+    /// <summary>
+    /// WebSocket transport (ws:// or wss://).
+    /// </summary>
+    WebSocket
 }
 
 /// <summary>

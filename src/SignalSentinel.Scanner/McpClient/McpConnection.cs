@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using SignalSentinel.Core.McpProtocol;
@@ -6,7 +7,7 @@ using SignalSentinel.Core.McpProtocol;
 namespace SignalSentinel.Scanner.McpClient;
 
 /// <summary>
-/// Manages connections to MCP servers via stdio or HTTP transport.
+/// Manages connections to MCP servers via stdio, HTTP, or WebSocket transport.
 /// Security hardened for production use.
 /// </summary>
 public sealed class McpConnection : IAsyncDisposable
@@ -15,12 +16,14 @@ public sealed class McpConnection : IAsyncDisposable
     private readonly TimeSpan _timeout;
     private Process? _process;
     private HttpClient? _httpClient;
+    private ClientWebSocket? _webSocket;
     private int _requestId;
     private bool _disposed;
 
     // Security: Limit response sizes to prevent memory exhaustion
     private const int MaxResponseSizeBytes = 10 * 1024 * 1024; // 10MB
     private const int MaxDescriptionLength = 100_000; // 100KB per description
+    private const int WebSocketReceiveBufferSize = 8192;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -56,6 +59,10 @@ public sealed class McpConnection : IAsyncDisposable
         if (_config.Transport == McpTransportType.Stdio)
         {
             await StartProcessAsync(cancellationToken);
+        }
+        else if (_config.Transport == McpTransportType.WebSocket)
+        {
+            await ConnectWebSocketAsync(cancellationToken);
         }
         else
         {
@@ -107,6 +114,63 @@ public sealed class McpConnection : IAsyncDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         var result = await SendRequestAsync<McpPromptsListResult>("prompts/list", null, cancellationToken);
         return result ?? new McpPromptsListResult { Prompts = [] };
+    }
+
+    private async Task ConnectWebSocketAsync(CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(_config.Url))
+        {
+            throw new InvalidOperationException($"No URL specified for WebSocket transport on server '{_config.Name}'");
+        }
+
+        // Security: Validate and convert URL to WebSocket scheme
+        var wsUri = GetWebSocketUri(_config.Url);
+
+        _webSocket = new ClientWebSocket();
+
+        // Security: Set reasonable buffer sizes
+        _webSocket.Options.SetBuffer(WebSocketReceiveBufferSize, WebSocketReceiveBufferSize);
+
+        // Security: Set user agent
+        _webSocket.Options.SetRequestHeader("User-Agent", "SignalSentinel.Scanner/1.0");
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(_timeout);
+
+        try
+        {
+            await _webSocket.ConnectAsync(wsUri, cts.Token);
+        }
+        catch (WebSocketException ex)
+        {
+            throw new InvalidOperationException(
+                $"Failed to connect WebSocket to '{_config.Name}': {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Converts an HTTP/WS URL to a valid WebSocket URI.
+    /// </summary>
+    private static Uri GetWebSocketUri(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            throw new InvalidOperationException($"Invalid WebSocket URL: {url}");
+        }
+
+        // Security: Only allow ws, wss, http, https schemes
+        var scheme = uri.Scheme.ToLowerInvariant() switch
+        {
+            "ws" => "ws",
+            "wss" => "wss",
+            "http" => "ws",
+            "https" => "wss",
+            _ => throw new InvalidOperationException(
+                $"Unsupported scheme '{uri.Scheme}' for WebSocket transport. Use ws://, wss://, http://, or https://")
+        };
+
+        var builder = new UriBuilder(uri) { Scheme = scheme };
+        return builder.Uri;
     }
 
     private async Task StartProcessAsync(CancellationToken cancellationToken)
@@ -247,6 +311,10 @@ public sealed class McpConnection : IAsyncDisposable
         {
             return await SendStdioRequestAsync<TResult>(requestJson, id, cancellationToken);
         }
+        else if (_config.Transport == McpTransportType.WebSocket)
+        {
+            return await SendWebSocketRequestAsync<TResult>(requestJson, id, cancellationToken);
+        }
         else
         {
             return await SendHttpRequestAsync<TResult>(requestJson, cancellationToken);
@@ -269,6 +337,14 @@ public sealed class McpConnection : IAsyncDisposable
             {
                 await _process.StandardInput.WriteLineAsync(json.AsMemory(), cancellationToken);
                 await _process.StandardInput.FlushAsync();
+            }
+        }
+        else if (_config.Transport == McpTransportType.WebSocket)
+        {
+            if (_webSocket is not null && _webSocket.State == WebSocketState.Open)
+            {
+                var bytes = Encoding.UTF8.GetBytes(json);
+                await _webSocket.SendAsync(bytes.AsMemory(), WebSocketMessageType.Text, true, cancellationToken);
             }
         }
         else if (_httpClient is not null && _config.Url is not null)
@@ -413,6 +489,150 @@ public sealed class McpConnection : IAsyncDisposable
         return null;
     }
 
+    private async Task<TResult?> SendWebSocketRequestAsync<TResult>(
+        string requestJson,
+        int expectedId,
+        CancellationToken cancellationToken) where TResult : class
+    {
+        if (_webSocket is null || _webSocket.State != WebSocketState.Open)
+        {
+            throw new InvalidOperationException("WebSocket not connected");
+        }
+
+        // Send request
+        var requestBytes = Encoding.UTF8.GetBytes(requestJson);
+
+        // Security: Limit request size
+        if (requestBytes.Length > 1_000_000)
+        {
+            throw new InvalidOperationException("Request too large for WebSocket");
+        }
+
+        await _webSocket.SendAsync(
+            requestBytes.AsMemory(),
+            WebSocketMessageType.Text,
+            true,
+            cancellationToken);
+
+        // Receive response
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(_timeout);
+
+        var totalBytesRead = 0;
+
+        while (!cts.Token.IsCancellationRequested)
+        {
+            var message = await ReceiveWebSocketMessageAsync(cts.Token);
+            if (message is null)
+            {
+                continue;
+            }
+
+            // Security: Track total bytes to prevent memory exhaustion
+            totalBytesRead += message.Length;
+            if (totalBytesRead > MaxResponseSizeBytes)
+            {
+                throw new InvalidOperationException("WebSocket response too large - possible denial of service");
+            }
+
+            try
+            {
+                var doc = JsonDocument.Parse(message);
+                var root = doc.RootElement;
+
+                // Check if this is a response (has id)
+                if (root.TryGetProperty("id", out var idElement))
+                {
+                    var responseId = idElement.ValueKind switch
+                    {
+                        JsonValueKind.Number => idElement.GetInt32(),
+                        JsonValueKind.String => int.TryParse(idElement.GetString(), out var parsed) ? parsed : -1,
+                        _ => -1
+                    };
+
+                    if (responseId == expectedId)
+                    {
+                        if (root.TryGetProperty("error", out var error))
+                        {
+                            var errorMsg = error.TryGetProperty("message", out var msgEl)
+                                ? msgEl.GetString() ?? "Unknown error"
+                                : "Unknown error";
+                            if (errorMsg.Length > 500)
+                            {
+                                errorMsg = errorMsg[..500] + "...";
+                            }
+                            throw new InvalidOperationException($"MCP error: {errorMsg}");
+                        }
+
+                        if (root.TryGetProperty("result", out var result))
+                        {
+                            return JsonSerializer.Deserialize<TResult>(result.GetRawText(), JsonOptions);
+                        }
+
+                        return null;
+                    }
+                }
+            }
+            catch (JsonException)
+            {
+                // Not valid JSON, skip
+            }
+        }
+
+        throw new TimeoutException($"Timeout waiting for WebSocket response from MCP server '{_config.Name}'");
+    }
+
+    /// <summary>
+    /// Receives a complete WebSocket text message, reassembling fragments.
+    /// </summary>
+    private async Task<string?> ReceiveWebSocketMessageAsync(CancellationToken cancellationToken)
+    {
+        if (_webSocket is null)
+        {
+            return null;
+        }
+
+        var buffer = new byte[WebSocketReceiveBufferSize];
+        var messageBuilder = new StringBuilder();
+        var totalBytes = 0;
+        var segment = new ArraySegment<byte>(buffer);
+
+        WebSocketReceiveResult receiveResult;
+        do
+        {
+            receiveResult = await _webSocket.ReceiveAsync(segment, cancellationToken);
+
+            if (receiveResult.MessageType == WebSocketMessageType.Close)
+            {
+                // Server initiated close
+                if (_webSocket.State == WebSocketState.Open || _webSocket.State == WebSocketState.CloseReceived)
+                {
+                    await _webSocket.CloseOutputAsync(
+                        WebSocketCloseStatus.NormalClosure,
+                        "Scan complete",
+                        cancellationToken);
+                }
+                throw new InvalidOperationException("WebSocket connection closed by server");
+            }
+
+            if (receiveResult.MessageType == WebSocketMessageType.Text)
+            {
+                totalBytes += receiveResult.Count;
+
+                // Security: Prevent oversized messages
+                if (totalBytes > MaxResponseSizeBytes)
+                {
+                    throw new InvalidOperationException("WebSocket message too large");
+                }
+
+                messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, receiveResult.Count));
+            }
+        } while (!receiveResult.EndOfMessage);
+
+        var message = messageBuilder.ToString();
+        return string.IsNullOrEmpty(message) ? null : message;
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
@@ -441,12 +661,31 @@ public sealed class McpConnection : IAsyncDisposable
             _process = null;
         }
 
+        if (_webSocket is not null)
+        {
+            try
+            {
+                if (_webSocket.State == WebSocketState.Open)
+                {
+                    await _webSocket.CloseAsync(
+                        WebSocketCloseStatus.NormalClosure,
+                        "Scanner disconnecting",
+                        CancellationToken.None);
+                }
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
+
+            _webSocket.Dispose();
+            _webSocket = null;
+        }
+
         if (_httpClient is not null)
         {
             _httpClient.Dispose();
             _httpClient = null;
         }
-
-        await Task.CompletedTask;
     }
 }

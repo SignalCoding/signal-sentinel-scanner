@@ -256,13 +256,14 @@ public static class Program
             return false;
         }
 
-        // Security: Only allow http/https
+        // Security: Only allow http/https/ws/wss
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
         {
             return false;
         }
 
-        if (uri.Scheme != "http" && uri.Scheme != "https")
+        if (uri.Scheme != "http" && uri.Scheme != "https" &&
+            uri.Scheme != "ws" && uri.Scheme != "wss")
         {
             return false;
         }
@@ -340,7 +341,7 @@ public static class Program
             
             OPTIONS:
                 -c, --config <path>     Path to MCP configuration file
-                -r, --remote <url>      Remote MCP server URL to scan
+                -r, --remote <url>      Remote MCP server URL (http/https/ws/wss)
                 -d, --discover          Auto-discover MCP configurations
                 -f, --format <format>   Output format: json, markdown, html (default: markdown)
                 -o, --output <path>     Output file path (defaults to stdout)
@@ -354,6 +355,7 @@ public static class Program
                 sentinel-scan --discover
                 sentinel-scan --config ~/.cursor/mcp.json
                 sentinel-scan --remote https://mcp.example.com/mcp --format html -o report.html
+                sentinel-scan --remote wss://mcp.example.com/ws
                 sentinel-scan --discover --ci --format json
             
             SECURITY RULES:
@@ -422,6 +424,10 @@ public static class Program
             if (config.RemoteUrl is not null)
             {
                 var uri = new Uri(config.RemoteUrl);
+                var transport = uri.Scheme is "ws" or "wss"
+                    ? Core.McpProtocol.McpTransportType.WebSocket
+                    : Core.McpProtocol.McpTransportType.Http;
+
                 configFiles.Add(new Core.McpProtocol.McpConfigFile
                 {
                     FilePath = "remote",
@@ -431,7 +437,7 @@ public static class Program
                         new Core.McpProtocol.McpServerConfig
                         {
                             Name = uri.Host,
-                            Transport = Core.McpProtocol.McpTransportType.Http,
+                            Transport = transport,
                             Url = config.RemoteUrl
                         }
                     ]

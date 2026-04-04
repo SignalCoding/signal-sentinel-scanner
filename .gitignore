@@ -130,5 +130,6 @@ SIGNAL_SENTINEL_PRODUCT_DOCUMENTATION.md
 # Build artifacts
 artifacts/
 
-# Test server (local testing only)
+# Test server and reports (local testing only)
 test-mcp-server/
+test-report.*

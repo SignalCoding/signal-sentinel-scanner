@@ -92,7 +92,7 @@ LABEL org.opencontainers.image.title="Signal Sentinel Scanner" \
       org.opencontainers.image.source="https://github.com/SignalCoding/signal-sentinel" \
       org.opencontainers.image.documentation="https://github.com/SignalCoding/signal-sentinel#readme" \
       org.opencontainers.image.url="https://signalcoding.co.uk/signal-sentinel" \
-      org.opencontainers.image.version="1.0.0" \
+      org.opencontainers.image.version="1.1.0" \
       org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine"
 
 # Build-time labels (set via --build-arg)

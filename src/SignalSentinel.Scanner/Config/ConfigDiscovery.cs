@@ -353,15 +353,25 @@ public static class ConfigDiscovery
                 urlElement.ValueKind == JsonValueKind.String)
             {
                 url = urlElement.GetString();
-                transport = McpTransportType.Http;
 
-                // Security: Validate URL
+                // Security: Validate URL and determine transport
                 if (url is not null)
                 {
-                    if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
-                        (uri.Scheme != "http" && uri.Scheme != "https"))
+                    if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                     {
                         url = null; // Invalid URL, ignore
+                    }
+                    else if (uri.Scheme is "ws" or "wss")
+                    {
+                        transport = McpTransportType.WebSocket;
+                    }
+                    else if (uri.Scheme is "http" or "https")
+                    {
+                        transport = McpTransportType.Http;
+                    }
+                    else
+                    {
+                        url = null; // Unsupported scheme, ignore
                     }
                 }
             }
@@ -375,6 +385,7 @@ public static class ConfigDiscovery
                     "stdio" => McpTransportType.Stdio,
                     "http" or "sse" => McpTransportType.Http,
                     "streamable-http" => McpTransportType.StreamableHttp,
+                    "websocket" or "ws" or "wss" => McpTransportType.WebSocket,
                     _ => McpTransportType.Stdio
                 };
             }
