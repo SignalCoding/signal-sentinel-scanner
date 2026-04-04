@@ -123,12 +123,15 @@ jobs:
           context: .
           file: ./deploy/docker/Dockerfile.scanner
           push: false
+          load: true  # Load image into local Docker daemon for testing
           tags: signal-sentinel:test
           build-args: |
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VCS_REF=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Note: load only works with single platform, so we test amd64 only in CI
+          platforms: linux/amd64
       
       - name: Test Docker image
         run: |
