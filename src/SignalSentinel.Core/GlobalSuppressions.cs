@@ -30,3 +30,65 @@ using System.Diagnostics.CodeAnalysis;
     "Globalization",
     "CA1307:Specify StringComparison for clarity",
     Justification = "Ordinal comparison is intentional for security pattern matching")]
+
+// CA1034: Nested types should not be visible — intentional grouping of constants by category
+[assembly: SuppressMessage(
+    "Design",
+    "CA1034:Nested types should not be visible",
+    Justification = "Intentional grouping of constants by category (Rules, Limits)",
+    Scope = "type",
+    Target = "~T:SignalSentinel.Core.RuleConstants.Rules")]
+[assembly: SuppressMessage(
+    "Design",
+    "CA1034:Nested types should not be visible",
+    Justification = "Intentional grouping of constants by category (Rules, Limits)",
+    Scope = "type",
+    Target = "~T:SignalSentinel.Core.RuleConstants.Limits")]
+
+// CA1056: URI properties should not be strings — these are JSON deserialization models
+[assembly: SuppressMessage(
+    "Design",
+    "CA1056:URI-like properties should not be strings",
+    Justification = "JSON deserialization model — changing to System.Uri would break JSON parsing",
+    Scope = "member",
+    Target = "~P:SignalSentinel.Core.McpProtocol.McpResourceDefinition.Uri")]
+[assembly: SuppressMessage(
+    "Design",
+    "CA1056:URI-like properties should not be strings",
+    Justification = "JSON deserialization model — changing to System.Uri would break JSON parsing",
+    Scope = "member",
+    Target = "~P:SignalSentinel.Core.McpProtocol.McpServerConfig.Url")]
+
+// CA1055: URI return values should not be strings — returns URL strings used in reports
+[assembly: SuppressMessage(
+    "Design",
+    "CA1055:URI-like return values should not be strings",
+    Justification = "Returns URL string used in security reports, not for navigation",
+    Scope = "member",
+    Target = "~M:SignalSentinel.Core.Models.OwaspAsiCodes.GetDocumentationUrl(System.String)")]
+
+// CA1308: Use ToUpperInvariant — ToLowerInvariant is intentional in all cases below
+[assembly: SuppressMessage(
+    "Globalization",
+    "CA1308:Normalize strings to uppercase",
+    Justification = "URL fragments require lowercase per convention",
+    Scope = "member",
+    Target = "~M:SignalSentinel.Core.Models.OwaspAsiCodes.GetDocumentationUrl(System.String)")]
+[assembly: SuppressMessage(
+    "Globalization",
+    "CA1308:Normalize strings to uppercase",
+    Justification = "Lowercase normalisation is correct for case-insensitive name comparison",
+    Scope = "member",
+    Target = "~M:SignalSentinel.Core.Security.TyposquatDetector.NormalizeName(System.String)")]
+[assembly: SuppressMessage(
+    "Globalization",
+    "CA1308:Normalize strings to uppercase",
+    Justification = "Hex hashes are conventionally lowercase",
+    Scope = "member",
+    Target = "~M:SignalSentinel.Core.Security.HashPinning.ComputeToolHash(SignalSentinel.Core.McpProtocol.McpToolDefinition)")]
+[assembly: SuppressMessage(
+    "Globalization",
+    "CA1308:Normalize strings to uppercase",
+    Justification = "Hex hashes are conventionally lowercase",
+    Scope = "member",
+    Target = "~M:SignalSentinel.Core.Security.HashPinning.ComputeServerManifestHash(System.String,System.Collections.Generic.IEnumerable{SignalSentinel.Core.McpProtocol.McpToolDefinition})")]

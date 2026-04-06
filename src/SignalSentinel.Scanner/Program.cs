@@ -192,7 +192,7 @@ public static class Program
 
                 default:
                     // Security: Reject unknown arguments to prevent injection
-                    if (arg.StartsWith("-"))
+                    if (arg.StartsWith('-'))
                     {
                         Console.Error.WriteLine($"Error: Unknown option: {SanitizeForDisplay(arg)}");
                         return null;

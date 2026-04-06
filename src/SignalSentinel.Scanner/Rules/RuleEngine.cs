@@ -10,7 +10,7 @@ namespace SignalSentinel.Scanner.Rules;
 /// </summary>
 public sealed class RuleEngine
 {
-    private readonly IReadOnlyList<IRule> _rules;
+    private readonly List<IRule> _rules;
     private readonly bool _verbose;
     private readonly Action<string>? _logger;
 
@@ -124,7 +124,7 @@ public sealed class RuleEngine
         };
     }
 
-    private async Task<RuleExecutionResult> ExecuteRuleAsync(
+    private static async Task<RuleExecutionResult> ExecuteRuleAsync(
         IRule rule, 
         ScanContext context,
         CancellationToken cancellationToken)

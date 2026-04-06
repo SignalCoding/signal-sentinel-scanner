@@ -14,6 +14,8 @@ public static partial class InjectionPatterns
     /// </summary>
     public static bool SafeIsMatch(Regex pattern, string? input)
     {
+        ArgumentNullException.ThrowIfNull(pattern);
+
         if (string.IsNullOrEmpty(input))
         {
             return false;
@@ -41,6 +43,8 @@ public static partial class InjectionPatterns
     /// </summary>
     public static IEnumerable<Match> SafeMatches(Regex pattern, string? input)
     {
+        ArgumentNullException.ThrowIfNull(pattern);
+
         if (string.IsNullOrEmpty(input))
         {
             yield break;

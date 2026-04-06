@@ -151,7 +151,7 @@ public class SeverityScorerTests
         var (_, score) = SeverityScorer.CalculateGrade(findings, []);
 
         // Assert
-        score.Should().BeLessOrEqualTo(expectedMinScore + 5); // Allow some tolerance
+        score.Should().BeLessThanOrEqualTo(expectedMinScore + 5); // Allow some tolerance
     }
 
     private static Finding CreateFinding(Severity severity)

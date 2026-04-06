@@ -62,11 +62,12 @@ public sealed partial class CrossServerAttackPathRule : IRule
                 if (caps != ToolCapability.None)
                 {
                     var key = server.ServerName;
-                    if (!capabilityMap.ContainsKey(key))
+                    if (!capabilityMap.TryGetValue(key, out var toolList))
                     {
-                        capabilityMap[key] = [];
+                        toolList = [];
+                        capabilityMap[key] = toolList;
                     }
-                    capabilityMap[key].Add((server.ServerName, tool.Name, caps));
+                    toolList.Add((server.ServerName, tool.Name, caps));
                 }
             }
         }

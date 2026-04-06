@@ -22,7 +22,6 @@ public sealed class McpConnection : IAsyncDisposable
 
     // Security: Limit response sizes to prevent memory exhaustion
     private const int MaxResponseSizeBytes = 10 * 1024 * 1024; // 10MB
-    private const int MaxDescriptionLength = 100_000; // 100KB per description
     private const int WebSocketReceiveBufferSize = 8192;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -354,7 +353,7 @@ public sealed class McpConnection : IAsyncDisposable
             if (_process?.StandardInput is not null)
             {
                 await _process.StandardInput.WriteLineAsync(json.AsMemory(), cancellationToken);
-                await _process.StandardInput.FlushAsync();
+                await _process.StandardInput.FlushAsync(cancellationToken);
             }
         }
         else if (_config.Transport == McpTransportType.WebSocket)
@@ -368,7 +367,7 @@ public sealed class McpConnection : IAsyncDisposable
         else if (_httpClient is not null && _config.Url is not null)
         {
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            await _httpClient.PostAsync(_config.Url, content, cancellationToken);
+            await _httpClient.PostAsync(new Uri(_config.Url), content, cancellationToken);
         }
     }
 
@@ -383,7 +382,7 @@ public sealed class McpConnection : IAsyncDisposable
         }
 
         await _process.StandardInput.WriteLineAsync(requestJson.AsMemory(), cancellationToken);
-        await _process.StandardInput.FlushAsync();
+        await _process.StandardInput.FlushAsync(cancellationToken);
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(_timeout);

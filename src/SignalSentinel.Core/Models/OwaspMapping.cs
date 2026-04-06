@@ -56,6 +56,9 @@ public static class OwaspAsiCodes
     /// <summary>
     /// Gets the URL to the OWASP documentation for an ASI code.
     /// </summary>
-    public static string GetDocumentationUrl(string code) =>
-        $"https://owasp.org/www-project-agentic-ai-top-10/#{code.ToLowerInvariant()}";
+    public static string GetDocumentationUrl(string code)
+    {
+        ArgumentNullException.ThrowIfNull(code);
+        return $"https://owasp.org/www-project-agentic-ai-top-10/#{code.ToLowerInvariant()}";
+    }
 }
