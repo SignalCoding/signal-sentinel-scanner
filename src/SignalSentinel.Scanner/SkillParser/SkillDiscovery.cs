@@ -148,7 +148,7 @@ public static class SkillDiscovery
                 };
             }
 
-            errors.Add($"Directory not found: {fullPath}");
+            errors.Add($"Directory not found: {Path.GetFileName(fullPath)}");
             return new SkillScanSource
             {
                 SourcePath = fullPath,

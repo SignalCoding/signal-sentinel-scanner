@@ -88,8 +88,8 @@ public static class HashPinning
         IReadOnlyList<McpToolDefinition> previousTools,
         IReadOnlyList<McpToolDefinition> currentTools)
     {
-        var previousDict = previousTools.ToDictionary(t => t.Name, ComputeToolHash);
-        var currentDict = currentTools.ToDictionary(t => t.Name, ComputeToolHash);
+        var previousDict = previousTools.GroupBy(t => t.Name).ToDictionary(g => g.Key, g => ComputeToolHash(g.First()));
+        var currentDict = currentTools.GroupBy(t => t.Name).ToDictionary(g => g.Key, g => ComputeToolHash(g.First()));
 
         var added = currentDict.Keys.Except(previousDict.Keys).ToList();
         var removed = previousDict.Keys.Except(currentDict.Keys).ToList();
@@ -110,13 +110,15 @@ public static class HashPinning
         };
     }
 
+    private static readonly JsonSerializerOptions NormalizeJsonOptions = new()
+    {
+        WriteIndented = false,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     private static string NormalizeJson(JsonElement element)
     {
-        return JsonSerializer.Serialize(element, new JsonSerializerOptions
-        {
-            WriteIndented = false,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        return JsonSerializer.Serialize(element, NormalizeJsonOptions);
     }
 }
 

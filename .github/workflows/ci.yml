@@ -4,6 +4,7 @@
 # Licensed under the Apache License, Version 2.0.
 # -----------------------------------------------------------------------
 # Runs on all pushes and pull requests - builds, tests, and security scans
+# All actions pinned to SHA hashes for supply chain security.
 
 name: CI
 
@@ -26,12 +27,12 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
       
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       
@@ -45,7 +46,7 @@ jobs:
         run: dotnet test --configuration Release --no-build --verbosity normal --logger trx --results-directory TestResults
       
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: test-results-${{ matrix.os }}
@@ -57,10 +58,10 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       
@@ -71,11 +72,13 @@ jobs:
         run: |
           dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerability-report.txt
           if grep -q "has the following vulnerable packages" vulnerability-report.txt; then
-            echo "::warning::Vulnerable packages detected - review required"
+            echo "::error::Vulnerable packages detected - failing build"
+            exit 1
           fi
       
       - name: Upload vulnerability report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
         with:
           name: vulnerability-report
           path: vulnerability-report.txt
@@ -86,10 +89,10 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       
@@ -112,30 +115,27 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
       
       - name: Build Docker image (no push)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
         with:
           context: .
           file: ./deploy/docker/Dockerfile.scanner
           push: false
-          load: true  # Load image into local Docker daemon for testing
+          load: true
           tags: signal-sentinel:test
           build-args: |
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VCS_REF=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # Note: load only works with single platform, so we test amd64 only in CI
           platforms: linux/amd64
       
       - name: Test Docker image
         run: |
-          # Test version (should exit 0)
           docker run --rm signal-sentinel:test --version
-          # Test help (exits 1 by design when no config found, so we just verify it runs)
           docker run --rm signal-sentinel:test --help || true

@@ -137,6 +137,12 @@ public static class SkillReader
             return [];
         }
 
+        // Security: Skip directories that are symlinks to prevent directory traversal
+        if ((File.GetAttributes(fullDir) & FileAttributes.ReparsePoint) != 0)
+        {
+            return [];
+        }
+
         string[] skillFiles;
         try
         {

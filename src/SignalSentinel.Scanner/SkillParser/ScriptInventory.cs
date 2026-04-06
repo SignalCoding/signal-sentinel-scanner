@@ -5,6 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Runtime.InteropServices;
 using SignalSentinel.Core.Models;
 
 namespace SignalSentinel.Scanner.SkillParser;
@@ -75,8 +76,29 @@ public static class ScriptInventory
 
                 var fullPath = Path.GetFullPath(file);
 
+                // Security: Resolve symlinks before containment check to prevent escape
+                var resolvedPath = fullPath;
+                try
+                {
+                    if ((File.GetAttributes(fullPath) & FileAttributes.ReparsePoint) != 0)
+                    {
+                        resolvedPath = File.ResolveLinkTarget(fullPath, returnFinalTarget: true)?.FullName ?? fullPath;
+                    }
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    continue;
+                }
+
                 // Security: Ensure file is within the skill directory (no symlink escape)
-                if (!fullPath.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase))
+                var baseDirWithSep = baseDir.EndsWith(Path.DirectorySeparatorChar)
+                    ? baseDir
+                    : baseDir + Path.DirectorySeparatorChar;
+                var comparison = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                    ? StringComparison.Ordinal
+                    : StringComparison.OrdinalIgnoreCase;
+                if (!resolvedPath.StartsWith(baseDirWithSep, comparison) &&
+                    !string.Equals(resolvedPath, baseDir, comparison))
                 {
                     continue;
                 }

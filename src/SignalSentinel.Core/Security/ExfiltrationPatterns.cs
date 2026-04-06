@@ -21,7 +21,7 @@ public static partial class ExfiltrationPatterns
     /// </summary>
     [GeneratedRegex(
         @"(POST\s+to|PUT\s+to|PATCH\s+to|send\s+(data|response|output|result)\s+to|upload\s+to|transmit\s+to|exfiltrate\s+to|forward\s+(data|response)\s+to)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex HttpDataSend();
 
@@ -29,8 +29,8 @@ public static partial class ExfiltrationPatterns
     /// Detects curl/wget/fetch calls that send data outbound.
     /// </summary>
     [GeneratedRegex(
-        @"(curl\s+.*-[dX]|curl\s+.*--data|wget\s+.*--post|fetch\s*\(\s*['""]https?://|requests\.post|http\.post|Invoke-WebRequest\s+.*-Method\s+Post|Invoke-RestMethod\s+.*-Method\s+Post)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        @"(curl\s+.{0,500}?-[dX]|curl\s+.{0,500}?--data|wget\s+.{0,500}?--post|fetch\s*\(\s*['""]https?://|requests\.post|http\.post|Invoke-WebRequest\s+.{0,500}?-Method\s+Post|Invoke-RestMethod\s+.{0,500}?-Method\s+Post)",
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex NetworkUtilSend();
 
@@ -39,7 +39,7 @@ public static partial class ExfiltrationPatterns
     /// </summary>
     [GeneratedRegex(
         @"(webhook\.site|requestbin|ngrok\.io|burpcollaborator|oastify\.com|pipedream\.net|hookbin\.com|canarytokens\.com)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex KnownExfiltrationEndpoints();
 
@@ -48,7 +48,7 @@ public static partial class ExfiltrationPatterns
     /// </summary>
     [GeneratedRegex(
         @"(nslookup\s+.*\$|dig\s+.*\$|Resolve-DnsName\s+.*\$|\.burpcollaborator\.net|\.oastify\.com)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex DnsExfiltration();
 

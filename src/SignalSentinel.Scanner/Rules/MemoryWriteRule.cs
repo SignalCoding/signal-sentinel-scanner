@@ -15,13 +15,13 @@ public sealed partial class MemoryWriteRule : IRule
     public string Description => "Detects MCP tools with write access to agent memory, vector databases, or context that could enable memory poisoning attacks.";
     public bool EnabledByDefault => true;
 
-    [GeneratedRegex(@"\b(memory|context|conversation|history|session|state|cache)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(memory|context|conversation|history|session|state|cache)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex MemoryKeywords();
 
-    [GeneratedRegex(@"\b(vector|embedding|semantic|rag|knowledge|index|retrieval)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(vector|embedding|semantic|rag|knowledge|index|retrieval)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex VectorKeywords();
 
-    [GeneratedRegex(@"\b(write|store|save|update|modify|add|insert|put|set|create|append|push)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(write|store|save|update|modify|add|insert|put|set|create|append|push)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex WriteKeywords();
 
     public Task<IEnumerable<Finding>> EvaluateAsync(ScanContext context, CancellationToken cancellationToken = default)

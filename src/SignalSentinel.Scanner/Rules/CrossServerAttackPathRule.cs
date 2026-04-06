@@ -20,22 +20,22 @@ public sealed partial class CrossServerAttackPathRule : IRule
 
     public IReadOnlyList<AttackPath> DetectedAttackPaths => _detectedAttackPaths;
 
-    [GeneratedRegex(@"\b(read|get|fetch|retrieve|load|download|query|select)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(read|get|fetch|retrieve|load|download|query|select)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex ReadPattern();
 
-    [GeneratedRegex(@"\b(write|save|store|upload|create|insert|update|modify|put)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(write|save|store|upload|create|insert|update|modify|put)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex WritePattern();
 
-    [GeneratedRegex(@"\b(http|https|url|endpoint|api|request|fetch|curl|wget|socket|network)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(http|https|url|endpoint|api|request|fetch|curl|wget|socket|network)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex NetworkPattern();
 
-    [GeneratedRegex(@"\b(file|path|directory|folder|disk|filesystem|fs)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(file|path|directory|folder|disk|filesystem|fs)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex FilePattern();
 
-    [GeneratedRegex(@"\b(database|db|sql|query|table|mongo|redis|postgres|mysql)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(database|db|sql|query|table|mongo|redis|postgres|mysql)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex DatabasePattern();
 
-    [GeneratedRegex(@"\b(exec|execute|run|shell|command|script|eval|system|spawn)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(exec|execute|run|shell|command|script|eval|system|spawn)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex ExecutePattern();
 
     public Task<IEnumerable<Finding>> EvaluateAsync(ScanContext context, CancellationToken cancellationToken = default)

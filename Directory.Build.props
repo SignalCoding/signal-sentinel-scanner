@@ -34,7 +34,6 @@
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     
     <!-- Code analysis settings -->
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisMode>All</AnalysisMode>
     
     <!-- Security: Disable BinaryFormatter (CVE-2024-21404) -->

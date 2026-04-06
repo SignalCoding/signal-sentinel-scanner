@@ -4,7 +4,7 @@
 # Licensed under the Apache License, Version 2.0.
 # -----------------------------------------------------------------------
 # Triggered on version tags (v*) - publishes to NuGet and GitHub Container Registry
-# Compliant with: Super Prompt v7.1.0, MOD JSP 440/656
+# All actions pinned to SHA hashes for supply chain security.
 
 name: Release
 
@@ -19,21 +19,18 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # ==========================================================================
-  # Build and Test
-  # ==========================================================================
   build:
     name: Build & Test
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          fetch-depth: 0  # Full history for SourceLink
+          fetch-depth: 0
       
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       
@@ -56,9 +53,6 @@ jobs:
             exit 1
           fi
 
-  # ==========================================================================
-  # Publish NuGet Package
-  # ==========================================================================
   publish-nuget:
     name: Publish to NuGet
     needs: build
@@ -66,12 +60,12 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
       
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       
@@ -96,13 +90,13 @@ jobs:
             -p:ContinuousIntegrationBuild=true
       
       - name: Upload NuGet artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: nuget-packages
           path: ./artifacts/*.nupkg
       
       - name: Upload Symbol packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: symbol-packages
           path: ./artifacts/*.snupkg
@@ -120,11 +114,8 @@ jobs:
             --api-key ${{ secrets.NUGET_API_KEY }} \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
-        continue-on-error: true  # Symbol push is non-critical
+        continue-on-error: true
 
-  # ==========================================================================
-  # Publish Docker Image
-  # ==========================================================================
   publish-docker:
     name: Publish to GHCR
     needs: build
@@ -135,17 +126,17 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       
       - name: Extract version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
       
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
       
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -153,7 +144,7 @@ jobs:
       
       - name: Extract metadata for Docker
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -163,7 +154,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
       
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
         with:
           context: .
           file: ./deploy/docker/Dockerfile.scanner
@@ -178,22 +169,21 @@ jobs:
           platforms: linux/amd64,linux/arm64
       
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # master 2026-04-06
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
           format: 'sarif'
           output: 'trivy-results.sarif'
-        continue-on-error: true
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
       
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@3b1a19a80ab047f35cbb237b5bd9bdc1e14f166c # v3
+        if: always()
         with:
           sarif_file: 'trivy-results.sarif'
         continue-on-error: true
 
-  # ==========================================================================
-  # Create GitHub Release
-  # ==========================================================================
   create-release:
     name: Create GitHub Release
     needs: [publish-nuget, publish-docker]
@@ -203,26 +193,26 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       
       - name: Extract version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
       
       - name: Download NuGet artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: nuget-packages
           path: ./artifacts
       
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@26994186c0ac3ef5cae75ac16aa32e8153525f77 # v1
         with:
           name: Signal Sentinel v${{ steps.version.outputs.VERSION }}
           body: |
             ## Signal Sentinel Scanner v${{ steps.version.outputs.VERSION }}
             
-            MCP Security Audit Tool - OWASP Agentic AI Top 10 Compliant
+            MCP & Agent Skill Security Scanner - OWASP Agentic AI Top 10 + MCP Top 10 Compliant
             
             ### Installation
             
@@ -234,15 +224,6 @@ jobs:
             **Docker**
             ```bash
             docker pull ghcr.io/signalcoding/signal-sentinel-scanner:${{ steps.version.outputs.VERSION }}
-            ```
-            
-            ### Quick Start
-            ```bash
-            # Auto-discover and scan MCP configurations
-            sentinel-scan --discover
-            
-            # Or with Docker
-            docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:${{ steps.version.outputs.VERSION }} --help
             ```
             
             ### Links

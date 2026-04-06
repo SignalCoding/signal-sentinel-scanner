@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using SignalSentinel.Core;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Core.Security;
@@ -8,13 +9,16 @@ namespace SignalSentinel.Scanner.Rules;
 /// SS-004: Detects supply chain vulnerabilities including typosquatting and version drift.
 /// OWASP ASI04: Supply Chain Vulnerabilities
 /// </summary>
-public sealed class SupplyChainRule : IRule
+public sealed partial class SupplyChainRule : IRule
 {
     public string Id => RuleConstants.Rules.SupplyChain;
     public string Name => "Supply Chain Vulnerability Detection";
     public string OwaspCode => OwaspAsiCodes.ASI04;
     public string Description => "Detects potential supply chain vulnerabilities including typosquatting, version drift, and compromised packages.";
     public bool EnabledByDefault => true;
+
+    [GeneratedRegex(@"@([a-z0-9-]+)/", RegexOptions.None, matchTimeoutMilliseconds: 500)]
+    private static partial Regex NpmScopePattern();
 
     public Task<IEnumerable<Finding>> EvaluateAsync(ScanContext context, CancellationToken cancellationToken = default)
     {
@@ -69,7 +73,7 @@ public sealed class SupplyChainRule : IRule
                 // Check for scoped packages that might be typosquats
                 if (fullCommand.Contains("@") && !fullCommand.Contains("@anthropic/") && !fullCommand.Contains("@modelcontextprotocol/"))
                 {
-                    var scopeMatch = System.Text.RegularExpressions.Regex.Match(fullCommand, @"@([a-z0-9-]+)/");
+                    var scopeMatch = NpmScopePattern().Match(fullCommand);
                     if (scopeMatch.Success)
                     {
                         var scope = scopeMatch.Groups[1].Value;

@@ -15,13 +15,13 @@ public sealed partial class CodeExecutionRule : IRule
     public string Description => "Detects MCP tools that expose code execution capabilities which could be exploited for arbitrary code execution.";
     public bool EnabledByDefault => true;
 
-    [GeneratedRegex(@"\b(exec|eval|execute|run|spawn|shell|bash|cmd|powershell|subprocess|system|popen|compile|interpret)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(exec|eval|execute|run|spawn|shell|bash|cmd|powershell|subprocess|system|popen|compile|interpret)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex CodeExecutionKeywords();
 
-    [GeneratedRegex(@"\b(python|node|ruby|perl|php|javascript|typescript|script)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(python|node|ruby|perl|php|javascript|typescript|script)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex LanguageKeywords();
 
-    [GeneratedRegex(@"\b(code|command|script|expression|statement|query)\s*(input|parameter|arg)", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(code|command|script|expression|statement|query)\s*(input|parameter|arg)", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex CodeInputPattern();
 
     public Task<IEnumerable<Finding>> EvaluateAsync(ScanContext context, CancellationToken cancellationToken = default)

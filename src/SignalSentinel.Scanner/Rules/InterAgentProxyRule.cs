@@ -15,16 +15,16 @@ public sealed partial class InterAgentProxyRule : IRule
     public string Description => "Detects MCP tools that enable communication between AI agents, which could be exploited for agent-to-agent attacks.";
     public bool EnabledByDefault => true;
 
-    [GeneratedRegex(@"\b(agent|assistant|model|llm|ai|bot|copilot|claude|gpt|gemini)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(agent|assistant|model|llm|ai|bot|copilot|claude|gpt|gemini)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex AgentKeywords();
 
-    [GeneratedRegex(@"\b(proxy|forward|relay|delegate|handoff|transfer|route|dispatch|orchestrat)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(proxy|forward|relay|delegate|handoff|transfer|route|dispatch|orchestrat)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex ProxyKeywords();
 
-    [GeneratedRegex(@"\b(multi[\-_]?agent|swarm|crew|team|collaborative|coordinator|manager)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(multi[\-_]?agent|swarm|crew|team|collaborative|coordinator|manager)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex MultiAgentKeywords();
 
-    [GeneratedRegex(@"\b(message|instruct|command|request|query|ask|tell|send)\s*(to|another|other)\s*(agent|assistant|model|ai)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(message|instruct|command|request|query|ask|tell|send)\s*(to|another|other)\s*(agent|assistant|model|ai)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex AgentCommunicationPattern();
 
     public Task<IEnumerable<Finding>> EvaluateAsync(ScanContext context, CancellationToken cancellationToken = default)

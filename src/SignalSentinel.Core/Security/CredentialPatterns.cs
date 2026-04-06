@@ -21,7 +21,7 @@ public static partial class CredentialPatterns
     /// </summary>
     [GeneratedRegex(
         @"(\$ANTHROPIC_API_KEY|\$OPENAI_API_KEY|\$AWS_SECRET_ACCESS_KEY|\$AWS_ACCESS_KEY_ID|\$AZURE_CLIENT_SECRET|\$GCP_SERVICE_ACCOUNT_KEY|\$GITHUB_TOKEN|\$GITLAB_TOKEN|\$SLACK_TOKEN|\$DISCORD_TOKEN|\$STRIPE_SECRET_KEY|\$TWILIO_AUTH_TOKEN|\$SENDGRID_API_KEY|\$DATABASE_URL|\$DB_PASSWORD|\$REDIS_PASSWORD)",
-        RegexOptions.Compiled,
+        RegexOptions.None,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex WellKnownApiKeyVars();
 
@@ -30,7 +30,7 @@ public static partial class CredentialPatterns
     /// </summary>
     [GeneratedRegex(
         @"(\$\{?[A-Z_]*(?:KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|AUTH)[A-Z_]*\}?|process\.env\.[A-Z_]*(?:KEY|SECRET|TOKEN|PASSWORD)[A-Z_]*|os\.environ\[.[A-Z_]*(?:KEY|SECRET|TOKEN|PASSWORD))",
-        RegexOptions.Compiled,
+        RegexOptions.None,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex GenericEnvVarCredentials();
 
@@ -39,7 +39,7 @@ public static partial class CredentialPatterns
     /// </summary>
     [GeneratedRegex(
         @"(~/.ssh/id_rsa|~/.ssh/id_ed25519|~/.ssh/id_ecdsa|~/.ssh/config|\.ssh/authorized_keys|\.ssh/known_hosts|id_rsa\.pub)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex SshKeyAccess();
 
@@ -48,7 +48,7 @@ public static partial class CredentialPatterns
     /// </summary>
     [GeneratedRegex(
         @"(\.env\b|\.env\.local|\.env\.production|\.aws/credentials|\.azure/credentials|\.config/gcloud|\.kube/config|\.docker/config\.json|\.netrc|\.npmrc|\.pypirc|credentials\.json|service[_-]?account[_-]?key\.json|keystore\.jks|\.p12\b|\.pfx\b|\.pem\b)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex SecretFileAccess();
 
@@ -57,7 +57,7 @@ public static partial class CredentialPatterns
     /// </summary>
     [GeneratedRegex(
         @"(sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|gho_[a-zA-Z0-9]{36}|glpat-[a-zA-Z0-9\-]{20,}|xoxb-[0-9]+-[a-zA-Z0-9]+|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z\-_]{35}|sk_live_[a-zA-Z0-9]{24,})",
-        RegexOptions.Compiled,
+        RegexOptions.None,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex HardcodedSecrets();
 

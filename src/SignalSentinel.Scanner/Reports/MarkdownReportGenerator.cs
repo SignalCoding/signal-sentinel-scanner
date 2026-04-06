@@ -12,6 +12,18 @@ public sealed class MarkdownReportGenerator : IReportGenerator
     public string Format => "Markdown";
     public string FileExtension => ".md";
 
+    private static string SanitizeMarkdown(string? value, int maxLength = 500)
+    {
+        if (string.IsNullOrEmpty(value)) return string.Empty;
+        var sanitized = value.Length > maxLength ? value[..(maxLength - 3)] + "..." : value;
+        return sanitized
+            .Replace("|", "\\|")
+            .Replace("[", "\\[")
+            .Replace("]", "\\]")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;");
+    }
+
     public string Generate(ScanResult result)
     {
         var sb = new StringBuilder();
@@ -61,24 +73,24 @@ public sealed class MarkdownReportGenerator : IReportGenerator
         foreach (var server in result.Servers)
         {
             var status = server.ConnectionSuccessful ? "✅ Connected" : "❌ Failed";
-            sb.AppendLine($"### {server.Name}");
+            sb.AppendLine($"### {SanitizeMarkdown(server.Name)}");
             sb.AppendLine();
             sb.AppendLine($"- **Status:** {status}");
-            sb.AppendLine($"- **Transport:** {server.Transport}");
+            sb.AppendLine($"- **Transport:** {SanitizeMarkdown(server.Transport)}");
             if (server.Version is not null)
             {
-                sb.AppendLine($"- **Version:** {server.Version}");
+                sb.AppendLine($"- **Version:** {SanitizeMarkdown(server.Version)}");
             }
             if (server.SourceConfig is not null)
             {
-                sb.AppendLine($"- **Config:** `{server.SourceConfig}`");
+                sb.AppendLine($"- **Config:** `{SanitizeMarkdown(server.SourceConfig)}`");
             }
             sb.AppendLine($"- **Tools:** {server.ToolCount}");
             sb.AppendLine($"- **Resources:** {server.ResourceCount}");
             sb.AppendLine($"- **Prompts:** {server.PromptCount}");
             if (server.ConnectionError is not null)
             {
-                sb.AppendLine($"- **Error:** {server.ConnectionError}");
+                sb.AppendLine($"- **Error:** {SanitizeMarkdown(server.ConnectionError)}");
             }
             sb.AppendLine();
         }
@@ -93,7 +105,7 @@ public sealed class MarkdownReportGenerator : IReportGenerator
             foreach (var skill in result.Skills)
             {
                 var level = skill.IsProjectLevel ? "Project" : "Personal";
-                sb.AppendLine($"| {skill.Name} | {skill.Platform ?? "Unknown"} | {skill.ScriptCount} | {level} |");
+                sb.AppendLine($"| {SanitizeMarkdown(skill.Name)} | {SanitizeMarkdown(skill.Platform ?? "Unknown")} | {skill.ScriptCount} | {level} |");
             }
             sb.AppendLine();
         }
@@ -170,7 +182,7 @@ public sealed class MarkdownReportGenerator : IReportGenerator
 
                 sb.AppendLine($"### {severityEmoji} {path.Id}: {path.Severity}");
                 sb.AppendLine();
-                sb.AppendLine(path.Description);
+                sb.AppendLine(SanitizeMarkdown(path.Description));
                 sb.AppendLine();
                 sb.AppendLine("**Attack Chain:**");
                 sb.AppendLine();
@@ -178,10 +190,10 @@ public sealed class MarkdownReportGenerator : IReportGenerator
                 {
                     var step = path.Steps[i];
                     var arrow = i < path.Steps.Count - 1 ? " →" : "";
-                    sb.AppendLine($"{i + 1}. `{step.ServerName}:{step.ToolName}` ({step.Capability}){arrow}");
+                    sb.AppendLine($"{i + 1}. `{SanitizeMarkdown(step.ServerName)}:{SanitizeMarkdown(step.ToolName)}` ({step.Capability}){arrow}");
                 }
                 sb.AppendLine();
-                sb.AppendLine($"**Remediation:** {path.Remediation}");
+                sb.AppendLine($"**Remediation:** {SanitizeMarkdown(path.Remediation)}");
                 sb.AppendLine();
             }
         }
@@ -213,13 +225,13 @@ public sealed class MarkdownReportGenerator : IReportGenerator
 
             foreach (var finding in severityFindings)
             {
-                sb.AppendLine($"#### [{finding.RuleId}] {finding.Title}");
+                sb.AppendLine($"#### [{finding.RuleId}] {SanitizeMarkdown(finding.Title)}");
                 sb.AppendLine();
                 var sourceLabel = finding.Source == FindingSource.Skill ? "Skill" : "Server";
-                sb.AppendLine($"- **{sourceLabel}:** {finding.ServerName}");
+                sb.AppendLine($"- **{sourceLabel}:** {SanitizeMarkdown(finding.ServerName)}");
                 if (finding.ToolName is not null)
                 {
-                    sb.AppendLine($"- **Tool:** {finding.ToolName}");
+                    sb.AppendLine($"- **Tool:** {SanitizeMarkdown(finding.ToolName)}");
                 }
                 sb.AppendLine($"- **OWASP:** {finding.OwaspCode}");
                 if (finding.McpCode is not null)
@@ -231,13 +243,13 @@ public sealed class MarkdownReportGenerator : IReportGenerator
                     sb.AppendLine($"- **Confidence:** {finding.Confidence:P0}");
                 }
                 sb.AppendLine();
-                sb.AppendLine($"**Description:** {finding.Description}");
+                sb.AppendLine($"**Description:** {SanitizeMarkdown(finding.Description)}");
                 sb.AppendLine();
-                sb.AppendLine($"**Remediation:** {finding.Remediation}");
+                sb.AppendLine($"**Remediation:** {SanitizeMarkdown(finding.Remediation)}");
                 if (finding.Evidence is not null)
                 {
                     sb.AppendLine();
-                    sb.AppendLine($"**Evidence:** `{finding.Evidence}`");
+                    sb.AppendLine($"**Evidence:** `{SanitizeMarkdown(finding.Evidence)}`");
                 }
                 sb.AppendLine();
             }

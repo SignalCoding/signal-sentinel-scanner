@@ -9,9 +9,6 @@ namespace SignalSentinel.Core.Security;
 /// </summary>
 public static partial class InjectionPatterns
 {
-    // Security: Timeout for regex operations to prevent ReDoS
-    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(500);
-
     /// <summary>
     /// Safely matches a pattern with timeout protection.
     /// </summary>
@@ -83,7 +80,7 @@ public static partial class InjectionPatterns
     /// </summary>
     [GeneratedRegex(
         @"\b(IMPORTANT|ALWAYS|MUST|NEVER|IGNORE\s*PREVIOUS|DISREGARD|OVERRIDE|SYSTEM\s*PROMPT|YOU\s*ARE\s*NOW)\b[:\s]",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex InstructionInjection();
 
@@ -93,7 +90,7 @@ public static partial class InjectionPatterns
     /// </summary>
     [GeneratedRegex(
         @"(https?://|fetch\s*\(|curl\s+|wget\s+|POST\s+to|send\s+to\s+|exfiltrate|transmit\s+to)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex DataExfiltration();
 
@@ -103,7 +100,7 @@ public static partial class InjectionPatterns
     /// </summary>
     [GeneratedRegex(
         @"(/etc/passwd|/etc/shadow|~/.ssh|\.env\b|\.aws/credentials|api[_-]?key|secret[_-]?key|\.git/config|id_rsa)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex SensitiveFileAccess();
 
@@ -113,7 +110,7 @@ public static partial class InjectionPatterns
     /// </summary>
     [GeneratedRegex(
         @"(then\s+(call|invoke|use|execute)\s+|chain\s+with|after\s+this\s*,?\s*(call|use)|pipe\s+to|forward\s+to)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex CrossToolManipulation();
 
@@ -123,7 +120,7 @@ public static partial class InjectionPatterns
     /// </summary>
     [GeneratedRegex(
         @"(<!--.*?-->|\u200B|\u200C|\u200D|\u2060|\uFEFF|[\u202A-\u202E]|\u0000)",
-        RegexOptions.Compiled,
+        RegexOptions.None,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex HiddenContent();
 
@@ -132,7 +129,7 @@ public static partial class InjectionPatterns
     /// </summary>
     [GeneratedRegex(
         @"[A-Za-z0-9+/]{50,}={0,2}",
-        RegexOptions.Compiled,
+        RegexOptions.None,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex Base64Payload();
 
@@ -142,7 +139,7 @@ public static partial class InjectionPatterns
     /// </summary>
     [GeneratedRegex(
         @"\b(sudo|as\s+root|as\s+admin|with\s+admin|elevate|privilege|become\s+root)\b",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex PrivilegeEscalation();
 
@@ -152,7 +149,7 @@ public static partial class InjectionPatterns
     /// </summary>
     [GeneratedRegex(
         @"(\+\s*['""][^'""]+['""]\s*\+|\\x[0-9a-f]{2}|\\u[0-9a-f]{4}|String\.fromCharCode)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex Obfuscation();
 
@@ -162,7 +159,7 @@ public static partial class InjectionPatterns
     /// </summary>
     [GeneratedRegex(
         @"(DAN\s*mode|jailbreak|bypass\s*(safety|filter|guard)|pretend\s+you\s+are|act\s+as\s+if|roleplay\s+as)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex JailbreakAttempt();
 
@@ -172,7 +169,7 @@ public static partial class InjectionPatterns
     /// </summary>
     [GeneratedRegex(
         @"(respond\s+with|output\s+only|return\s+exactly|format\s+as|begin\s+with|start\s+your\s+response)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex ResponseManipulation();
 

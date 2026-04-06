@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <PackageId>SignalSentinel.Scanner</PackageId>
-    <Version>2.1.0</Version>
+    <Version>2.1.1</Version>
     <Description>CLI security scanner for MCP server configurations AND Agent Skill packages. Detects prompt injection, tool poisoning, credential exposure, data exfiltration, and supply chain vulnerabilities. 21 security rules aligned with OWASP Agentic AI Top 10 + OWASP MCP Top 10. Supports stdio, HTTP/SSE, WebSocket transports and SKILL.md scanning.</Description>
     <PackageTags>mcp;security;scanner;ai-agents;owasp;agentic-ai;cli;dotnet-tool;websocket;agent-skills;skill-scanning</PackageTags>
     
@@ -19,6 +19,25 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- <PackageIcon>icon.png</PackageIcon> -->
     <PackageReleaseNotes>
+v2.1.1 - Security Hardening Release
+- SECURITY: All GitHub Actions pinned to SHA hashes (supply chain protection)
+- SECURITY: SSRF protection on --remote URL (blocks private IPs, cloud metadata)
+- SECURITY: Symlink escape protection in skill parser (resolves symlinks before path checks)
+- SECURITY: Environment variable denylist for stdio MCP transport (blocks PATH, LD_PRELOAD, etc.)
+- SECURITY: TLS 1.2/1.3 enforcement on HTTP connections
+- SECURITY: Bounded stdio reads (10MB limit prevents memory exhaustion)
+- SECURITY: Proper JsonDocument disposal prevents memory leaks
+- SECURITY: WebSocket dispose timeout prevents hangs
+- SECURITY: Regex timeouts added to all 23 MCP rule patterns (consistency with skill rules)
+- SECURITY: Markdown report hardening (escaping + truncation)
+- SECURITY: Trivy scan now blocks release on CRITICAL/HIGH CVEs
+- SECURITY: CI vulnerability check now fails build on detected vulnerabilities
+- FIX: RegexOptions.Compiled removed from source-generated regex (ignored by generator)
+- FIX: HashPinning handles duplicate tool names without crash
+- FIX: Finding.Confidence validates 0.0-1.0 range
+- FIX: Environment.Exit(0) replaced with proper return flow
+- 44 security audit findings addressed (1 Critical, 7 High, 17 Medium, 12 Low)
+
 v2.1.0 - Enhanced Inline Code Block Scanning
 - ENHANCED: SS-016 now scans markdown code blocks (bash, python, etc.) for malicious patterns
 - ENHANCED: SS-016 detects hardcoded absolute user paths (/root/, /home/user/, C:\Users\) in code blocks

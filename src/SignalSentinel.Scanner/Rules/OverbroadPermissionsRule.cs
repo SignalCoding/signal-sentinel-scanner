@@ -16,10 +16,10 @@ public sealed partial class OverbroadPermissionsRule : IRule
     public string Description => "Detects MCP tools with overly broad permissions that could enable misuse or exploitation.";
     public bool EnabledByDefault => true;
 
-    [GeneratedRegex(@"\*|any|all|full|unrestricted|unlimited", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\*|any|all|full|unrestricted|unlimited", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex WildcardPattern();
 
-    [GeneratedRegex(@"root|admin|system|sudo|superuser", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"root|admin|system|sudo|superuser", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex AdminPattern();
 
     private static readonly HashSet<string> DangerousOperations = new(StringComparer.OrdinalIgnoreCase)

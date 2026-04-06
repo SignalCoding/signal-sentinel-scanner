@@ -126,6 +126,8 @@ development-super-prompt*.md
 *_Product_Specification*.docx
 COMPLIANCE_AUDIT.md
 SIGNAL_SENTINEL_PRODUCT_DOCUMENTATION.md
+SIGNAL_SENTINEL_DEV_SPEC*.md
+SECURITY_AUDIT*.md
 WEBSITE_UPDATE_*.md
 
 # Build artifacts

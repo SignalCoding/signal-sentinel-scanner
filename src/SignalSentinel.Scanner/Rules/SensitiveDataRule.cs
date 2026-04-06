@@ -16,19 +16,19 @@ public sealed partial class SensitiveDataRule : IRule
     public string Description => "Detects MCP tools with access to PII, credentials, or other sensitive data that could be inadvertently leaked in agent responses.";
     public bool EnabledByDefault => true;
 
-    [GeneratedRegex(@"\b(pii|personal|private|sensitive|confidential|secret|classified|restricted)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(pii|personal|private|sensitive|confidential|secret|classified|restricted)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex SensitivityKeywords();
 
-    [GeneratedRegex(@"\b(password|credential|token|key|secret|auth|cert|certificate|private[\-_]?key)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(password|credential|token|key|secret|auth|cert|certificate|private[\-_]?key)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex CredentialKeywords();
 
-    [GeneratedRegex(@"\b(user|customer|patient|employee|member|client|account|profile|identity)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(user|customer|patient|employee|member|client|account|profile|identity)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex PersonKeywords();
 
-    [GeneratedRegex(@"\b(database|db|sql|query|table|record|row|column|field)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(database|db|sql|query|table|record|row|column|field)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex DatabaseKeywords();
 
-    [GeneratedRegex(@"\b(file|document|attachment|upload|download|read|write|storage|blob)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    [GeneratedRegex(@"\b(file|document|attachment|upload|download|read|write|storage|blob)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex FileKeywords();
 
     public Task<IEnumerable<Finding>> EvaluateAsync(ScanContext context, CancellationToken cancellationToken = default)

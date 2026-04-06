@@ -71,6 +71,10 @@ public sealed class McpConnection : IAsyncDisposable
             {
                 // Security: Enable certificate revocation list checking
                 CheckCertificateRevocationList = true,
+                // Security: Enforce modern TLS versions only (intentional hardcoding)
+#pragma warning disable CA5398 // Intentionally restricting to TLS 1.2+ for security
+                SslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13,
+#pragma warning restore CA5398
             };
 
             _httpClient = new HttpClient(handler)
@@ -208,11 +212,25 @@ public sealed class McpConnection : IAsyncDisposable
 
         if (_config.Env is not null)
         {
+            // Security: Denylist of sensitive environment variables that must not be overridden
+            var envDenylist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "PATH", "LD_PRELOAD", "LD_LIBRARY_PATH",
+                "DYLD_INSERT_LIBRARIES", "DYLD_LIBRARY_PATH",
+                "PYTHONPATH", "NODE_PATH",
+                "COMSPEC", "SHELL", "HOME", "USERPROFILE",
+                "SystemRoot", "windir"
+            };
+
             foreach (var (key, value) in _config.Env)
             {
-                // Security: Only set non-empty environment variables
+                // Security: Only set non-empty environment variables, skip denylisted keys
                 if (!string.IsNullOrWhiteSpace(key) && value is not null)
                 {
+                    if (envDenylist.Contains(key))
+                    {
+                        continue;
+                    }
                     startInfo.Environment[key] = value;
                 }
             }
@@ -374,7 +392,7 @@ public sealed class McpConnection : IAsyncDisposable
 
         while (!cts.Token.IsCancellationRequested)
         {
-            var line = await _process.StandardOutput.ReadLineAsync(cts.Token);
+            var line = await ReadBoundedLineAsync(_process.StandardOutput, MaxResponseSizeBytes, cts.Token);
             if (string.IsNullOrEmpty(line))
             {
                 continue;
@@ -389,7 +407,7 @@ public sealed class McpConnection : IAsyncDisposable
 
             try
             {
-                var doc = JsonDocument.Parse(line);
+                using var doc = JsonDocument.Parse(line);
                 var root = doc.RootElement;
 
                 // Check if this is a response (has id)
@@ -452,7 +470,7 @@ public sealed class McpConnection : IAsyncDisposable
         }
 
         var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
-        var response = await _httpClient.PostAsync(uri, content, cancellationToken);
+        using var response = await _httpClient.PostAsync(uri, content, cancellationToken);
 
         response.EnsureSuccessStatusCode();
 
@@ -470,7 +488,7 @@ public sealed class McpConnection : IAsyncDisposable
             throw new InvalidOperationException("Response too large");
         }
 
-        var doc = JsonDocument.Parse(responseJson);
+        using var doc = JsonDocument.Parse(responseJson);
         var root = doc.RootElement;
 
         if (root.TryGetProperty("error", out var error))
@@ -537,7 +555,7 @@ public sealed class McpConnection : IAsyncDisposable
 
             try
             {
-                var doc = JsonDocument.Parse(message);
+                using var doc = JsonDocument.Parse(message);
                 var root = doc.RootElement;
 
                 // Check if this is a response (has id)
@@ -580,6 +598,50 @@ public sealed class McpConnection : IAsyncDisposable
         }
 
         throw new TimeoutException($"Timeout waiting for WebSocket response from MCP server '{_config.Name}'");
+    }
+
+    /// <summary>
+    /// Reads a single line from a StreamReader with a maximum length limit.
+    /// Prevents memory exhaustion from extremely long lines.
+    /// </summary>
+    private static async Task<string?> ReadBoundedLineAsync(StreamReader reader, int maxLength, CancellationToken cancellationToken)
+    {
+        var buffer = new char[4096];
+        var sb = new StringBuilder();
+
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var ch = reader.Peek();
+            if (ch == -1)
+            {
+                // End of stream
+                return sb.Length > 0 ? sb.ToString() : null;
+            }
+
+            var bytesRead = await reader.ReadAsync(buffer.AsMemory(0, 1), cancellationToken);
+            if (bytesRead == 0)
+            {
+                return sb.Length > 0 ? sb.ToString() : null;
+            }
+
+            if (buffer[0] == '\n')
+            {
+                return sb.ToString();
+            }
+
+            if (buffer[0] != '\r')
+            {
+                sb.Append(buffer[0]);
+            }
+
+            if (sb.Length > maxLength)
+            {
+                throw new InvalidOperationException(
+                    $"Stdio line exceeds maximum allowed length of {maxLength / (1024 * 1024)}MB - possible denial of service");
+            }
+        }
     }
 
     /// <summary>
@@ -667,10 +729,12 @@ public sealed class McpConnection : IAsyncDisposable
             {
                 if (_webSocket.State == WebSocketState.Open)
                 {
+                    // Security: Use a 5-second timeout to prevent hanging on dispose
+                    using var closeCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
                     await _webSocket.CloseAsync(
                         WebSocketCloseStatus.NormalClosure,
                         "Scanner disconnecting",
-                        CancellationToken.None);
+                        closeCts.Token);
                 }
             }
             catch

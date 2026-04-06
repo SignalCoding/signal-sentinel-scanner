@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using System.Text.RegularExpressions;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.Config;
@@ -16,7 +17,7 @@ namespace SignalSentinel.Scanner;
 /// </summary>
 public static class Program
 {
-    private const string Version = "2.1.0";
+    private const string Version = "2.1.1";
 
     // Security: Limits for input validation
     private const int MaxPathLength = 4096;
@@ -40,7 +41,7 @@ public static class Program
             if (config is null)
             {
                 PrintUsage();
-                return 2;
+                return 0;
             }
 
             // Security: Use a cancellation token with overall timeout
@@ -91,14 +92,13 @@ public static class Program
 
                 case "--version":
                     Console.WriteLine($"Signal Sentinel Scanner v{Version}");
-                    Environment.Exit(0);
                     return null;
 
                 case "--config" or "-c":
                     if (i + 1 < args.Length)
                     {
                         var path = args[++i];
-                        if (!ValidatePath(path))
+                        if (!ValidatePath(path, ".json"))
                         {
                             Console.Error.WriteLine("Error: Invalid config path");
                             return null;
@@ -213,7 +213,7 @@ public static class Program
     /// <summary>
     /// Validates a file path for safety.
     /// </summary>
-    private static bool ValidatePath(string? path)
+    private static bool ValidatePath(string? path, string? requiredExtension = null)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
@@ -235,6 +235,17 @@ public static class Program
         try
         {
             var fullPath = Path.GetFullPath(path);
+
+            // Security: Enforce required file extension (e.g. .json for config files)
+            if (requiredExtension is not null)
+            {
+                var ext = Path.GetExtension(fullPath);
+                if (!string.Equals(ext, requiredExtension, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
             return true;
         }
         catch
@@ -287,8 +298,51 @@ public static class Program
             return false;
         }
 
-        // Security: Block localhost/private IPs in CI mode
-        // (In practice, you might want to allow localhost for local scanning)
+        // Security: SSRF protection - block requests to internal/private networks
+        try
+        {
+            var host = uri.DnsSafeHost;
+            var addresses = Dns.GetHostAddresses(host);
+
+            foreach (var addr in addresses)
+            {
+                var bytes = addr.GetAddressBytes();
+
+                // Block loopback (127.0.0.0/8, ::1)
+                if (IPAddress.IsLoopback(addr))
+                    return false;
+
+                if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    // Block 10.0.0.0/8
+                    if (bytes[0] == 10)
+                        return false;
+
+                    // Block 172.16.0.0/12
+                    if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
+                        return false;
+
+                    // Block 192.168.0.0/16
+                    if (bytes[0] == 192 && bytes[1] == 168)
+                        return false;
+
+                    // Block link-local 169.254.0.0/16 (includes cloud metadata 169.254.169.254)
+                    if (bytes[0] == 169 && bytes[1] == 254)
+                        return false;
+                }
+                else if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                {
+                    // Block fe80::/10 (link-local)
+                    if (bytes[0] == 0xfe && (bytes[1] & 0xc0) == 0x80)
+                        return false;
+                }
+            }
+        }
+        catch
+        {
+            // If DNS resolution fails, allow the URL (don't block on DNS failure)
+        }
+
         return true;
     }
 

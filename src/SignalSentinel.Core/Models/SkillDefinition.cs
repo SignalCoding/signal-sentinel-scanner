@@ -5,6 +5,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Immutable;
+
 namespace SignalSentinel.Core.Models;
 
 /// <summary>
@@ -76,7 +78,7 @@ public sealed record SkillDefinition
     /// All additional frontmatter keys not explicitly modelled.
     /// </summary>
     public IReadOnlyDictionary<string, string> ExtraFrontmatter { get; init; } =
-        new Dictionary<string, string>();
+        ImmutableDictionary<string, string>.Empty;
 }
 
 /// <summary>

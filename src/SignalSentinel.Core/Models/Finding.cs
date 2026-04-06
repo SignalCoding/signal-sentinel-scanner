@@ -60,7 +60,21 @@ public sealed record Finding
     /// <summary>
     /// Confidence score (0.0 to 1.0) for pattern-based detections.
     /// </summary>
-    public double? Confidence { get; init; }
+    public double? Confidence
+    {
+        get => _confidence;
+        init
+        {
+            if (value is not null && (value < 0.0 || value > 1.0))
+            {
+                throw new ArgumentOutOfRangeException(nameof(Confidence), value, "Confidence must be between 0.0 and 1.0 inclusive.");
+            }
+
+            _confidence = value;
+        }
+    }
+
+    private readonly double? _confidence;
 
     /// <summary>
     /// OWASP MCP Top 10 code (e.g., "MCP01") for dual mapping.
