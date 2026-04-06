@@ -128,6 +128,7 @@ COMPLIANCE_AUDIT.md
 SIGNAL_SENTINEL_PRODUCT_DOCUMENTATION.md
 SIGNAL_SENTINEL_DEV_SPEC*.md
 SECURITY_AUDIT*.md
+BACKLOG_*.md
 WEBSITE_UPDATE_*.md
 
 # Build artifacts
@@ -137,3 +138,4 @@ artifacts/
 test-mcp-server/
 test-skills/
 test-report.*
+scan-results/
