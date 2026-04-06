@@ -1,4 +1,4 @@
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.Scoring;
 using Xunit;
@@ -18,8 +18,8 @@ public class SeverityScorerTests
         var (grade, score) = SeverityScorer.CalculateGrade(findings, attackPaths);
 
         // Assert
-        grade.Should().Be(SecurityGrade.A);
-        score.Should().Be(100);
+        grade.ShouldBe(SecurityGrade.A);
+        score.ShouldBe(100);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class SeverityScorerTests
         var (grade, _) = SeverityScorer.CalculateGrade(findings, attackPaths);
 
         // Assert
-        grade.Should().Be(SecurityGrade.D);
+        grade.ShouldBe(SecurityGrade.D);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class SeverityScorerTests
         var (grade, _) = SeverityScorer.CalculateGrade(findings, attackPaths);
 
         // Assert
-        grade.Should().Be(SecurityGrade.F);
+        grade.ShouldBe(SecurityGrade.F);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class SeverityScorerTests
         var (grade, _) = SeverityScorer.CalculateGrade(findings, attackPaths);
 
         // Assert
-        grade.Should().Be(SecurityGrade.C);
+        grade.ShouldBe(SecurityGrade.C);
     }
 
     [Fact]
@@ -91,8 +91,8 @@ public class SeverityScorerTests
         var (grade, score) = SeverityScorer.CalculateGrade(findings, attackPaths);
 
         // Assert
-        grade.Should().BeOneOf(SecurityGrade.A, SecurityGrade.B);
-        score.Should().BeGreaterThan(90);
+        grade.ShouldBeOneOf(SecurityGrade.A, SecurityGrade.B);
+        score.ShouldBeGreaterThan(90);
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public class SeverityScorerTests
         var (grade, _) = SeverityScorer.CalculateGrade(findings, attackPaths);
 
         // Assert
-        grade.Should().Be(SecurityGrade.D);
+        grade.ShouldBe(SecurityGrade.D);
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class SeverityScorerTests
         var (grade, _) = SeverityScorer.CalculateGrade(findings, attackPaths);
 
         // Assert
-        grade.Should().Be(SecurityGrade.F);
+        grade.ShouldBe(SecurityGrade.F);
     }
 
     [Theory]
@@ -151,7 +151,7 @@ public class SeverityScorerTests
         var (_, score) = SeverityScorer.CalculateGrade(findings, []);
 
         // Assert
-        score.Should().BeLessThanOrEqualTo(expectedMinScore + 5); // Allow some tolerance
+        score.ShouldBeLessThanOrEqualTo(expectedMinScore + 5); // Allow some tolerance
     }
 
     private static Finding CreateFinding(Severity severity)

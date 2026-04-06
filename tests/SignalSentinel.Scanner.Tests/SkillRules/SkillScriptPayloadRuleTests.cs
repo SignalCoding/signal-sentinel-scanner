@@ -5,7 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.Rules;
 using SignalSentinel.Scanner.Rules.SkillRules;
@@ -25,8 +25,8 @@ public class SkillScriptPayloadRuleTests
             ScriptLanguage.Bash);
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().NotBeEmpty();
-        findings.Should().Contain(f =>
+        findings.ShouldNotBeEmpty();
+        findings.ShouldContain(f =>
             f.Severity == Severity.Critical &&
             f.Title.Contains("Remote Code Execution"));
     }
@@ -39,8 +39,8 @@ public class SkillScriptPayloadRuleTests
             ScriptLanguage.Bash);
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().NotBeEmpty();
-        findings.Should().Contain(f => f.Title.Contains("Persistence"));
+        findings.ShouldNotBeEmpty();
+        findings.ShouldContain(f => f.Title.Contains("Persistence"));
     }
 
     [Fact]
@@ -51,8 +51,8 @@ public class SkillScriptPayloadRuleTests
             ScriptLanguage.Python);
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().NotBeEmpty();
-        findings.Should().Contain(f => f.Title.Contains("File System Traversal"));
+        findings.ShouldNotBeEmpty();
+        findings.ShouldContain(f => f.Title.Contains("File System Traversal"));
     }
 
     [Fact]
@@ -63,8 +63,8 @@ public class SkillScriptPayloadRuleTests
             ScriptLanguage.Python);
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().NotBeEmpty();
-        findings.Should().Contain(f => f.Title.Contains("Process Execution"));
+        findings.ShouldNotBeEmpty();
+        findings.ShouldContain(f => f.Title.Contains("Process Execution"));
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class SkillScriptPayloadRuleTests
             ScriptLanguage.Python);
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class SkillScriptPayloadRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     private static ScanContext CreateContextWithScript(string fileName, string content, ScriptLanguage language)

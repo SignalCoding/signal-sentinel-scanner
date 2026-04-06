@@ -5,7 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.McpProtocol;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.McpClient;
@@ -34,7 +34,7 @@ public class CredentialHygieneRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f =>
+        findings.ShouldContain(f =>
             f.Severity == Severity.Critical &&
             f.Title.Contains("Hardcoded Secret"));
     }
@@ -55,7 +55,7 @@ public class CredentialHygieneRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f =>
+        findings.ShouldContain(f =>
             f.Severity == Severity.High &&
             f.Title.Contains("Credential Passed via Environment Variable"));
     }
@@ -72,7 +72,7 @@ public class CredentialHygieneRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class CredentialHygieneRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     private static ScanContext CreateContext(McpServerConfig config)

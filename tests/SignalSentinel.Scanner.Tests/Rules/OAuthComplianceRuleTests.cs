@@ -5,7 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.McpProtocol;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.McpClient;
@@ -29,7 +29,7 @@ public class OAuthComplianceRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f =>
+        findings.ShouldContain(f =>
             f.Severity == Severity.Critical &&
             f.Title.Contains("No TLS"));
     }
@@ -49,7 +49,7 @@ public class OAuthComplianceRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f =>
+        findings.ShouldContain(f =>
             f.Severity == Severity.High &&
             f.Title.Contains("Static Authentication"));
     }
@@ -65,7 +65,7 @@ public class OAuthComplianceRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f =>
+        findings.ShouldContain(f =>
             f.Severity == Severity.Medium &&
             f.Title.Contains("No Authentication"));
     }
@@ -82,7 +82,7 @@ public class OAuthComplianceRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class OAuthComplianceRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f =>
+        findings.ShouldContain(f =>
             f.Severity == Severity.Critical &&
             f.Title.Contains("No TLS"));
     }

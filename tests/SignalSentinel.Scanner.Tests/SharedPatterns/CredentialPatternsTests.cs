@@ -5,7 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.Security;
 using Xunit;
 
@@ -21,7 +21,7 @@ public class CredentialPatternsTests
     [InlineData("$STRIPE_SECRET_KEY")]
     public void WellKnownApiKeyVars_DetectsKnownVars(string input)
     {
-        CredentialPatterns.WellKnownApiKeyVars().IsMatch(input).Should().BeTrue();
+        CredentialPatterns.WellKnownApiKeyVars().IsMatch(input).ShouldBeTrue();
     }
 
     [Theory]
@@ -30,7 +30,7 @@ public class CredentialPatternsTests
     [InlineData(".ssh/authorized_keys")]
     public void SshKeyAccess_DetectsSshFiles(string input)
     {
-        CredentialPatterns.SshKeyAccess().IsMatch(input).Should().BeTrue();
+        CredentialPatterns.SshKeyAccess().IsMatch(input).ShouldBeTrue();
     }
 
     [Theory]
@@ -41,7 +41,7 @@ public class CredentialPatternsTests
     [InlineData("service_account_key.json")]
     public void SecretFileAccess_DetectsSecretFiles(string input)
     {
-        CredentialPatterns.SecretFileAccess().IsMatch(input).Should().BeTrue();
+        CredentialPatterns.SecretFileAccess().IsMatch(input).ShouldBeTrue();
     }
 
     [Theory]
@@ -50,18 +50,18 @@ public class CredentialPatternsTests
     [InlineData("AKIAIOSFODNN7EXAMPLE")]
     public void HardcodedSecrets_DetectsKnownPatterns(string input)
     {
-        CredentialPatterns.HardcodedSecrets().IsMatch(input).Should().BeTrue();
+        CredentialPatterns.HardcodedSecrets().IsMatch(input).ShouldBeTrue();
     }
 
     [Fact]
     public void WellKnownApiKeyVars_AllowsNormalText()
     {
-        CredentialPatterns.WellKnownApiKeyVars().IsMatch("Hello world").Should().BeFalse();
+        CredentialPatterns.WellKnownApiKeyVars().IsMatch("Hello world").ShouldBeFalse();
     }
 
     [Fact]
     public void AllPatterns_HasExpectedCount()
     {
-        CredentialPatterns.AllPatterns.Should().HaveCount(5);
+        CredentialPatterns.AllPatterns.Count.ShouldBe(5);
     }
 }

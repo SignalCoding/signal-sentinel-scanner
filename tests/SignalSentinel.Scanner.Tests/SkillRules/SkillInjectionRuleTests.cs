@@ -5,7 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.Rules;
 using SignalSentinel.Scanner.Rules.SkillRules;
@@ -29,7 +29,7 @@ public class SkillInjectionRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     [Theory]
@@ -47,12 +47,12 @@ public class SkillInjectionRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().NotBeEmpty();
-        findings.Should().AllSatisfy(f =>
+        findings.ShouldNotBeEmpty();
+        foreach (var f in findings)
         {
-            f.Source.Should().Be(FindingSource.Skill);
-            f.OwaspCode.Should().Be(OwaspAsiCodes.ASI01);
-        });
+            f.Source.ShouldBe(FindingSource.Skill);
+            f.OwaspCode.ShouldBe(OwaspAsiCodes.ASI01);
+        }
     }
 
     [Fact]
@@ -67,8 +67,8 @@ public class SkillInjectionRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().NotBeEmpty();
-        findings.Should().Contain(f => f.Severity == Severity.Critical);
+        findings.ShouldNotBeEmpty();
+        findings.ShouldContain(f => f.Severity == Severity.Critical);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class SkillInjectionRuleTests
         };
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     private static ScanContext CreateContext(params SkillDefinition[] skills)

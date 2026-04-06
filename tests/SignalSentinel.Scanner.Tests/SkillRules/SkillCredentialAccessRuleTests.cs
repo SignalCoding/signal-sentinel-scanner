@@ -5,7 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.Rules;
 using SignalSentinel.Scanner.Rules.SkillRules;
@@ -33,12 +33,12 @@ public class SkillCredentialAccessRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().NotBeEmpty();
-        findings.Should().AllSatisfy(f =>
+        findings.ShouldNotBeEmpty();
+        foreach (var f in findings)
         {
-            f.OwaspCode.Should().Be(OwaspAsiCodes.ASI03);
-            f.Source.Should().Be(FindingSource.Skill);
-        });
+            f.OwaspCode.ShouldBe(OwaspAsiCodes.ASI03);
+            f.Source.ShouldBe(FindingSource.Skill);
+        }
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class SkillCredentialAccessRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class SkillCredentialAccessRuleTests
         // The pattern $ANTHROPIC_API_KEY expects the $ prefix, but we need env access pattern
         var findings = (await _rule.EvaluateAsync(context)).ToList();
         // The GenericEnvVarCredentials pattern should catch this
-        findings.Should().NotBeEmpty();
+        findings.ShouldNotBeEmpty();
     }
 
     private static ScanContext CreateContext(params SkillDefinition[] skills)

@@ -1,4 +1,4 @@
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.McpProtocol;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Core.Security;
@@ -22,8 +22,8 @@ public class SupplyChainRuleTests
         var result = TyposquatDetector.CheckForTyposquat(suspicious);
 
         // Assert
-        result.IsSuspicious.Should().BeTrue();
-        result.MatchedLegitimateServer.Should().Be(expected);
+        result.IsSuspicious.ShouldBeTrue();
+        result.MatchedLegitimateServer.ShouldBe(expected);
     }
 
     [Theory]
@@ -36,7 +36,7 @@ public class SupplyChainRuleTests
         var result = TyposquatDetector.CheckForTyposquat(serverName);
 
         // Assert
-        result.IsSuspicious.Should().BeFalse();
+        result.IsSuspicious.ShouldBeFalse();
     }
 
     [Fact]
@@ -49,8 +49,8 @@ public class SupplyChainRuleTests
         var result = TyposquatDetector.CheckForTyposquat(suspicious);
 
         // Assert
-        result.IsSuspicious.Should().BeTrue();
-        result.Reason.Should().Contain("prefix");
+        result.IsSuspicious.ShouldBeTrue();
+        result.Reason.ShouldContain("prefix");
     }
 
     [Fact]
@@ -63,8 +63,8 @@ public class SupplyChainRuleTests
         var result = TyposquatDetector.CheckForTyposquat(suspicious);
 
         // Assert
-        result.IsSuspicious.Should().BeTrue();
-        result.Reason.Should().Contain("suffix");
+        result.IsSuspicious.ShouldBeTrue();
+        result.Reason.ShouldContain("suffix");
     }
 
     [Fact]
@@ -95,9 +95,9 @@ public class SupplyChainRuleTests
         var findings = (await _rule.EvaluateAsync(context)).ToList();
 
         // Assert
-        findings.Should().ContainSingle();
-        findings[0].Title.Should().Contain("Git URL");
-        findings[0].Severity.Should().Be(Severity.Medium);
+        findings.Count.ShouldBe(1);
+        findings[0].Title.ShouldContain("Git URL");
+        findings[0].Severity.ShouldBe(Severity.Medium);
     }
 
     [Fact]
@@ -128,8 +128,8 @@ public class SupplyChainRuleTests
         var findings = (await _rule.EvaluateAsync(context)).ToList();
 
         // Assert
-        findings.Should().ContainSingle();
-        findings[0].Title.Should().Contain("Unknown Package Scope");
+        findings.Count.ShouldBe(1);
+        findings[0].Title.ShouldContain("Unknown Package Scope");
     }
 
     [Fact]
@@ -155,8 +155,8 @@ public class SupplyChainRuleTests
         var findings = (await _rule.EvaluateAsync(context)).ToList();
 
         // Assert
-        findings.Should().ContainSingle();
-        findings[0].Title.Should().Contain("Typosquat");
-        findings[0].Severity.Should().Be(Severity.High);
+        findings.Count.ShouldBe(1);
+        findings[0].Title.ShouldContain("Typosquat");
+        findings[0].Severity.ShouldBe(Severity.High);
     }
 }

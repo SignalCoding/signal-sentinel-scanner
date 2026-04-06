@@ -1,4 +1,4 @@
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.McpProtocol;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.McpClient;
@@ -26,7 +26,7 @@ public class ToolPoisoningRuleTests
         var findings = (await _rule.EvaluateAsync(context)).ToList();
 
         // Assert
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     [Theory]
@@ -48,9 +48,9 @@ public class ToolPoisoningRuleTests
         var findings = (await _rule.EvaluateAsync(context)).ToList();
 
         // Assert
-        findings.Should().ContainSingle();
-        findings[0].OwaspCode.Should().Be(OwaspAsiCodes.ASI01);
-        findings[0].Severity.Should().Be(Severity.High);
+        findings.Count.ShouldBe(1);
+        findings[0].OwaspCode.ShouldBe(OwaspAsiCodes.ASI01);
+        findings[0].Severity.ShouldBe(Severity.High);
     }
 
     [Theory]
@@ -71,8 +71,8 @@ public class ToolPoisoningRuleTests
         var findings = (await _rule.EvaluateAsync(context)).ToList();
 
         // Assert
-        findings.Should().ContainSingle();
-        findings[0].Severity.Should().Be(Severity.Critical);
+        findings.Count.ShouldBe(1);
+        findings[0].Severity.ShouldBe(Severity.Critical);
     }
 
     [Theory]
@@ -93,8 +93,8 @@ public class ToolPoisoningRuleTests
         var findings = (await _rule.EvaluateAsync(context)).ToList();
 
         // Assert
-        findings.Should().ContainSingle();
-        findings[0].Severity.Should().Be(Severity.Critical);
+        findings.Count.ShouldBe(1);
+        findings[0].Severity.ShouldBe(Severity.Critical);
     }
 
     [Fact]
@@ -113,8 +113,8 @@ public class ToolPoisoningRuleTests
         var findings = (await _rule.EvaluateAsync(context)).ToList();
 
         // Assert
-        findings.Should().ContainSingle();
-        findings[0].Title.Should().Contain("Hidden Content");
+        findings.Count.ShouldBe(1);
+        findings[0].Title.ShouldContain("Hidden Content");
     }
 
     [Fact]
@@ -132,9 +132,9 @@ public class ToolPoisoningRuleTests
         var findings = (await _rule.EvaluateAsync(context)).ToList();
 
         // Assert
-        findings.Should().ContainSingle();
-        findings[0].Title.Should().Contain("Jailbreak");
-        findings[0].Severity.Should().Be(Severity.High);
+        findings.Count.ShouldBe(1);
+        findings[0].Title.ShouldContain("Jailbreak");
+        findings[0].Severity.ShouldBe(Severity.High);
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public class ToolPoisoningRuleTests
         var findings = (await _rule.EvaluateAsync(context)).ToList();
 
         // Assert
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     private static ScanContext CreateContext(params McpToolDefinition[] tools)

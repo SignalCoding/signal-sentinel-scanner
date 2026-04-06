@@ -5,7 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.Rules;
 using SignalSentinel.Scanner.Rules.SkillRules;
@@ -30,7 +30,7 @@ public class SkillHiddenContentRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f => f.Title.Contains("HTML Comment"));
+        findings.ShouldContain(f => f.Title.Contains("HTML Comment"));
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class SkillHiddenContentRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f =>
+        findings.ShouldContain(f =>
             f.Severity == Severity.Critical &&
             f.Title.Contains("Dangerous HTML Tag"));
     }
@@ -64,7 +64,7 @@ public class SkillHiddenContentRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f => f.Title.Contains("Zero-Width"));
+        findings.ShouldContain(f => f.Title.Contains("Zero-Width"));
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public class SkillHiddenContentRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     private static ScanContext CreateContext(params SkillDefinition[] skills)

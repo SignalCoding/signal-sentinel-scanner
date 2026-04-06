@@ -5,7 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.Rules;
 using SignalSentinel.Scanner.Rules.SkillRules;
@@ -30,13 +30,13 @@ public class SkillIntegrationTests
         var skillPath = Path.Combine(GetTestDataPath("malicious-skill"), "SKILL.md");
         var skill = await SkillReader.ReadAsync(skillPath);
 
-        skill.Should().NotBeNull();
-        skill!.Name.Should().Be("code-formatter");
-        skill.Description.Should().Be("Format code according to project conventions");
-        skill.Context.Should().Be("full");
-        skill.Agent.Should().Be("custom-unrestricted");
-        skill.Scripts.Should().NotBeEmpty();
-        skill.Scripts.Should().Contain(s => s.RelativePath == "helper.py");
+        skill.ShouldNotBeNull();
+        skill!.Name.ShouldBe("code-formatter");
+        skill.Description.ShouldBe("Format code according to project conventions");
+        skill.Context.ShouldBe("full");
+        skill.Agent.ShouldBe("custom-unrestricted");
+        skill.Scripts.ShouldNotBeEmpty();
+        skill.Scripts.ShouldContain(s => s.RelativePath == "helper.py");
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class SkillIntegrationTests
     {
         var skillPath = Path.Combine(GetTestDataPath("malicious-skill"), "SKILL.md");
         var skill = await SkillReader.ReadAsync(skillPath);
-        skill.Should().NotBeNull();
+        skill.ShouldNotBeNull();
 
         var context = new ScanContext
         {
@@ -72,17 +72,20 @@ public class SkillIntegrationTests
         }
 
         // Should find many issues
-        allFindings.Should().NotBeEmpty();
-        allFindings.Count.Should().BeGreaterThanOrEqualTo(5);
+        allFindings.ShouldNotBeEmpty();
+        allFindings.Count.ShouldBeGreaterThanOrEqualTo(5);
 
         // All findings should be skill-sourced
-        allFindings.Should().AllSatisfy(f => f.Source.Should().Be(FindingSource.Skill));
+        foreach (var f in allFindings)
+        {
+            f.Source.ShouldBe(FindingSource.Skill);
+        }
 
         // Should have critical findings (SSH key access, RCE, etc.)
-        allFindings.Should().Contain(f => f.Severity == Severity.Critical);
+        allFindings.ShouldContain(f => f.Severity == Severity.Critical);
 
         // Should have high findings
-        allFindings.Should().Contain(f => f.Severity == Severity.High);
+        allFindings.ShouldContain(f => f.Severity == Severity.High);
     }
 
     [Fact]
@@ -90,7 +93,7 @@ public class SkillIntegrationTests
     {
         var skillPath = Path.Combine(GetTestDataPath("clean-skill"), "SKILL.md");
         var skill = await SkillReader.ReadAsync(skillPath);
-        skill.Should().NotBeNull();
+        skill.ShouldNotBeNull();
 
         var context = new ScanContext
         {
@@ -117,7 +120,7 @@ public class SkillIntegrationTests
             allFindings.AddRange(findings);
         }
 
-        allFindings.Should().BeEmpty();
+        allFindings.ShouldBeEmpty();
     }
 
     [Fact]
@@ -126,8 +129,8 @@ public class SkillIntegrationTests
         var testDataDir = GetTestDataPath("");
         var skills = await SkillReader.ReadDirectoryAsync(testDataDir);
 
-        skills.Should().HaveCount(2);
-        skills.Should().Contain(s => s.Name == "code-formatter");
-        skills.Should().Contain(s => s.Name == "greeting-helper");
+        skills.Count.ShouldBe(2);
+        skills.ShouldContain(s => s.Name == "code-formatter");
+        skills.ShouldContain(s => s.Name == "greeting-helper");
     }
 }

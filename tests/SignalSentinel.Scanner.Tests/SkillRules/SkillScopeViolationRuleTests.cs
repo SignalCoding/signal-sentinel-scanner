@@ -5,7 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.Rules;
 using SignalSentinel.Scanner.Rules.SkillRules;
@@ -30,7 +30,7 @@ public class SkillScopeViolationRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     [Fact]
@@ -46,8 +46,8 @@ public class SkillScopeViolationRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().NotBeEmpty();
-        findings.Should().Contain(f => f.Title.Contains("network access", StringComparison.OrdinalIgnoreCase));
+        findings.ShouldNotBeEmpty();
+        findings.ShouldContain(f => f.Title.Contains("network access", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -63,8 +63,8 @@ public class SkillScopeViolationRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().NotBeEmpty();
-        findings.Should().Contain(f => f.Title.Contains("shell", StringComparison.OrdinalIgnoreCase));
+        findings.ShouldNotBeEmpty();
+        findings.ShouldContain(f => f.Title.Contains("shell", StringComparison.OrdinalIgnoreCase));
     }
 
     private static ScanContext CreateContext(params SkillDefinition[] skills)

@@ -5,7 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.Rules;
 using SignalSentinel.Scanner.Rules.SkillRules;
@@ -31,7 +31,7 @@ public class SkillExcessivePermRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f =>
+        findings.ShouldContain(f =>
             f.Severity == Severity.High &&
             f.Title.Contains("Context Setting"));
     }
@@ -50,7 +50,7 @@ public class SkillExcessivePermRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f => f.Title.Contains("Agent Override"));
+        findings.ShouldContain(f => f.Title.Contains("Agent Override"));
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class SkillExcessivePermRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f =>
+        findings.ShouldContain(f =>
             f.Severity == Severity.Low &&
             f.Title.Contains("Missing Description"));
     }
@@ -85,7 +85,7 @@ public class SkillExcessivePermRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f => f.Title.Contains("Filesystem Access"));
+        findings.ShouldContain(f => f.Title.Contains("Filesystem Access"));
     }
 
     [Theory]
@@ -103,7 +103,7 @@ public class SkillExcessivePermRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().Contain(f => f.Title.Contains("Shell Access"));
+        findings.ShouldContain(f => f.Title.Contains("Shell Access"));
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public class SkillExcessivePermRuleTests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.Should().BeEmpty();
+        findings.ShouldBeEmpty();
     }
 
     private static ScanContext CreateContext(params SkillDefinition[] skills)

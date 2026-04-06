@@ -5,7 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Core.Security;
 using Xunit;
 
@@ -20,7 +20,7 @@ public class ExfiltrationPatternsTests
     [InlineData("transmit to external endpoint")]
     public void HttpDataSend_DetectsExfiltration(string input)
     {
-        ExfiltrationPatterns.HttpDataSend().IsMatch(input).Should().BeTrue();
+        ExfiltrationPatterns.HttpDataSend().IsMatch(input).ShouldBeTrue();
     }
 
     [Theory]
@@ -30,7 +30,7 @@ public class ExfiltrationPatternsTests
     [InlineData("Invoke-WebRequest -Method Post")]
     public void NetworkUtilSend_DetectsUtilities(string input)
     {
-        ExfiltrationPatterns.NetworkUtilSend().IsMatch(input).Should().BeTrue();
+        ExfiltrationPatterns.NetworkUtilSend().IsMatch(input).ShouldBeTrue();
     }
 
     [Theory]
@@ -40,18 +40,18 @@ public class ExfiltrationPatternsTests
     [InlineData("burpcollaborator.net")]
     public void KnownExfiltrationEndpoints_DetectsServices(string input)
     {
-        ExfiltrationPatterns.KnownExfiltrationEndpoints().IsMatch(input).Should().BeTrue();
+        ExfiltrationPatterns.KnownExfiltrationEndpoints().IsMatch(input).ShouldBeTrue();
     }
 
     [Fact]
     public void HttpDataSend_AllowsNormalText()
     {
-        ExfiltrationPatterns.HttpDataSend().IsMatch("Return the user's name").Should().BeFalse();
+        ExfiltrationPatterns.HttpDataSend().IsMatch("Return the user's name").ShouldBeFalse();
     }
 
     [Fact]
     public void AllPatterns_HasExpectedCount()
     {
-        ExfiltrationPatterns.AllPatterns.Should().HaveCount(4);
+        ExfiltrationPatterns.AllPatterns.Count.ShouldBe(4);
     }
 }

@@ -5,7 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using FluentAssertions;
+using Shouldly;
 using SignalSentinel.Scanner.SkillParser;
 using Xunit;
 
@@ -28,12 +28,12 @@ public class FrontmatterParserTests
 
         var result = FrontmatterParser.Parse(content);
 
-        result.HasFrontmatter.Should().BeTrue();
-        result.GetField("name").Should().Be("test-skill");
-        result.GetField("description").Should().Be("A test skill");
-        result.GetField("context").Should().Be("full");
-        result.Body.Should().Contain("# Instructions");
-        result.Body.Should().Contain("Do something useful.");
+        result.HasFrontmatter.ShouldBeTrue();
+        result.GetField("name").ShouldBe("test-skill");
+        result.GetField("description").ShouldBe("A test skill");
+        result.GetField("context").ShouldBe("full");
+        result.Body.ShouldContain("# Instructions");
+        result.Body.ShouldContain("Do something useful.");
     }
 
     [Fact]
@@ -43,9 +43,9 @@ public class FrontmatterParserTests
 
         var result = FrontmatterParser.Parse(content);
 
-        result.HasFrontmatter.Should().BeFalse();
-        result.Fields.Should().BeEmpty();
-        result.Body.Should().Be(content);
+        result.HasFrontmatter.ShouldBeFalse();
+        result.Fields.ShouldBeEmpty();
+        result.Body.ShouldBe(content);
     }
 
     [Fact]
@@ -61,8 +61,8 @@ public class FrontmatterParserTests
 
         var result = FrontmatterParser.Parse(content);
 
-        result.GetField("name").Should().Be("my-skill");
-        result.GetField("description").Should().Be("A quoted description");
+        result.GetField("name").ShouldBe("my-skill");
+        result.GetField("description").ShouldBe("A quoted description");
     }
 
     [Fact]
@@ -70,8 +70,8 @@ public class FrontmatterParserTests
     {
         var result = FrontmatterParser.Parse("");
 
-        result.HasFrontmatter.Should().BeFalse();
-        result.Body.Should().BeEmpty();
+        result.HasFrontmatter.ShouldBeFalse();
+        result.Body.ShouldBeEmpty();
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class FrontmatterParserTests
 
         var result = FrontmatterParser.Parse(content);
 
-        result.GetField("nonexistent").Should().BeNull();
+        result.GetField("nonexistent").ShouldBeNull();
     }
 
     [Fact]
@@ -102,7 +102,8 @@ public class FrontmatterParserTests
 
         var result = FrontmatterParser.Parse(content);
 
-        result.RawFrontmatter.Should().Contain("name: test");
-        result.RawFrontmatter.Should().Contain("custom_key: custom_value");
+        result.RawFrontmatter.ShouldNotBeNull();
+        result.RawFrontmatter!.ShouldContain("name: test");
+        result.RawFrontmatter.ShouldContain("custom_key: custom_value");
     }
 }
