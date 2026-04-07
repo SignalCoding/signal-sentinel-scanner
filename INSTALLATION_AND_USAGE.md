@@ -1,7 +1,7 @@
 # Signal Sentinel Scanner - Installation and Usage Guide
 
-**Version:** 2.1.0  
-**Last Updated:** 2026-04-04  
+**Version:** 2.1.1  
+**Last Updated:** 2026-04-06  
 **Repository:** https://github.com/SignalCoding/signal-sentinel-scanner
 
 ---
@@ -52,7 +52,7 @@ sentinel-scan --version
 
 **Expected output:**
 ```
-Signal Sentinel Scanner v1.0.1
+Signal Sentinel Scanner v2.1.1
 ```
 
 ### Update
@@ -85,22 +85,22 @@ dotnet tool uninstall -g SignalSentinel.Scanner
 ### Pull the Image
 
 ```bash
-docker pull ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0
+docker pull ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1
 ```
 
 ### Available Tags
 
 | Tag | Description |
 |-----|-------------|
-| `1.0.1` | Specific version (recommended for CI/CD) |
-| `1.0` | Latest 1.0.x patch version |
-| `1` | Latest 1.x.x version |
+| `2.1.1` | Specific version (recommended for CI/CD) |
+| `2.1` | Latest 2.1.x patch version |
+| `2` | Latest 2.x.x version |
 | `latest` | Latest stable release |
 
 ### Verify Installation
 
 ```bash
-docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 --version
+docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 --version
 ```
 
 ### Image Details
@@ -108,7 +108,7 @@ docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 --version
 | Property | Value |
 |----------|-------|
 | Registry | GitHub Container Registry (ghcr.io) |
-| Image | `ghcr.io/signalcoding/signal-sentinel-scanner` |
+| Image | `ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1` |
 | Base | Alpine Linux (.NET runtime-deps) |
 | Architecture | linux/amd64, linux/arm64 |
 | User | Non-root (sentinel, uid 1000) |
@@ -120,11 +120,21 @@ docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 --version
 
 ### Auto-Discover and Scan (Recommended)
 
-The scanner can automatically find MCP configurations from popular applications:
+The scanner can automatically find MCP configurations and Agent Skills from popular applications:
 
 **.NET Tool:**
 ```bash
+# Auto-discover MCP configurations
 sentinel-scan --discover
+
+# Auto-discover Agent Skills
+sentinel-scan --skills
+
+# Scan both MCP and Skills
+sentinel-scan --discover --skills
+
+# Scan a specific skill directory
+sentinel-scan --skills ~/.claude/skills/
 ```
 
 **Docker:**
@@ -133,7 +143,7 @@ sentinel-scan --discover
 docker run --rm \
   -v "$HOME/.cursor:/home/sentinel/.cursor:ro" \
   -v "$HOME/.config:/home/sentinel/.config:ro" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 --discover
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 --discover --skills
 ```
 
 **Windows Docker:**
@@ -141,7 +151,7 @@ docker run --rm \
 docker run --rm `
   -v "$env:USERPROFILE\.cursor:/home/sentinel/.cursor:ro" `
   -v "$env:APPDATA:/home/sentinel/AppData/Roaming:ro" `
-  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 --discover
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 --discover --skills
 ```
 
 ### Scan a Specific Config File
@@ -155,7 +165,7 @@ sentinel-scan --config ~/.cursor/mcp.json
 ```bash
 docker run --rm \
   -v "$HOME/.cursor/mcp.json:/config/mcp.json:ro" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 --config /config/mcp.json
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 --config /config/mcp.json
 ```
 
 ### Scan a Remote MCP Server
@@ -167,7 +177,7 @@ sentinel-scan --remote https://mcp.example.com/sse
 
 **Docker:**
 ```bash
-docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 \
+docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 \
   --remote https://mcp.example.com/sse
 ```
 
@@ -186,8 +196,9 @@ sentinel-scan [OPTIONS]
 | Option | Short | Description | Default |
 |--------|-------|-------------|---------|
 | `--config <path>` | `-c` | Path to MCP configuration file | - |
-| `--remote <url>` | `-r` | Remote MCP server URL to scan | - |
+| `--remote <url>` | `-r` | Remote MCP server URL (http/https/ws/wss) | - |
 | `--discover` | `-d` | Auto-discover MCP configurations | - |
+| `--skills [path]` | `-s` | Scan Agent Skills (auto-discover or specify path) | - |
 | `--format <format>` | `-f` | Output format: json, markdown, html | markdown |
 | `--output <path>` | `-o` | Output file path | stdout |
 | `--ci` | - | CI mode - exit code 1 on critical/high findings | false |
@@ -220,8 +231,8 @@ sentinel-scan --discover --format html --output security-report.html
 docker run --rm \
   -v "$HOME/.cursor:/home/sentinel/.cursor:ro" \
   -v "$(pwd):/output" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 \
-  --discover --format html --output /output/security-report.html
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 \
+  --discover --skills --format html --output /output/security-report.html
 ```
 
 ### Generate JSON for Processing
@@ -267,7 +278,7 @@ sentinel-scan --discover --format json
 ```json
 {
   "scanDate": "2026-04-04T08:00:00Z",
-  "scannerVersion": "1.0.1",
+  "scannerVersion": "2.1.1",
   "grade": "B",
   "score": 85,
   "summary": {
@@ -348,7 +359,7 @@ jobs:
   security-scan:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0
+      image: ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1
     steps:
       - uses: actions/checkout@v4
       
@@ -383,7 +394,7 @@ steps:
 
 ```yaml
 mcp-security-scan:
-  image: ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0
+  image: ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1
   script:
     - sentinel-scan --config ./mcp-config.json --ci --format json --output gl-sast-report.json
   artifacts:
@@ -422,21 +433,25 @@ pipeline {
 
 ## Supported Applications
 
-Signal Sentinel auto-discovers MCP configurations from:
+Signal Sentinel auto-discovers MCP configurations and Agent Skills from:
 
-| Application | Config Location (Windows) | Config Location (macOS/Linux) |
-|-------------|---------------------------|-------------------------------|
-| Claude Desktop | `%APPDATA%\Claude\claude_desktop_config.json` | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| Cursor | `%USERPROFILE%\.cursor\mcp.json` | `~/.cursor/mcp.json` |
-| VS Code | `%APPDATA%\Code\User\settings.json` | `~/.config/Code/User/settings.json` |
-| Windsurf | `%USERPROFILE%\.windsurf\mcp.json` | `~/.windsurf/mcp.json` |
-| Zed | `%APPDATA%\Zed\settings.json` | `~/.config/zed/settings.json` |
+| Application | MCP Configs | Agent Skills | Config Location (macOS/Linux) |
+|-------------|:-----------:|:------------:|-------------------------------|
+| Claude Desktop | ✅ | - | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Claude Code | - | ✅ | `~/.claude/skills/` |
+| Cursor | ✅ | ✅ | `~/.cursor/mcp.json`, `~/.cursor/skills/` |
+| VS Code | ✅ | - | `~/.config/Code/User/settings.json` |
+| Windsurf | ✅ | ✅ | `~/.windsurf/mcp.json`, `~/.windsurf/skills/` |
+| Zed | ✅ | - | `~/.config/zed/settings.json` |
+| OpenAI Codex CLI | - | ✅ | `~/.codex/skills/` |
 
 ---
 
 ## Security Rules
 
-Signal Sentinel scans for OWASP Agentic AI Top 10 vulnerabilities:
+Signal Sentinel scans for OWASP Agentic AI Top 10 + OWASP MCP Top 10 vulnerabilities with 21 rules:
+
+### MCP Rules
 
 | Rule | OWASP Code | Description |
 |------|------------|-------------|
@@ -450,6 +465,22 @@ Signal Sentinel scans for OWASP Agentic AI Top 10 vulnerabilities:
 | SS-008 | ASI09 | Sensitive Data Access |
 | SS-009 | ASI01 | Excessive Description Length |
 | SS-010 | ASI02 | Cross-Server Attack Paths |
+| SS-019 | ASI03 | Credential Hygiene Check |
+| SS-020 | ASI03 | OAuth 2.1 Compliance Check |
+| SS-021 | ASI04 | Package Provenance Check |
+
+### Skill Rules
+
+| Rule | OWASP Code | Description |
+|------|------------|-------------|
+| SS-011 | ASI01 | Skill Prompt Injection Detection |
+| SS-012 | ASI02 | Skill Scope Violation Detection |
+| SS-013 | ASI03 | Skill Credential Access Detection |
+| SS-014 | ASI09 | Skill Data Exfiltration Detection |
+| SS-015 | ASI01 | Skill Obfuscation Detection |
+| SS-016 | ASI05 | Skill Script Payload Detection |
+| SS-017 | ASI02 | Skill Excessive Permissions Detection |
+| SS-018 | ASI01 | Skill Hidden Content Detection |
 
 ---
 
@@ -493,7 +524,7 @@ sentinel-scan --remote https://slow-server.com/mcp --timeout 120
 ```bash
 docker run --rm \
   -v "/path/to/config:/config:ro" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.0 --config /config/mcp.json
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 --config /config/mcp.json
 ```
 
 ### "Tool not found" after installation
@@ -525,4 +556,4 @@ Apache 2.0 - Copyright 2026 Signal Coding Limited
 
 ---
 
-*Document generated for Signal Sentinel Scanner v1.0.1*
+*Document generated for Signal Sentinel Scanner v2.1.1*

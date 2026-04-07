@@ -4,7 +4,9 @@
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
+| 2.1.x   | :white_check_mark: |
+| 2.0.x   | :white_check_mark: |
+| 1.x.x   | :x: End of life    |
 
 ## Reporting a Vulnerability
 
@@ -66,9 +68,13 @@ Signal Sentinel is built to comply with:
 ## Security Features
 
 ### Scanner
-- Detects 10 categories of MCP security vulnerabilities
-- Identifies cross-server attack paths
+- 21 security rules across MCP server and Agent Skill scanning
+- 13 MCP rules (SS-001 to SS-010, SS-019 to SS-021): tool poisoning, overbroad permissions, missing auth, supply chain, code execution, memory write, inter-agent comms, sensitive data, credential hygiene, OAuth 2.1 compliance, package provenance
+- 8 Skill rules (SS-011 to SS-018): prompt injection, scope violation, credential access, data exfiltration, obfuscation, script payloads, excessive permissions, hidden content
+- Cross-server attack path analysis
 - Supply chain integrity checks (hash pinning, typosquat detection)
+- OWASP Agentic AI Top 10 (ASI01-ASI10) + OWASP MCP Top 10 (MCP01-MCP10) dual compliance mapping
+- v2.1.1: SHA-pinned CI/CD, SSRF protection, symlink escape protection, regex timeouts, TLS enforcement, bounded reads
 
 ### Gateway (Coming Soon)
 - Real-time tool call filtering
