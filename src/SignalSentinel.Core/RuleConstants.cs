@@ -27,7 +27,7 @@ public static class RuleConstants
     /// </summary>
     public static class Rules
     {
-        // MCP Rules (SS-001 to SS-010, original v1.0)
+        // MCP Rules (SS-001 to SS-010)
         public const string ToolPoisoning = "SS-001";
         public const string OverbroadPermissions = "SS-002";
         public const string MissingAuthentication = "SS-003";
@@ -39,7 +39,7 @@ public static class RuleConstants
         public const string ExcessiveDescription = "SS-009";
         public const string CrossServerAttackPaths = "SS-010";
 
-        // Skill Rules (SS-011 to SS-018, v2.0)
+        // Skill Rules (SS-011 to SS-018)
         public const string SkillInjection = "SS-011";
         public const string SkillScopeViolation = "SS-012";
         public const string SkillCredentialAccess = "SS-013";
@@ -49,7 +49,7 @@ public static class RuleConstants
         public const string SkillExcessivePermissions = "SS-017";
         public const string SkillHiddenContent = "SS-018";
 
-        // New MCP Rules (SS-019 to SS-021, v2.0)
+        // MCP Rules (SS-019 to SS-021)
         public const string CredentialHygiene = "SS-019";
         public const string OAuthCompliance = "SS-020";
         public const string PackageProvenance = "SS-021";

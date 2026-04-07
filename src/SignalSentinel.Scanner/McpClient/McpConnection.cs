@@ -24,6 +24,8 @@ public sealed class McpConnection : IAsyncDisposable
     private const int MaxResponseSizeBytes = 10 * 1024 * 1024; // 10MB
     private const int WebSocketReceiveBufferSize = 8192;
 
+    private static readonly string UserAgentString = $"SignalSentinel.Scanner/{typeof(McpConnection).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -83,7 +85,7 @@ public sealed class McpConnection : IAsyncDisposable
             };
 
             // Security: Add user agent for identification
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("SignalSentinel.Scanner/1.0");
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentString);
         }
 
         return await InitializeAsync(cancellationToken);
@@ -135,7 +137,7 @@ public sealed class McpConnection : IAsyncDisposable
         _webSocket.Options.SetBuffer(WebSocketReceiveBufferSize, WebSocketReceiveBufferSize);
 
         // Security: Set user agent
-        _webSocket.Options.SetRequestHeader("User-Agent", "SignalSentinel.Scanner/1.0");
+        _webSocket.Options.SetRequestHeader("User-Agent", UserAgentString);
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(_timeout);

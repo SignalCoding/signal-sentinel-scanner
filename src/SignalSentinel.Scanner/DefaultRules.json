@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "2.1.1",
   "rules": [
     {
       "id": "SS-001",
@@ -68,6 +68,83 @@
       "id": "SS-010",
       "name": "Cross-Server Attack Path Analysis",
       "owaspCode": "ASI02",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-011",
+      "name": "Skill Prompt Injection Detection",
+      "owaspCode": "ASI01",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-012",
+      "name": "Skill Scope Violation Detection",
+      "owaspCode": "ASI02",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-013",
+      "name": "Skill Credential Access Detection",
+      "owaspCode": "ASI03",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-014",
+      "name": "Skill Data Exfiltration Detection",
+      "owaspCode": "ASI09",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-015",
+      "name": "Skill Obfuscation Detection",
+      "owaspCode": "ASI01",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-016",
+      "name": "Skill Script Payload Detection",
+      "owaspCode": "ASI05",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-017",
+      "name": "Skill Excessive Permissions Detection",
+      "owaspCode": "ASI02",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-018",
+      "name": "Skill Hidden Content Detection",
+      "owaspCode": "ASI01",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-019",
+      "name": "Credential Hygiene Check",
+      "owaspCode": "ASI03",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-020",
+      "name": "OAuth 2.1 Compliance Check",
+      "owaspCode": "ASI03",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-021",
+      "name": "Package Provenance Check",
+      "owaspCode": "ASI04",
       "enabled": true,
       "severity": "dynamic"
     }
