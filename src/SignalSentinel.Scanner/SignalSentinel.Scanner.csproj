@@ -29,7 +29,7 @@ v2.2.0 - Rug Pull Detection, SARIF, Sigma Rules, Offline Mode
 - NEW: --offline flag enforces zero-egress operation, verified by dedicated offline-verification CI job
 - NEW: --sigma-rules flag loads Sigma YAML rules for custom MCP/Skill pattern detection
 - NEW: Finding deduplication engine collapses identical matches with OccurrenceCount indicator
-- 25 total security rules (15 MCP + 9 Skill + 1 Shared); 160+ tests; 0 warnings, 0 errors
+- 25 total security rules (16 MCP + 9 Skill); 195 tests; 0 warnings, 0 errors
 
 v2.1.1 - Security Hardening Release
 - SECURITY: All GitHub Actions pinned to SHA hashes (supply chain protection)

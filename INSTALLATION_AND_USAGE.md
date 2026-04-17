@@ -1,7 +1,7 @@
 # Signal Sentinel Scanner - Installation and Usage Guide
 
-**Version:** 2.1.1  
-**Last Updated:** 2026-04-06  
+**Version:** 2.2.0  
+**Last Updated:** 2026-04-17  
 **Repository:** https://github.com/SignalCoding/signal-sentinel-scanner
 
 ---
@@ -52,7 +52,7 @@ sentinel-scan --version
 
 **Expected output:**
 ```
-Signal Sentinel Scanner v2.1.1
+Signal Sentinel Scanner v2.2.0
 ```
 
 ### Update
@@ -85,22 +85,22 @@ dotnet tool uninstall -g SignalSentinel.Scanner
 ### Pull the Image
 
 ```bash
-docker pull ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1
+docker pull ghcr.io/signalcoding/signal-sentinel-scanner:2.2.0
 ```
 
 ### Available Tags
 
 | Tag | Description |
 |-----|-------------|
-| `2.1.1` | Specific version (recommended for CI/CD) |
-| `2.1` | Latest 2.1.x patch version |
+| `2.2.0` | Specific version (recommended for CI/CD) |
+| `2.2` | Latest 2.2.x patch version |
 | `2` | Latest 2.x.x version |
 | `latest` | Latest stable release |
 
 ### Verify Installation
 
 ```bash
-docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 --version
+docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.2.0 --version
 ```
 
 ### Image Details
@@ -108,7 +108,7 @@ docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 --version
 | Property | Value |
 |----------|-------|
 | Registry | GitHub Container Registry (ghcr.io) |
-| Image | `ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1` |
+| Image | `ghcr.io/signalcoding/signal-sentinel-scanner:2.2.0` |
 | Base | Alpine Linux (.NET runtime-deps) |
 | Architecture | linux/amd64, linux/arm64 |
 | User | Non-root (sentinel, uid 1000) |
@@ -143,7 +143,7 @@ sentinel-scan --skills ~/.claude/skills/
 docker run --rm \
   -v "$HOME/.cursor:/home/sentinel/.cursor:ro" \
   -v "$HOME/.config:/home/sentinel/.config:ro" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 --discover --skills
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.2.0 --discover --skills
 ```
 
 **Windows Docker:**
@@ -151,7 +151,7 @@ docker run --rm \
 docker run --rm `
   -v "$env:USERPROFILE\.cursor:/home/sentinel/.cursor:ro" `
   -v "$env:APPDATA:/home/sentinel/AppData/Roaming:ro" `
-  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 --discover --skills
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.2.0 --discover --skills
 ```
 
 ### Scan a Specific Config File
@@ -165,7 +165,7 @@ sentinel-scan --config ~/.cursor/mcp.json
 ```bash
 docker run --rm \
   -v "$HOME/.cursor/mcp.json:/config/mcp.json:ro" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 --config /config/mcp.json
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.2.0 --config /config/mcp.json
 ```
 
 ### Scan a Remote MCP Server
@@ -177,7 +177,7 @@ sentinel-scan --remote https://mcp.example.com/sse
 
 **Docker:**
 ```bash
-docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 \
+docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:2.2.0 \
   --remote https://mcp.example.com/sse
 ```
 
@@ -199,8 +199,12 @@ sentinel-scan [OPTIONS]
 | `--remote <url>` | `-r` | Remote MCP server URL (http/https/ws/wss) | - |
 | `--discover` | `-d` | Auto-discover MCP configurations | - |
 | `--skills [path]` | `-s` | Scan Agent Skills (auto-discover or specify path) | - |
-| `--format <format>` | `-f` | Output format: json, markdown, html | markdown |
+| `--format <format>` | `-f` | Output format: json, markdown, html, sarif | markdown |
 | `--output <path>` | `-o` | Output file path | stdout |
+| `--baseline <path>` | - | Compare against baseline file (creates if missing) *(v2.2)* | - |
+| `--update-baseline` | - | Regenerate baseline file from current scan *(v2.2)* | false |
+| `--offline` | - | Enforce zero network egress (refuses `--remote`) *(v2.2)* | false |
+| `--sigma-rules <path>` | - | Load Sigma YAML rules from a file or directory *(v2.2)* | - |
 | `--ci` | - | CI mode - exit code 1 on critical/high findings | false |
 | `--verbose` | `-v` | Enable verbose output | false |
 | `--timeout <seconds>` | `-t` | Connection timeout (max: 300) | 30 |
@@ -231,7 +235,7 @@ sentinel-scan --discover --format html --output security-report.html
 docker run --rm \
   -v "$HOME/.cursor:/home/sentinel/.cursor:ro" \
   -v "$(pwd):/output" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 \
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.2.0 \
   --discover --skills --format html --output /output/security-report.html
 ```
 
@@ -278,7 +282,7 @@ sentinel-scan --discover --format json
 ```json
 {
   "scanDate": "2026-04-04T08:00:00Z",
-  "scannerVersion": "2.1.1",
+  "scannerVersion": "2.2.0",
   "grade": "B",
   "score": 85,
   "summary": {
@@ -307,6 +311,68 @@ Features:
 - OWASP compliance matrix
 - Responsive design
 - Print-friendly
+
+### SARIF v2.1.0 *(new in v2.2)*
+
+OASIS-standard Static Analysis Results Interchange Format, compatible with GitHub Code Scanning, Azure DevOps, and most IDE security extensions.
+
+```bash
+sentinel-scan --discover --format sarif --output results.sarif
+```
+
+Upload to GitHub Code Scanning:
+
+```yaml
+- name: Upload SARIF
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: results.sarif
+```
+
+---
+
+## v2.2 Workflows
+
+### Baseline / Rug Pull Detection (SS-022)
+
+A baseline captures the schema hash of every tool on every server. Later scans compare against it to flag mutations, additions, and removals.
+
+```bash
+# First run - creates baseline if missing
+sentinel-scan --discover --baseline .sentinel-baseline.json
+
+# Subsequent runs - compare against baseline (same command)
+sentinel-scan --discover --baseline .sentinel-baseline.json
+
+# Explicitly refresh the baseline (after an approved change)
+sentinel-scan --discover --baseline .sentinel-baseline.json --update-baseline
+```
+
+Findings produced by rug-pull detection:
+- **Critical** - Tool description or schema has mutated since baseline
+- **High** - A new tool has appeared that was not in the baseline
+- **Medium** - A tool present in the baseline has been removed
+
+### Offline / Air-gapped Scanning
+
+For defence, HMG, or any environment that mandates zero network egress:
+
+```bash
+sentinel-scan --discover --skills --offline
+```
+
+When `--offline` is active, any attempt to initiate an HTTP or WebSocket connection will throw an `OfflineViolationException`. Combining `--offline` with `--remote` is rejected at argument parsing time.
+
+### Sigma Rule Import
+
+Load community or internal Sigma YAML rules alongside Signal Sentinel's built-in rules:
+
+```bash
+sentinel-scan --discover --sigma-rules ./sigma-rules/
+sentinel-scan --discover --sigma-rules ./detections/aws-key-leak.yml
+```
+
+Supported Sigma subset: `title`, `id`, `description`, `level`, `tags`, `logsource.product` (`mcp` / `skill`), and `detection` (`contains`, `startswith`, `endswith`, `equals`).
 
 ---
 
@@ -359,7 +425,7 @@ jobs:
   security-scan:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1
+      image: ghcr.io/signalcoding/signal-sentinel-scanner:2.2.0
     steps:
       - uses: actions/checkout@v4
       
@@ -394,7 +460,7 @@ steps:
 
 ```yaml
 mcp-security-scan:
-  image: ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1
+  image: ghcr.io/signalcoding/signal-sentinel-scanner:2.2.0
   script:
     - sentinel-scan --config ./mcp-config.json --ci --format json --output gl-sast-report.json
   artifacts:
@@ -449,7 +515,7 @@ Signal Sentinel auto-discovers MCP configurations and Agent Skills from:
 
 ## Security Rules
 
-Signal Sentinel scans for OWASP Agentic AI Top 10 + OWASP MCP Top 10 vulnerabilities with 21 rules:
+Signal Sentinel scans for OWASP Agentic AI Top 10 + OWASP MCP Top 10 vulnerabilities with 25 rules:
 
 ### MCP Rules
 
@@ -468,6 +534,9 @@ Signal Sentinel scans for OWASP Agentic AI Top 10 + OWASP MCP Top 10 vulnerabili
 | SS-019 | ASI03 | Credential Hygiene Check |
 | SS-020 | ASI03 | OAuth 2.1 Compliance Check |
 | SS-021 | ASI04 | Package Provenance Check |
+| SS-022 | ASI01 | Rug Pull Detection / Schema Mutation *(v2.2)* |
+| SS-023 | ASI01 | Shadow Tool Injection / Typosquat *(v2.2)* |
+| SS-025 | ASI06 | Excessive Tool Response Size *(v2.2)* |
 
 ### Skill Rules
 
@@ -481,6 +550,7 @@ Signal Sentinel scans for OWASP Agentic AI Top 10 + OWASP MCP Top 10 vulnerabili
 | SS-016 | ASI05 | Skill Script Payload Detection |
 | SS-017 | ASI02 | Skill Excessive Permissions Detection |
 | SS-018 | ASI01 | Skill Hidden Content Detection |
+| SS-024 | ASI04 | Skill Integrity Verification *(v2.2)* |
 
 ---
 
@@ -524,7 +594,7 @@ sentinel-scan --remote https://slow-server.com/mcp --timeout 120
 ```bash
 docker run --rm \
   -v "/path/to/config:/config:ro" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:2.1.1 --config /config/mcp.json
+  ghcr.io/signalcoding/signal-sentinel-scanner:2.2.0 --config /config/mcp.json
 ```
 
 ### "Tool not found" after installation
@@ -556,4 +626,4 @@ Apache 2.0 - Copyright 2026 Signal Coding Limited
 
 ---
 
-*Document generated for Signal Sentinel Scanner v2.1.1*
+*Document generated for Signal Sentinel Scanner v2.2.0*

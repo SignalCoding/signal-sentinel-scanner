@@ -4,8 +4,9 @@
 
 | Version | Supported          |
 | ------- | ------------------ |
+| 2.2.x   | :white_check_mark: |
 | 2.1.x   | :white_check_mark: |
-| 2.0.x   | :white_check_mark: |
+| 2.0.x   | :x: End of life    |
 | 1.x.x   | :x: End of life    |
 
 ## Reporting a Vulnerability
@@ -68,13 +69,18 @@ Signal Sentinel is built to comply with:
 ## Security Features
 
 ### Scanner
-- 21 security rules across MCP server and Agent Skill scanning
-- 13 MCP rules (SS-001 to SS-010, SS-019 to SS-021): tool poisoning, overbroad permissions, missing auth, supply chain, code execution, memory write, inter-agent comms, sensitive data, credential hygiene, OAuth 2.1 compliance, package provenance
-- 8 Skill rules (SS-011 to SS-018): prompt injection, scope violation, credential access, data exfiltration, obfuscation, script payloads, excessive permissions, hidden content
+- 25 security rules across MCP server and Agent Skill scanning
+- 16 MCP rules (SS-001..SS-010, SS-019..SS-023, SS-025): tool poisoning, overbroad permissions, missing auth, supply chain, code execution, memory write, inter-agent comms, sensitive data, credential hygiene, OAuth 2.1 compliance, package provenance, rug pull detection, shadow tool injection, excessive response size
+- 9 Skill rules (SS-011..SS-018, SS-024): prompt injection, scope violation, credential access, data exfiltration, obfuscation, script payloads, excessive permissions, hidden content, skill integrity verification
 - Cross-server attack path analysis
-- Supply chain integrity checks (hash pinning, typosquat detection)
+- Supply chain integrity checks (hash pinning, typosquat detection, Levenshtein distance)
+- Baseline comparison with SHA-256 schema hashing for rug-pull detection
+- Offline mode (`--offline`) enforces zero network egress for air-gapped / HMG environments
+- SARIF v2.1.0 output compatible with GitHub Code Scanning
+- Sigma YAML rule import for shared SOC detection content
 - OWASP Agentic AI Top 10 (ASI01-ASI10) + OWASP MCP Top 10 (MCP01-MCP10) dual compliance mapping
 - v2.1.1: SHA-pinned CI/CD, SSRF protection, symlink escape protection, regex timeouts, TLS enforcement, bounded reads
+- v2.2.0: Deduplication engine collapses duplicate findings; integrity verifier detects unsigned skills
 
 ### Gateway (Coming Soon)
 - Real-time tool call filtering
