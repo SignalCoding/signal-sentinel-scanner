@@ -53,6 +53,12 @@ public static class RuleConstants
         public const string CredentialHygiene = "SS-019";
         public const string OAuthCompliance = "SS-020";
         public const string PackageProvenance = "SS-021";
+
+        // v2.2.0 Rules (SS-022 to SS-025)
+        public const string RugPullDetection = "SS-022";
+        public const string ShadowToolInjection = "SS-023";
+        public const string SkillIntegrityVerification = "SS-024";
+        public const string ExcessiveToolResponse = "SS-025";
     }
 
     /// <summary>

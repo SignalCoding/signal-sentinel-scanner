@@ -3,8 +3,14 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- Test projects: Allow underscores in method names (common test naming convention) -->
-    <NoWarn>$(NoWarn);CA1707</NoWarn>
+    <!-- Test projects: relax analyser rules that add friction in test code without improving quality. -->
+    <!-- CA1707: underscores allowed in test method names (common xUnit convention). -->
+    <!-- CA1861: allow inline array arguments for readable test fixtures. -->
+    <!-- CA1849: allow sync File APIs in test setup (no real perf concern). -->
+    <!-- CA1063: xUnit IDisposable pattern is trivially lightweight; full Dispose(bool) is noise. -->
+    <!-- CA1515: xUnit discovers public test classes via reflection. -->
+    <!-- CA1711: xUnit requires Collection fixtures to be named *Collection. -->
+    <NoWarn>$(NoWarn);CA1707;CA1861;CA1849;CA1063;CA1515;CA1711</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

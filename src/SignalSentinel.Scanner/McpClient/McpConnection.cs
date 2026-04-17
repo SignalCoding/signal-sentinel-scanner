@@ -3,6 +3,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using SignalSentinel.Core.McpProtocol;
+using SignalSentinel.Scanner.Offline;
 
 namespace SignalSentinel.Scanner.McpClient;
 
@@ -63,10 +64,13 @@ public sealed class McpConnection : IAsyncDisposable
         }
         else if (_config.Transport == McpTransportType.WebSocket)
         {
+            OfflineGuard.EnsureAllowed($"WebSocket connect to {_config.Url}");
             await ConnectWebSocketAsync(cancellationToken);
         }
         else
         {
+            OfflineGuard.EnsureAllowed($"HTTP connect to {_config.Url}");
+
             // Security: Configure HttpClient with security settings
             var handler = new HttpClientHandler
             {

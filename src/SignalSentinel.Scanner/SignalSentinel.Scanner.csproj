@@ -3,9 +3,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <PackageId>SignalSentinel.Scanner</PackageId>
-    <Version>2.1.1</Version>
-    <Description>CLI security scanner for MCP server configurations AND Agent Skill packages. Detects prompt injection, tool poisoning, credential exposure, data exfiltration, and supply chain vulnerabilities. 21 security rules aligned with OWASP Agentic AI Top 10 + OWASP MCP Top 10. Supports stdio, HTTP/SSE, WebSocket transports and SKILL.md scanning.</Description>
-    <PackageTags>mcp;security;scanner;ai-agents;owasp;agentic-ai;cli;dotnet-tool;websocket;agent-skills;skill-scanning</PackageTags>
+    <Version>2.2.0</Version>
+    <Description>CLI security scanner for MCP server configurations AND Agent Skill packages. Detects prompt injection, tool poisoning, credential exposure, data exfiltration, supply chain vulnerabilities, rug-pull schema mutations, shadow tool injection, and skill integrity issues. 25 security rules aligned with OWASP Agentic AI Top 10 + OWASP MCP Top 10. Supports stdio, HTTP/SSE, WebSocket transports, SKILL.md scanning, SARIF output, Sigma rule import, and verified offline operation.</Description>
+    <PackageTags>mcp;security;scanner;ai-agents;owasp;agentic-ai;cli;dotnet-tool;websocket;agent-skills;skill-scanning;sarif;sigma;rug-pull;offline</PackageTags>
     
     <!-- Enable as global dotnet tool -->
     <PackAsTool>true</PackAsTool>
@@ -19,6 +19,18 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- <PackageIcon>icon.png</PackageIcon> -->
     <PackageReleaseNotes>
+v2.2.0 - Rug Pull Detection, SARIF, Sigma Rules, Offline Mode
+- NEW: SS-022 Rug Pull Detection - catches silent tool schema mutations between scans via hashed baselines
+- NEW: SS-023 Shadow Tool Injection - typosquat/Levenshtein detection across configured servers
+- NEW: SS-024 Skill Integrity Verification - hash and signature checks for Agent Skills
+- NEW: SS-025 Excessive Tool Response Size - bounds live MCP tool responses
+- NEW: SARIF v2.1.0 output format (--format sarif) for GitHub Code Scanning and IDE integration
+- NEW: --baseline/--update-baseline flags to persist and compare tool schemas between scans
+- NEW: --offline flag enforces zero-egress operation, verified by dedicated offline-verification CI job
+- NEW: --sigma-rules flag loads Sigma YAML rules for custom MCP/Skill pattern detection
+- NEW: Finding deduplication engine collapses identical matches with OccurrenceCount indicator
+- 25 total security rules (15 MCP + 9 Skill + 1 Shared); 160+ tests; 0 warnings, 0 errors
+
 v2.1.1 - Security Hardening Release
 - SECURITY: All GitHub Actions pinned to SHA hashes (supply chain protection)
 - SECURITY: SSRF protection on --remote URL (blocks private IPs, cloud metadata)

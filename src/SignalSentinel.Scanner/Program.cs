@@ -2,8 +2,12 @@ using System.Diagnostics;
 using System.Net;
 using System.Text.RegularExpressions;
 using SignalSentinel.Core.Models;
+using SignalSentinel.Core.RuleFormats;
+using SignalSentinel.Scanner.Baseline;
 using SignalSentinel.Scanner.Config;
+using SignalSentinel.Scanner.Dedup;
 using SignalSentinel.Scanner.McpClient;
+using SignalSentinel.Scanner.Offline;
 using SignalSentinel.Scanner.Reports;
 using SignalSentinel.Scanner.Rules;
 using SignalSentinel.Scanner.Scoring;
@@ -17,7 +21,7 @@ namespace SignalSentinel.Scanner;
 /// </summary>
 public static class Program
 {
-    private const string Version = "2.1.1";
+    private const string Version = "2.2.0";
 
     // Security: Limits for input validation
     private const int MaxPathLength = 4096;
@@ -132,10 +136,45 @@ public static class Program
                         {
                             "json" => OutputFormat.Json,
                             "html" => OutputFormat.Html,
+                            "sarif" => OutputFormat.Sarif,
                             "markdown" or "md" => OutputFormat.Markdown,
                             _ => OutputFormat.Markdown
                         };
                         config = config with { OutputFormat = format };
+                    }
+                    break;
+
+                case "--baseline":
+                    if (i + 1 < args.Length)
+                    {
+                        var path = args[++i];
+                        if (!ValidatePath(path, ".json"))
+                        {
+                            Console.Error.WriteLine("Error: Invalid baseline path");
+                            return null;
+                        }
+                        config = config with { BaselinePath = path };
+                    }
+                    break;
+
+                case "--update-baseline":
+                    config = config with { UpdateBaseline = true };
+                    break;
+
+                case "--offline":
+                    config = config with { Offline = true };
+                    break;
+
+                case "--sigma-rules":
+                    if (i + 1 < args.Length)
+                    {
+                        var path = args[++i];
+                        if (!ValidatePath(path))
+                        {
+                            Console.Error.WriteLine("Error: Invalid sigma-rules path");
+                            return null;
+                        }
+                        config = config with { SigmaRulesPath = path };
                     }
                     break;
 
@@ -266,7 +305,7 @@ public static class Program
 
         // Security: Only allow specific extensions for output
         var extension = Path.GetExtension(path)?.ToLowerInvariant();
-        var allowedExtensions = new[] { ".json", ".md", ".html", ".txt" };
+        var allowedExtensions = new[] { ".json", ".md", ".html", ".txt", ".sarif" };
 
         return allowedExtensions.Contains(extension);
     }
@@ -417,8 +456,12 @@ public static class Program
                 -r, --remote <url>      Remote MCP server URL (http/https/ws/wss)
                 -d, --discover          Auto-discover MCP configurations
                 -s, --skills [path]     Scan Agent Skills (auto-discover or specify path)
-                -f, --format <format>   Output format: json, markdown, html (default: markdown)
+                -f, --format <format>   Output format: json, markdown, html, sarif (default: markdown)
                 -o, --output <path>     Output file path (defaults to stdout)
+                    --baseline <path>   Compare against baseline file (creates if missing)
+                    --update-baseline   Regenerate baseline file from current scan
+                    --offline           Enforce zero network egress (refuses --remote)
+                    --sigma-rules <p>   Load Sigma YAML rules from file or directory
                     --ci                CI mode - exit code 1 on critical/high findings
                 -v, --verbose           Enable verbose output
                 -t, --timeout <sec>     Connection timeout in seconds (default: 30, max: 300)
@@ -434,6 +477,10 @@ public static class Program
                 sentinel-scan --remote https://mcp.example.com/mcp
                 sentinel-scan --remote wss://mcp.example.com/ws
                 sentinel-scan --discover --skills --ci --format json  # CI/CD mode
+                sentinel-scan --discover --format sarif -o out.sarif  # SARIF for GitHub Code Scanning
+                sentinel-scan --discover --baseline .sentinel-baseline.json
+                sentinel-scan --discover --skills --offline           # Air-gapped verification
+                sentinel-scan --discover --sigma-rules ./rules/
             
             MCP SECURITY RULES:
                 SS-001  Tool Poisoning Detection (ASI01)
@@ -449,6 +496,9 @@ public static class Program
                 SS-019  Credential Hygiene (ASI03)
                 SS-020  OAuth 2.1 Compliance (ASI03)
                 SS-021  Package Provenance (ASI04)
+                SS-022  Rug Pull Detection / Schema Mutation (ASI01)
+                SS-023  Shadow Tool Injection (ASI01)
+                SS-025  Excessive Tool Response Size (ASI06)
             
             SKILL SECURITY RULES:
                 SS-011  Skill Prompt Injection (ASI01)
@@ -459,6 +509,7 @@ public static class Program
                 SS-016  Skill Script Payload (ASI05)
                 SS-017  Skill Excessive Permissions (ASI02)
                 SS-018  Skill Hidden Content (ASI01)
+                SS-024  Skill Integrity Verification (ASI04)
             
             For more information: https://github.com/SignalCoding/signal-sentinel-scanner
             Report security issues: security@signalcoding.co.uk
@@ -482,6 +533,18 @@ public static class Program
         {
             Log($"Signal Sentinel Scanner v{Version}");
             Log("================================");
+
+            // Enforce offline mode as early as possible
+            if (config.Offline)
+            {
+                OfflineGuard.Enable();
+                if (config.RemoteUrl is not null)
+                {
+                    Console.Error.WriteLine("Error: --offline is incompatible with --remote.");
+                    return 2;
+                }
+                Log("Offline mode: network operations will be blocked.");
+            }
 
             // Collect configurations
             var configFiles = new List<Core.McpProtocol.McpConfigFile>();
@@ -570,12 +633,67 @@ public static class Program
                 Log($"Found {allSkills.Count} skill(s) across {skillSources.Count} source(s)");
             }
 
+            // Baseline comparison (v2.2.0)
+            BaselineComparison? baselineComparison = null;
+            if (config.BaselinePath is not null)
+            {
+                var baseline = await BaselineManager.LoadAsync(config.BaselinePath, cancellationToken);
+                if (baseline is null)
+                {
+                    Log($"Baseline not found at {SanitizeForDisplay(config.BaselinePath)} - will be created after scan.");
+                }
+                else
+                {
+                    Log($"Baseline loaded (generated {baseline.GeneratedAt:o} by scanner v{baseline.ScannerVersion}).");
+                }
+                baselineComparison = BaselineManager.Compare(baseline, serverEnumerations);
+            }
+
+            // Load Sigma rules if requested (v2.2.0)
+            var customRules = new List<IRule>();
+            if (config.SigmaRulesPath is not null)
+            {
+                Log($"Loading Sigma rules from: {SanitizeForDisplay(config.SigmaRulesPath)}");
+                var sigmaResult = SigmaRuleLoader.LoadFromPath(config.SigmaRulesPath);
+                foreach (var err in sigmaResult.Errors)
+                {
+                    Log($"  Sigma load warning: {SanitizeForDisplay(err)}");
+                }
+                foreach (var sigma in sigmaResult.Rules)
+                {
+                    customRules.Add(new SigmaPatternRule(sigma));
+                }
+                Log($"Loaded {sigmaResult.Rules.Count} Sigma rule(s)");
+            }
+
+            // Always include v2.2.0 rules that depend on runtime state
+            customRules.Add(new RugPullDetectionRule(baselineComparison));
+            customRules.Add(new ShadowToolInjectionRule());
+            customRules.Add(new ExcessiveResponseRule());
+            customRules.Add(new Rules.SkillRules.SkillIntegrityRule());
+
             // Run rules
             Log("Executing security rules...");
-            var ruleEngine = new RuleEngine(verbose: config.Verbose, logger: Log);
+            var ruleEngine = new RuleEngine(customRules: customRules, verbose: config.Verbose, logger: Log);
             var context = new ScanContext { Servers = serverEnumerations, Skills = allSkills };
             var ruleResult = await ruleEngine.ExecuteAsync(context, cancellationToken);
+
+            // Deduplicate findings (v2.2.0)
+            var deduplicated = FindingDeduplicator.Deduplicate(ruleResult.Findings);
+            var collapsedCount = ruleResult.Findings.Count - deduplicated.Count;
+            if (collapsedCount > 0)
+            {
+                Log($"Deduplicated {collapsedCount} redundant finding(s).");
+            }
+            ruleResult = ruleResult with { Findings = deduplicated };
             Log($"Found {ruleResult.Findings.Count} finding(s), {ruleResult.AttackPaths.Count} attack path(s)");
+
+            // Save/update baseline if requested
+            if (config.BaselinePath is not null && (baselineComparison?.BaselineLoaded != true || config.UpdateBaseline))
+            {
+                await BaselineManager.SaveAsync(config.BaselinePath, serverEnumerations, Version, cancellationToken);
+                Log($"Baseline saved to {SanitizeForDisplay(config.BaselinePath)}");
+            }
 
             // Calculate grade
             var (grade, score) = SeverityScorer.CalculateGrade(ruleResult.Findings, ruleResult.AttackPaths);
@@ -634,6 +752,7 @@ public static class Program
             {
                 OutputFormat.Json => new JsonReportGenerator(),
                 OutputFormat.Html => new HtmlReportGenerator(),
+                OutputFormat.Sarif => new SarifReportGenerator(),
                 _ => new MarkdownReportGenerator()
             };
 

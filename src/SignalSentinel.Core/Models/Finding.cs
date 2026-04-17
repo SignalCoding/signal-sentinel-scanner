@@ -91,6 +91,13 @@ public sealed record Finding
     /// Skill file path (for skill-originated findings).
     /// </summary>
     public string? SkillFilePath { get; init; }
+
+    /// <summary>
+    /// Number of occurrences of this finding after deduplication.
+    /// Defaults to 1 for a single occurrence. Incremented by the deduplication engine
+    /// when the same (RuleId, ServerName, Evidence) triple is detected multiple times.
+    /// </summary>
+    public int OccurrenceCount { get; init; } = 1;
 }
 
 /// <summary>

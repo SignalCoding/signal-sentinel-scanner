@@ -59,6 +59,27 @@ public sealed record ScanConfig
     /// Optional specific path to a skills directory or SKILL.md file.
     /// </summary>
     public string? SkillsPath { get; init; }
+
+    /// <summary>
+    /// Optional baseline file path for rug-pull detection (SS-022) and suppression support.
+    /// </summary>
+    public string? BaselinePath { get; init; }
+
+    /// <summary>
+    /// If true, explicitly regenerate the baseline file from the current scan (after review).
+    /// </summary>
+    public bool UpdateBaseline { get; init; }
+
+    /// <summary>
+    /// If true, enforce offline operation: block any outbound network I/O.
+    /// When set, --remote is refused and any attempted HTTP call throws.
+    /// </summary>
+    public bool Offline { get; init; }
+
+    /// <summary>
+    /// Optional path to a directory or file containing Sigma YAML rules to evaluate.
+    /// </summary>
+    public string? SigmaRulesPath { get; init; }
 }
 
 /// <summary>
@@ -68,5 +89,6 @@ public enum OutputFormat
 {
     Json,
     Markdown,
-    Html
+    Html,
+    Sarif
 }

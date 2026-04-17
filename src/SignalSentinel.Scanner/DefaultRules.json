@@ -1,5 +1,5 @@
 {
-  "version": "2.1.1",
+  "version": "2.2.0",
   "rules": [
     {
       "id": "SS-001",
@@ -145,6 +145,34 @@
       "id": "SS-021",
       "name": "Package Provenance Check",
       "owaspCode": "ASI04",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-022",
+      "name": "Rug Pull Detection (Schema Mutation)",
+      "owaspCode": "ASI01",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-023",
+      "name": "Shadow Tool Injection",
+      "owaspCode": "ASI01",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-024",
+      "name": "Skill Integrity Verification",
+      "owaspCode": "ASI04",
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-025",
+      "name": "Excessive Tool Response Size",
+      "owaspCode": "ASI06",
       "enabled": true,
       "severity": "dynamic"
     }

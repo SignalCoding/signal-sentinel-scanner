@@ -92,3 +92,29 @@ using System.Diagnostics.CodeAnalysis;
     Justification = "Hex hashes are conventionally lowercase",
     Scope = "member",
     Target = "~M:SignalSentinel.Core.Security.HashPinning.ComputeServerManifestHash(System.String,System.Collections.Generic.IEnumerable{SignalSentinel.Core.McpProtocol.McpToolDefinition})")]
+[assembly: SuppressMessage(
+    "Globalization",
+    "CA1308:Normalize strings to uppercase",
+    Justification = "Sigma modifier and level tokens are defined in lowercase by the Sigma specification",
+    Scope = "member",
+    Target = "~M:SignalSentinel.Core.RuleFormats.SigmaRuleLoader.ParseField(System.String)~System.ValueTuple{System.String,SignalSentinel.Core.RuleFormats.SigmaMatchType}")]
+[assembly: SuppressMessage(
+    "Globalization",
+    "CA1308:Normalize strings to uppercase",
+    Justification = "Sigma severity levels are defined in lowercase by the Sigma specification",
+    Scope = "member",
+    Target = "~M:SignalSentinel.Core.RuleFormats.SigmaRuleLoader.MapLevel(System.String)~SignalSentinel.Core.Models.Severity")]
+
+// CA1812: YamlDotNet uses reflection to instantiate deserialisation DTOs
+[assembly: SuppressMessage(
+    "Performance",
+    "CA1812:Avoid uninstantiated internal classes",
+    Justification = "Instantiated reflectively by YamlDotNet deserialiser",
+    Scope = "type",
+    Target = "~T:SignalSentinel.Core.RuleFormats.SigmaRuleLoader.SigmaRawDocument")]
+[assembly: SuppressMessage(
+    "Performance",
+    "CA1812:Avoid uninstantiated internal classes",
+    Justification = "Instantiated reflectively by YamlDotNet deserialiser",
+    Scope = "type",
+    Target = "~T:SignalSentinel.Core.RuleFormats.SigmaRuleLoader.SigmaRawLogSource")]

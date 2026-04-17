@@ -225,7 +225,8 @@ public sealed class MarkdownReportGenerator : IReportGenerator
 
             foreach (var finding in severityFindings)
             {
-                sb.AppendLine($"#### [{finding.RuleId}] {SanitizeMarkdown(finding.Title)}");
+                var occurrence = finding.OccurrenceCount > 1 ? $" [x{finding.OccurrenceCount}]" : string.Empty;
+                sb.AppendLine($"#### [{finding.RuleId}] {SanitizeMarkdown(finding.Title)}{occurrence}");
                 sb.AppendLine();
                 var sourceLabel = finding.Source == FindingSource.Skill ? "Skill" : "Server";
                 sb.AppendLine($"- **{sourceLabel}:** {SanitizeMarkdown(finding.ServerName)}");
