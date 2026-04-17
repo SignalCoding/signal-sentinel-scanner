@@ -72,8 +72,7 @@ public static class IntegrityVerifier
 
     private static string ComputeContentHash(SkillDefinition skill)
     {
-        using var sha = SHA256.Create();
-        var buffer = new MemoryStream();
+        using var buffer = new MemoryStream();
 
         var skillBytes = Encoding.UTF8.GetBytes(skill.RawContent);
         buffer.Write(skillBytes, 0, skillBytes.Length);
@@ -90,8 +89,7 @@ public static class IntegrityVerifier
             }
         }
 
-        buffer.Position = 0;
-        var hash = sha.ComputeHash(buffer);
+        var hash = SHA256.HashData(buffer.ToArray());
 
         var hex = new StringBuilder(hash.Length * 2);
         foreach (var b in hash)

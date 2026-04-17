@@ -21,8 +21,8 @@ public sealed class RuleEngine
     /// <param name="verbose">Enable verbose logging.</param>
     /// <param name="logger">Logger action for verbose output.</param>
     public RuleEngine(
-        IEnumerable<IRule>? customRules = null, 
-        bool verbose = false, 
+        IEnumerable<IRule>? customRules = null,
+        bool verbose = false,
         Action<string>? logger = null)
     {
         _verbose = verbose;
@@ -63,7 +63,7 @@ public sealed class RuleEngine
             allRules.AddRange(customRules);
         }
 
-        _rules = allRules.Where(r => r.EnabledByDefault).ToList();
+        _rules = [.. allRules.Where(r => r.EnabledByDefault)];
     }
 
     /// <summary>
@@ -78,7 +78,7 @@ public sealed class RuleEngine
     /// <param name="cancellationToken">Token to cancel execution.</param>
     /// <returns>Aggregated results from all rules.</returns>
     public async Task<RuleEngineResult> ExecuteAsync(
-        ScanContext context, 
+        ScanContext context,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -125,7 +125,7 @@ public sealed class RuleEngine
     }
 
     private static async Task<RuleExecutionResult> ExecuteRuleAsync(
-        IRule rule, 
+        IRule rule,
         ScanContext context,
         CancellationToken cancellationToken)
     {

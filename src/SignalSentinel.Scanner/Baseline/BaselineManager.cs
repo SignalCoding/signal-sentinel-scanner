@@ -53,13 +53,7 @@ public sealed class BaselineManager
 
         await using var stream = File.OpenRead(path);
         var baseline = await JsonSerializer.DeserializeAsync<BaselineFile>(stream, JsonOptions, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (baseline is null)
-        {
-            throw new InvalidOperationException("Baseline file could not be parsed.");
-        }
-
+            .ConfigureAwait(false) ?? throw new InvalidOperationException("Baseline file could not be parsed.");
         return baseline;
     }
 

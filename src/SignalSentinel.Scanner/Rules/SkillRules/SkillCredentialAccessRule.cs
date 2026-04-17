@@ -66,8 +66,7 @@ public sealed class SkillCredentialAccessRule : IRule
             foreach (var script in skill.Scripts)
             {
                 if (script.Content is null) continue;
-
-                foreach (var (id, name, pattern, severity, description) in CredentialPatterns.AllPatterns)
+                foreach (var (_, name, pattern, severity, description) in CredentialPatterns.AllPatterns)
                 {
                     if (InjectionPatterns.SafeIsMatch(pattern, script.Content))
                     {

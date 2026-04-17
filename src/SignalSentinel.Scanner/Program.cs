@@ -396,7 +396,7 @@ public static class Program
         }
 
         // Remove control characters except common whitespace
-        var sanitized = new string(input.Where(c => !char.IsControl(c) || c == ' ').ToArray());
+        var sanitized = new string([.. input.Where(c => !char.IsControl(c) || c == ' ')]);
 
         // Limit length
         if (sanitized.Length > 100)
@@ -704,7 +704,7 @@ public static class Program
             {
                 ScanTimestamp = DateTimeOffset.UtcNow,
                 ScannerVersion = Version,
-                Servers = serverEnumerations.Select(s => new ServerScanSummary
+                Servers = [.. serverEnumerations.Select(s => new ServerScanSummary
                 {
                     Name = s.ServerName,
                     Version = s.ServerVersion,
@@ -715,15 +715,15 @@ public static class Program
                     PromptCount = s.Prompts.Count,
                     ConnectionSuccessful = s.ConnectionSuccessful,
                     ConnectionError = s.ConnectionError
-                }).ToList(),
-                Skills = allSkills.Select(s => new SkillScanSummary
+                })],
+                Skills = [.. allSkills.Select(s => new SkillScanSummary
                 {
                     Name = s.Name,
                     Platform = s.SourcePlatform,
                     FilePath = s.FilePath,
                     ScriptCount = s.Scripts.Count,
                     IsProjectLevel = s.IsProjectLevel
-                }).ToList(),
+                })],
                 Findings = ruleResult.Findings,
                 AttackPaths = ruleResult.AttackPaths,
                 Grade = grade,

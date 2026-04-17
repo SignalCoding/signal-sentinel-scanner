@@ -7,24 +7,17 @@ namespace SignalSentinel.Scanner.McpClient;
 /// Enumerates tools, resources, and prompts from MCP servers.
 /// Security hardened with timeout enforcement and resource limits.
 /// </summary>
-public sealed class ToolEnumerator
+public sealed class ToolEnumerator(TimeSpan timeout, bool verbose = false, Action<string>? logger = null)
 {
-    private readonly TimeSpan _timeout;
-    private readonly bool _verbose;
-    private readonly Action<string>? _logger;
+    private readonly TimeSpan _timeout = timeout;
+    private readonly bool _verbose = verbose;
+    private readonly Action<string>? _logger = logger;
 
     // Security: Limit maximum items to prevent memory exhaustion
     private const int MaxToolsPerServer = 10_000;
     private const int MaxResourcesPerServer = 10_000;
     private const int MaxPromptsPerServer = 1_000;
     private const int MaxServers = 100;
-
-    public ToolEnumerator(TimeSpan timeout, bool verbose = false, Action<string>? logger = null)
-    {
-        _timeout = timeout;
-        _verbose = verbose;
-        _logger = logger;
-    }
 
     /// <summary>
     /// Enumerates all MCP servers from configuration files.
@@ -297,8 +290,8 @@ public sealed class ToolEnumerator
         foreach (var pattern in patterns)
         {
             message = System.Text.RegularExpressions.Regex.Replace(
-                message, 
-                pattern, 
+                message,
+                pattern,
                 "[REDACTED]",
                 System.Text.RegularExpressions.RegexOptions.None,
                 TimeSpan.FromMilliseconds(100)); // Timeout for regex

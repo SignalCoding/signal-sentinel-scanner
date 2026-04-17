@@ -88,8 +88,7 @@ public sealed class SkillExfiltrationRule : IRule
             foreach (var script in skill.Scripts)
             {
                 if (script.Content is null) continue;
-
-                foreach (var (id, name, pattern, severity, description) in ExfiltrationPatterns.AllPatterns)
+                foreach (var (_, name, pattern, severity, description) in ExfiltrationPatterns.AllPatterns)
                 {
                     if (InjectionPatterns.SafeIsMatch(pattern, script.Content))
                     {

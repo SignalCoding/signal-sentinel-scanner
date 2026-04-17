@@ -26,7 +26,7 @@ public sealed class ToolPoisoningRule : IRule
     public string OwaspCode => OwaspAsiCodes.ASI01;
 
     /// <inheritdoc />
-    public string Description => 
+    public string Description =>
         "Detects prompt injection and tool poisoning patterns in MCP tool descriptions " +
         "that could hijack agent behaviour.";
 
@@ -35,11 +35,11 @@ public sealed class ToolPoisoningRule : IRule
 
     /// <inheritdoc />
     public Task<IEnumerable<Finding>> EvaluateAsync(
-        ScanContext context, 
+        ScanContext context,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
-        
+
         var findings = new List<Finding>();
 
         foreach (var server in context.Servers)

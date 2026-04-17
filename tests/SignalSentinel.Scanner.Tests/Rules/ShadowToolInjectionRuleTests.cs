@@ -15,14 +15,14 @@ public class ShadowToolInjectionRuleTests
     {
         return new ScanContext
         {
-            Servers = servers.Select(s => new ServerEnumeration
+            Servers = [.. servers.Select(s => new ServerEnumeration
             {
                 ServerConfig = new McpServerConfig { Name = s.server },
                 ServerName = s.server,
                 Transport = "stdio",
                 ConnectionSuccessful = true,
-                Tools = s.tools.Select(t => new McpToolDefinition { Name = t, Description = "desc" }).ToList()
-            }).ToList()
+                Tools = [.. s.tools.Select(t => new McpToolDefinition { Name = t, Description = "desc" })]
+            })]
         };
     }
 

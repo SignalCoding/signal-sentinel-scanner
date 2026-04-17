@@ -241,10 +241,11 @@ public sealed class McpConnection : IAsyncDisposable
             }
         }
 
-        _process = new Process { StartInfo = startInfo };
-
-        // Security: Enable process exited event for cleanup
-        _process.EnableRaisingEvents = true;
+        _process = new Process
+        {
+            StartInfo = startInfo,         // Security: Enable process exited event for cleanup
+            EnableRaisingEvents = true
+        };
 
         if (!_process.Start())
         {
@@ -296,12 +297,7 @@ public sealed class McpConnection : IAsyncDisposable
             }
         };
 
-        var result = await SendRequestAsync<McpInitializeResult>("initialize", initParams, cancellationToken);
-
-        if (result is null)
-        {
-            throw new InvalidOperationException($"Failed to initialize MCP server '{_config.Name}'");
-        }
+        var result = await SendRequestAsync<McpInitializeResult>("initialize", initParams, cancellationToken) ?? throw new InvalidOperationException($"Failed to initialize MCP server '{_config.Name}'");
 
         // Send initialized notification
         await SendNotificationAsync("notifications/initialized", null, cancellationToken);
@@ -429,7 +425,7 @@ public sealed class McpConnection : IAsyncDisposable
                     {
                         if (root.TryGetProperty("error", out var error))
                         {
-                            var errorMsg = error.TryGetProperty("message", out var msgEl) 
+                            var errorMsg = error.TryGetProperty("message", out var msgEl)
                                 ? msgEl.GetString() ?? "Unknown error"
                                 : "Unknown error";
                             // Security: Truncate error messages
@@ -751,10 +747,7 @@ public sealed class McpConnection : IAsyncDisposable
             _webSocket = null;
         }
 
-        if (_httpClient is not null)
-        {
-            _httpClient.Dispose();
-            _httpClient = null;
-        }
+        _httpClient?.Dispose();
+        _httpClient = null;
     }
 }

@@ -66,7 +66,7 @@ public sealed partial class SensitiveDataRule : IRule
                 }
 
                 // Check for PII access
-                if (PersonKeywords().IsMatch(combined) && 
+                if (PersonKeywords().IsMatch(combined) &&
                     (DatabaseKeywords().IsMatch(combined) || FileKeywords().IsMatch(combined)))
                 {
                     findings.Add(new Finding

@@ -41,7 +41,7 @@ public sealed partial class CrossServerAttackPathRule : IRule
     public Task<IEnumerable<Finding>> EvaluateAsync(ScanContext context, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
-        
+
         var findings = new List<Finding>();
         _detectedAttackPaths.Clear();
 
@@ -83,11 +83,11 @@ public sealed partial class CrossServerAttackPathRule : IRule
             .Where(t => t.Caps.HasFlag(ToolCapability.NetworkAccess))
             .ToList();
 
-        foreach (var reader in fileReaders)
+        foreach (var (ServerName, ToolName, Caps) in fileReaders)
         {
             foreach (var sender in networkSenders)
             {
-                if (reader.ServerName != sender.ServerName)
+                if (ServerName != sender.ServerName)
                 {
                     var path = new AttackPath
                     {
@@ -99,8 +99,8 @@ public sealed partial class CrossServerAttackPathRule : IRule
                         [
                             new AttackPathStep
                             {
-                                ServerName = reader.ServerName,
-                                ToolName = reader.ToolName,
+                                ServerName = ServerName,
+                                ToolName = ToolName,
                                 Capability = ToolCapability.ReadFile,
                                 Description = "Read sensitive file content"
                             },
@@ -122,9 +122,9 @@ public sealed partial class CrossServerAttackPathRule : IRule
                         OwaspCode = OwaspAsiCodes.ASI09,
                         Severity = Severity.Critical,
                         Title = "Cross-Server Data Exfiltration Path",
-                        Description = $"Attack path detected: {reader.ServerName}:{reader.ToolName} (file read) -> {sender.ServerName}:{sender.ToolName} (network send) enables data exfiltration.",
+                        Description = $"Attack path detected: {ServerName}:{ToolName} (file read) -> {sender.ServerName}:{sender.ToolName} (network send) enables data exfiltration.",
                         Remediation = path.Remediation,
-                        ServerName = $"{reader.ServerName} -> {sender.ServerName}",
+                        ServerName = $"{ServerName} -> {sender.ServerName}",
                         Evidence = $"Path ID: {path.Id}",
                         Confidence = 0.85
                     });
@@ -140,11 +140,11 @@ public sealed partial class CrossServerAttackPathRule : IRule
             .Where(t => t.Caps.HasFlag(ToolCapability.WriteFile))
             .ToList();
 
-        foreach (var dbReader in dbReaders)
+        foreach (var (ServerName, ToolName, Caps) in dbReaders)
         {
             foreach (var fileWriter in fileWriters)
             {
-                if (dbReader.ServerName != fileWriter.ServerName)
+                if (ServerName != fileWriter.ServerName)
                 {
                     var path = new AttackPath
                     {
@@ -156,8 +156,8 @@ public sealed partial class CrossServerAttackPathRule : IRule
                         [
                             new AttackPathStep
                             {
-                                ServerName = dbReader.ServerName,
-                                ToolName = dbReader.ToolName,
+                                ServerName = ServerName,
+                                ToolName = ToolName,
                                 Capability = ToolCapability.ReadData,
                                 Description = "Query database for sensitive data"
                             },
@@ -179,9 +179,9 @@ public sealed partial class CrossServerAttackPathRule : IRule
                         OwaspCode = OwaspAsiCodes.ASI02,
                         Severity = Severity.High,
                         Title = "Cross-Server Database Dump Path",
-                        Description = $"Attack path detected: {dbReader.ServerName}:{dbReader.ToolName} (DB read) -> {fileWriter.ServerName}:{fileWriter.ToolName} (file write) enables data dumping.",
+                        Description = $"Attack path detected: {ServerName}:{ToolName} (DB read) -> {fileWriter.ServerName}:{fileWriter.ToolName} (file write) enables data dumping.",
                         Remediation = path.Remediation,
-                        ServerName = $"{dbReader.ServerName} -> {fileWriter.ServerName}",
+                        ServerName = $"{ServerName} -> {fileWriter.ServerName}",
                         Evidence = $"Path ID: {path.Id}",
                         Confidence = 0.8
                     });
@@ -197,11 +197,11 @@ public sealed partial class CrossServerAttackPathRule : IRule
             .Where(t => t.Caps.HasFlag(ToolCapability.CodeExecution))
             .ToList();
 
-        foreach (var netReader in networkReaders)
+        foreach (var (ServerName, ToolName, Caps) in networkReaders)
         {
             foreach (var executor in codeExecutors)
             {
-                if (netReader.ServerName != executor.ServerName)
+                if (ServerName != executor.ServerName)
                 {
                     var path = new AttackPath
                     {
@@ -213,8 +213,8 @@ public sealed partial class CrossServerAttackPathRule : IRule
                         [
                             new AttackPathStep
                             {
-                                ServerName = netReader.ServerName,
-                                ToolName = netReader.ToolName,
+                                ServerName = ServerName,
+                                ToolName = ToolName,
                                 Capability = ToolCapability.NetworkAccess,
                                 Description = "Fetch malicious code from external source"
                             },
@@ -236,9 +236,9 @@ public sealed partial class CrossServerAttackPathRule : IRule
                         OwaspCode = OwaspAsiCodes.ASI05,
                         Severity = Severity.Critical,
                         Title = "Cross-Server Remote Code Execution Path",
-                        Description = $"Attack path detected: {netReader.ServerName}:{netReader.ToolName} (network) -> {executor.ServerName}:{executor.ToolName} (execute) enables remote code execution.",
+                        Description = $"Attack path detected: {ServerName}:{ToolName} (network) -> {executor.ServerName}:{executor.ToolName} (execute) enables remote code execution.",
                         Remediation = path.Remediation,
-                        ServerName = $"{netReader.ServerName} -> {executor.ServerName}",
+                        ServerName = $"{ServerName} -> {executor.ServerName}",
                         Evidence = $"Path ID: {path.Id}",
                         Confidence = 0.9
                     });

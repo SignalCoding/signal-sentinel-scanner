@@ -116,7 +116,7 @@ public static class OwaspMapper
     public static IReadOnlyList<ComplianceMatrixRow> GenerateComplianceMatrix(
         IReadOnlyDictionary<string, OwaspCategorySummary> categories)
     {
-        return categories.Values
+        return [.. categories.Values
             .OrderBy(c => c.Code)
             .Select(c => new ComplianceMatrixRow
             {
@@ -126,8 +126,7 @@ public static class OwaspMapper
                 FindingsCount = c.TotalFindings,
                 MaxSeverity = c.MaxSeverity,
                 Recommendation = GetRecommendation(c)
-            })
-            .ToList();
+            })];
     }
 
     private static ComplianceStatus DetermineComplianceStatus(OwaspCategorySummary category)

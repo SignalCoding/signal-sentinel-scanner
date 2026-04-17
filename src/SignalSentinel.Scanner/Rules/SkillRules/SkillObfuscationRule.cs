@@ -97,8 +97,7 @@ public sealed partial class SkillObfuscationRule : IRule
             foreach (var script in skill.Scripts)
             {
                 if (script.Content is null) continue;
-
-                foreach (var (id, name, pattern, severity, description) in ObfuscationPatterns.AllPatterns)
+                foreach (var (_, name, pattern, severity, description) in ObfuscationPatterns.AllPatterns)
                 {
                     if (InjectionPatterns.SafeIsMatch(pattern, script.Content))
                     {

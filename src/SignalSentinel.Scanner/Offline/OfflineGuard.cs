@@ -15,7 +15,11 @@ namespace SignalSentinel.Scanner.Offline;
 /// </summary>
 public static class OfflineGuard
 {
-    private static bool _offlineEnabled;
+    // Volatile ensures cross-thread visibility of offline-enforcement state.
+    // In production the flag is set once at program start, but marking it volatile
+    // provides defence in depth against reordering / caching in parallel code paths
+    // (for example, rule evaluation tasks that may be dispatched to the thread pool).
+    private static volatile bool _offlineEnabled;
 
     /// <summary>
     /// Whether offline mode is currently enforced for this process.

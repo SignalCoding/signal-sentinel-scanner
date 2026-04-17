@@ -44,7 +44,7 @@ public interface IRule
     /// <param name="cancellationToken">Token to cancel the evaluation.</param>
     /// <returns>List of findings from this rule.</returns>
     Task<IEnumerable<Finding>> EvaluateAsync(
-        ScanContext context, 
+        ScanContext context,
         CancellationToken cancellationToken = default);
 }
 
@@ -93,6 +93,6 @@ public sealed record PolicyConfiguration
     /// <summary>
     /// Custom severity overrides by rule ID.
     /// </summary>
-    public IReadOnlyDictionary<string, Severity> SeverityOverrides { get; init; } = 
+    public IReadOnlyDictionary<string, Severity> SeverityOverrides { get; init; } =
         new Dictionary<string, Severity>();
 }

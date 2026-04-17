@@ -132,7 +132,7 @@ public static class ConfigDiscovery
             var servers = new List<McpServerConfig>();
 
             // Check for mcpServers property (Claude Desktop, Cursor format)
-            if (root.TryGetProperty("mcpServers", out var mcpServers) && 
+            if (root.TryGetProperty("mcpServers", out var mcpServers) &&
                 mcpServers.ValueKind == JsonValueKind.Object)
             {
                 foreach (var server in mcpServers.EnumerateObject())
@@ -152,7 +152,7 @@ public static class ConfigDiscovery
             }
 
             // Check for servers array (alternative format)
-            if (root.TryGetProperty("servers", out var serversArray) && 
+            if (root.TryGetProperty("servers", out var serversArray) &&
                 serversArray.ValueKind == JsonValueKind.Array)
             {
                 foreach (var server in serversArray.EnumerateArray())
@@ -233,7 +233,7 @@ public static class ConfigDiscovery
             }
 
             // Security: Check for path traversal attempts
-            if (path.Contains("..") || 
+            if (path.Contains("..") ||
                 path.Contains('\0') ||
                 path.Contains('\r') ||
                 path.Contains('\n'))
@@ -268,7 +268,7 @@ public static class ConfigDiscovery
             }
 
             // Security: Remove control characters from name
-            name = new string(name.Where(c => !char.IsControl(c)).ToArray());
+            name = new string([.. name.Where(c => !char.IsControl(c))]);
 
             string? command = null;
             List<string>? args = null;
@@ -288,7 +288,7 @@ public static class ConfigDiscovery
                 }
             }
 
-            if (element.TryGetProperty("args", out var argsElement) && 
+            if (element.TryGetProperty("args", out var argsElement) &&
                 argsElement.ValueKind == JsonValueKind.Array)
             {
                 args = [];
@@ -317,7 +317,7 @@ public static class ConfigDiscovery
                 }
             }
 
-            if (element.TryGetProperty("env", out var envElement) && 
+            if (element.TryGetProperty("env", out var envElement) &&
                 envElement.ValueKind == JsonValueKind.Object)
             {
                 env = [];

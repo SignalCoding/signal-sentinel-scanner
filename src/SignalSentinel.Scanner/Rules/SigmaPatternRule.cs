@@ -14,22 +14,16 @@ namespace SignalSentinel.Scanner.Rules;
 /// Adapter that evaluates a single loaded <see cref="SigmaRule"/> as an <see cref="IRule"/>.
 /// Introduced in v2.2.0 to support Sigma YAML rule import via <c>--sigma-rules</c>.
 /// </summary>
-public sealed class SigmaPatternRule : IRule
+/// <remarks>
+/// Initialises a new instance of the <see cref="SigmaPatternRule"/> class.
+/// </remarks>
+/// <param name="rule">Parsed Sigma rule.</param>
+public sealed class SigmaPatternRule(SigmaRule rule) : IRule
 {
-    private readonly SigmaRule _rule;
-
-    /// <summary>
-    /// Initialises a new instance of the <see cref="SigmaPatternRule"/> class.
-    /// </summary>
-    /// <param name="rule">Parsed Sigma rule.</param>
-    public SigmaPatternRule(SigmaRule rule)
-    {
-        _rule = rule ?? throw new ArgumentNullException(nameof(rule));
-        Id = $"SIGMA-{rule.Id[..Math.Min(rule.Id.Length, 8)]}";
-    }
+    private readonly SigmaRule _rule = rule ?? throw new ArgumentNullException(nameof(rule));
 
     /// <inheritdoc />
-    public string Id { get; }
+    public string Id { get; } = $"SIGMA-{rule.Id[..Math.Min(rule.Id.Length, 8)]}";
 
     /// <inheritdoc />
     public string Name => _rule.Title;

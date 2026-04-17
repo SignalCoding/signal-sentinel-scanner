@@ -18,18 +18,13 @@ namespace SignalSentinel.Scanner.Rules;
 /// This rule consumes the <see cref="BaselineComparison"/> produced by <c>BaselineManager</c>.
 /// The rule emits no findings when no baseline is present (first scan) or when no mutations are detected.
 /// </remarks>
-public sealed class RugPullDetectionRule : IRule
+/// <remarks>
+/// Initialises a new instance of the <see cref="RugPullDetectionRule"/> class.
+/// </remarks>
+/// <param name="comparison">Baseline comparison produced by the scan pipeline.</param>
+public sealed class RugPullDetectionRule(BaselineComparison? comparison) : IRule
 {
-    private readonly BaselineComparison? _comparison;
-
-    /// <summary>
-    /// Initialises a new instance of the <see cref="RugPullDetectionRule"/> class.
-    /// </summary>
-    /// <param name="comparison">Baseline comparison produced by the scan pipeline.</param>
-    public RugPullDetectionRule(BaselineComparison? comparison)
-    {
-        _comparison = comparison;
-    }
+    private readonly BaselineComparison? _comparison = comparison;
 
     /// <inheritdoc />
     public string Id => RuleConstants.Rules.RugPullDetection;
