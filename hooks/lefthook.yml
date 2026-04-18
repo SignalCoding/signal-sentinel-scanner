@@ -1,0 +1,16 @@
+# Signal Sentinel Scanner - lefthook integration sample.
+# Copy into your consumer repo's lefthook.yml or merge with an existing config.
+# See https://github.com/evilmartians/lefthook for lefthook usage.
+
+pre-commit:
+  parallel: true
+  commands:
+    signal-sentinel:
+      glob: "Skills/**/*.{md,py,sh,ps1,js,ts}"
+      run: >-
+        sentinel-scan
+        --skills
+        --format sarif
+        --min-confidence 0.75
+        --fail-on high
+        --save-history

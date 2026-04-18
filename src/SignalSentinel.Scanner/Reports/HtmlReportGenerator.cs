@@ -57,10 +57,53 @@ public sealed class HtmlReportGenerator : IReportGenerator
         sb.AppendLine("      </div>");
         sb.AppendLine("      <div class=\"scan-meta\">");
         sb.AppendLine($"        <p><strong>Scan Date:</strong> {Encode(result.ScanTimestamp.ToString("yyyy-MM-dd HH:mm:ss"))} UTC</p>");
-        sb.AppendLine($"        <p><strong>Scanner Version:</strong> {Encode(result.ScannerVersion)}</p>");
+        sb.AppendLine($"        <p><strong>Scanner Version:</strong> {Encode(result.ScannerVersion)} (rubric v{Encode(result.RubricVersion)})</p>");
+        sb.AppendLine($"        <p><strong>Environment:</strong> {Encode(result.Environment)}</p>");
         sb.AppendLine($"        <p><strong>Duration:</strong> {result.Statistics.ScanDurationMs}ms</p>");
         sb.AppendLine("      </div>");
         sb.AppendLine("    </section>");
+
+        // v2.3.0 Scope disclosure
+        if (result.Scope is not null)
+        {
+            sb.AppendLine("    <section class=\"scope-section\">");
+            sb.AppendLine("      <h2>Scanner Scope</h2>");
+            sb.AppendLine("      <p class=\"scope-caveat\"><strong>Signal Sentinel is a first-pass authoring aid, not an audit tool.</strong> The items below declare exactly what was analysed. Complement with the listed third-party tools for defence in depth.</p>");
+            sb.AppendLine("      <div class=\"scope-grid\">");
+            if (result.Scope.Scanned.Count > 0)
+            {
+                sb.AppendLine("        <div class=\"scope-block\">");
+                sb.AppendLine("          <h4>Scanned</h4>");
+                sb.AppendLine("          <ul>");
+                foreach (var item in result.Scope.Scanned)
+                {
+                    sb.AppendLine($"            <li>{Encode(item)}</li>");
+                }
+                sb.AppendLine("          </ul>");
+                sb.AppendLine("        </div>");
+            }
+            if (result.Scope.NotScanned.Count > 0)
+            {
+                sb.AppendLine("        <div class=\"scope-block scope-warn\">");
+                sb.AppendLine("          <h4>Not scanned</h4>");
+                sb.AppendLine("          <ul>");
+                foreach (var item in result.Scope.NotScanned)
+                {
+                    sb.AppendLine($"            <li>{Encode(item)}</li>");
+                }
+                sb.AppendLine("          </ul>");
+                sb.AppendLine("        </div>");
+            }
+            if (result.Scope.ComplementaryTools.Count > 0)
+            {
+                sb.AppendLine("        <div class=\"scope-block\">");
+                sb.AppendLine("          <h4>Complement with</h4>");
+                sb.AppendLine("          <p>" + string.Join(", ", result.Scope.ComplementaryTools.Select(t => Encode(t))) + "</p>");
+                sb.AppendLine("        </div>");
+            }
+            sb.AppendLine("      </div>");
+            sb.AppendLine("    </section>");
+        }
 
         // Statistics
         sb.AppendLine("    <section>");
@@ -153,7 +196,28 @@ public sealed class HtmlReportGenerator : IReportGenerator
                 {
                     sb.AppendLine($" | <strong>Tool:</strong> {Encode(finding.ToolName)}");
                 }
-                sb.AppendLine($" | <strong>OWASP:</strong> {Encode(finding.OwaspCode)}</p>");
+                sb.AppendLine($" | <strong>OWASP ASI:</strong> {Encode(finding.OwaspCode)}");
+                if (finding.AstCodes.Count > 0)
+                {
+                    sb.AppendLine($" | <strong>OWASP AST:</strong> {Encode(string.Join(", ", finding.AstCodes))}");
+                }
+                if (finding.McpCode is not null)
+                {
+                    sb.AppendLine($" | <strong>MCP:</strong> {Encode(finding.McpCode)}");
+                }
+                if (finding.Confidence.HasValue)
+                {
+                    var conf = finding.Confidence.Value;
+                    var label = conf switch
+                    {
+                        >= 0.9 => "high",
+                        >= 0.7 => "medium",
+                        >= 0.5 => "candidate",
+                        _ => "weak"
+                    };
+                    sb.AppendLine($" | <strong>Confidence:</strong> <span class=\"conf-{label}\">{conf:P0} ({label})</span>");
+                }
+                sb.AppendLine("</p>");
                 sb.AppendLine($"        <p>{TruncateAndEncode(finding.Description, MaxDescriptionLength)}</p>");
                 sb.AppendLine($"        <p class=\"remediation\"><strong>Remediation:</strong> {TruncateAndEncode(finding.Remediation, MaxDescriptionLength)}</p>");
                 if (finding.Evidence is not null)
@@ -164,6 +228,33 @@ public sealed class HtmlReportGenerator : IReportGenerator
             }
         }
         sb.AppendLine("    </section>");
+
+        // v2.3.0 Accepted Risks audit table
+        if (result.SuppressedFindings.Count > 0)
+        {
+            sb.AppendLine("    <section class=\"accepted-risks\">");
+            sb.AppendLine("      <h2>Accepted Risks</h2>");
+            sb.AppendLine("      <p class=\"scope-caveat\">The findings below are explicitly accepted via <code>.sentinel-suppressions.json</code>. They are retained here for audit trail purposes and do not contribute to the active grade.</p>");
+            if (result.GradeWithoutSuppressions is not null && result.ScoreWithoutSuppressions is not null)
+            {
+                sb.AppendLine($"      <p class=\"debt-exposure\"><strong>Technical-debt exposure:</strong> if these {result.SuppressedFindings.Count} suppression(s) were removed, your grade would be <strong>{Encode(result.GradeWithoutSuppressions.ToString())} ({result.ScoreWithoutSuppressions}/100)</strong> instead of {Encode(result.Grade.ToString())} ({result.Score}/100).</p>");
+            }
+            sb.AppendLine("      <table class=\"compliance-table\">");
+            sb.AppendLine("        <thead><tr><th>Rule</th><th>Severity</th><th>Target</th><th>Justification</th><th>Approved By</th><th>Expires</th></tr></thead>");
+            sb.AppendLine("        <tbody>");
+            foreach (var f in result.SuppressedFindings)
+            {
+                var target = string.IsNullOrEmpty(f.ToolName)
+                    ? Encode(f.ServerName)
+                    : $"{Encode(f.ServerName)}:{Encode(f.ToolName)}";
+                var expires = f.Suppression?.ExpiresOn?.ToString("yyyy-MM-dd") ?? "-";
+                var expired = f.Suppression?.Expired == true ? " <span class=\"status-fail\">(expired)</span>" : string.Empty;
+                sb.AppendLine($"          <tr><td><code>{Encode(f.RuleId)}</code></td><td>{Encode(f.Severity.ToString())}</td><td>{target}</td><td>{TruncateAndEncode(f.Suppression?.Justification, MaxDescriptionLength)}</td><td>{Encode(f.Suppression?.ApprovedBy ?? "-")}</td><td>{Encode(expires)}{expired}</td></tr>");
+            }
+            sb.AppendLine("        </tbody>");
+            sb.AppendLine("      </table>");
+            sb.AppendLine("    </section>");
+        }
 
         sb.AppendLine("  </main>");
 
@@ -257,6 +348,19 @@ public sealed class HtmlReportGenerator : IReportGenerator
         .step { background: #fee2e2; padding: 0.25rem 0.75rem; border-radius: 4px; font-family: monospace; }
         code { background: #f3f4f6; padding: 0.125rem 0.375rem; border-radius: 4px; font-size: 0.875rem; word-break: break-all; }
         footer { text-align: center; padding: 2rem; color: #6b7280; font-size: 0.875rem; }
+        .scope-section { border-left: 4px solid #3b82f6; }
+        .scope-caveat { color: #4b5563; margin-bottom: 1rem; font-size: 0.95rem; }
+        .scope-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+        .scope-block { background: #f9fafb; padding: 0.75rem 1rem; border-radius: 6px; }
+        .scope-block.scope-warn { background: #fef3c7; }
+        .scope-block h4 { font-size: 0.9rem; color: #1e40af; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        .scope-block ul { list-style: disc; padding-left: 1.2rem; color: #374151; }
+        .accepted-risks { border-left: 4px solid #eab308; }
+        .debt-exposure { background: #fef3c7; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; color: #92400e; }
+        .conf-high { color: #166534; font-weight: 600; }
+        .conf-medium { color: #1e40af; font-weight: 600; }
+        .conf-candidate { color: #b45309; font-weight: 600; }
+        .conf-weak { color: #6b7280; font-style: italic; }
         @media (max-width: 640px) { .grade-section { flex-direction: column; text-align: center; } }
         """;
 }

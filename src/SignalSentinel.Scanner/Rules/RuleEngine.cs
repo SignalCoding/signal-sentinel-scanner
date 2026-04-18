@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using SignalSentinel.Core;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.Rules.SkillRules;
 
@@ -55,7 +56,10 @@ public sealed class RuleEngine
             // New MCP Rules (SS-019 to SS-021)
             new CredentialHygieneRule(),
             new OAuthComplianceRule(),
-            new PackageProvenanceRule()
+            new PackageProvenanceRule(),
+
+            // v2.3.0 informational
+            new NonMcpEndpointRule()
         };
 
         if (customRules is not null)
@@ -113,6 +117,55 @@ public sealed class RuleEngine
             }
         }
 
+        // v2.3.0 fix #21: when SS-INFO-001 fires on a server, drop MCP-protocol
+        // findings for that same server. The target is demonstrably not an MCP
+        // endpoint so MCP rules cannot meaningfully evaluate - firing them anyway
+        // would contradict the SS-INFO-001 finding text.
+        var nonMcpServers = findings
+            .Where(f => string.Equals(f.RuleId, RuleConstants.Rules.NonMcpEndpoint, StringComparison.Ordinal))
+            .Select(f => f.ServerName)
+            .Where(s => !string.IsNullOrEmpty(s))
+            .ToHashSet(StringComparer.Ordinal);
+
+        int droppedCount = 0;
+        if (nonMcpServers.Count > 0)
+        {
+            var filtered = new List<Finding>(findings.Count);
+            foreach (var f in findings)
+            {
+                if (nonMcpServers.Contains(f.ServerName)
+                    && RuleConstants.Rules.McpProtocolRules.Contains(f.RuleId))
+                {
+                    droppedCount++;
+                    Log($"  Dropping {f.RuleId} on {f.ServerName}: SS-INFO-001 already fired (non-MCP endpoint)");
+                    continue;
+                }
+                filtered.Add(f);
+            }
+            findings = filtered;
+
+            // Keep per-rule counts in sync with the filtered findings list so the
+            // rule-results dictionary doesn't mislead downstream reporters.
+            foreach (var ruleId in RuleConstants.Rules.McpProtocolRules)
+            {
+                if (!ruleResults.TryGetValue(ruleId, out var r) || r.Findings is null)
+                {
+                    continue;
+                }
+                var surviving = r.Findings
+                    .Where(f => !nonMcpServers.Contains(f.ServerName))
+                    .ToList();
+                if (surviving.Count != r.Findings.Count)
+                {
+                    ruleResults[ruleId] = r with
+                    {
+                        Findings = surviving,
+                        FindingsCount = surviving.Count
+                    };
+                }
+            }
+        }
+
         return new RuleEngineResult
         {
             Findings = findings,
@@ -120,7 +173,8 @@ public sealed class RuleEngine
             RuleResults = ruleResults,
             TotalRulesExecuted = _rules.Count,
             SuccessfulRules = ruleResults.Count(r => r.Value.Success),
-            TotalExecutionTimeMs = ruleResults.Values.Sum(r => r.ExecutionTimeMs)
+            TotalExecutionTimeMs = ruleResults.Values.Sum(r => r.ExecutionTimeMs),
+            NonMcpFindingsDropped = droppedCount
         };
     }
 
@@ -134,7 +188,15 @@ public sealed class RuleEngine
         try
         {
             var ruleFindings = await rule.EvaluateAsync(context, cancellationToken);
-            var findingsList = ruleFindings.ToList();
+
+            // v2.3.0: enrich findings with OWASP AST codes from the central mapping.
+            // Rules that already set AstCodes explicitly (e.g. SS-012) are preserved;
+            // rules without explicit codes inherit from their rule id mapping.
+            var findingsList = ruleFindings
+                .Select(f => f.AstCodes.Count > 0
+                    ? f
+                    : f with { AstCodes = RuleAstMapping.GetCodes(f.RuleId) })
+                .ToList();
             stopwatch.Stop();
 
             return new RuleExecutionResult
@@ -218,6 +280,12 @@ public sealed record RuleEngineResult
     /// Total execution time across all rules.
     /// </summary>
     public long TotalExecutionTimeMs { get; init; }
+
+    /// <summary>
+    /// v2.3.0: number of findings filtered out because SS-INFO-001 fired on the
+    /// same target (non-MCP endpoint). Emitted for diagnostics only.
+    /// </summary>
+    public int NonMcpFindingsDropped { get; init; }
 }
 
 /// <summary>

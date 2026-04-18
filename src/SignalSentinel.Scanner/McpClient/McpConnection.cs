@@ -182,6 +182,108 @@ public sealed class McpConnection : IAsyncDisposable
         return builder.Uri;
     }
 
+    /// <summary>
+    /// v2.3.0: classifies the first HTTP response from an alleged MCP endpoint.
+    /// Reads the body of an <see cref="HttpResponseMessage"/>, applies the non-MCP
+    /// endpoint detector, and only then validates the HTTP status code. The ordering
+    /// is deliberate: a React SPA hosted on a Traefik/nginx catch-all typically
+    /// returns 404 on POST to /mcp while its body still identifies the endpoint as
+    /// non-MCP (HTML / plain-text "Not Found"). Running the detector first ensures
+    /// SS-INFO-001 fires instead of an opaque HTTP 404 error.
+    /// </summary>
+    internal static async Task<string> ReadAndInspectHttpResponseAsync(
+        HttpResponseMessage response,
+        int maxBytes,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(response);
+
+        if (response.Content.Headers.ContentLength > maxBytes)
+        {
+            throw new InvalidOperationException("Response too large");
+        }
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (body.Length > maxBytes)
+        {
+            throw new InvalidOperationException("Response too large");
+        }
+
+        var contentType = response.Content.Headers.ContentType?.MediaType;
+        DetectAndThrowIfNotMcp(contentType, body);
+
+        response.EnsureSuccessStatusCode();
+
+        return body;
+    }
+
+    /// <summary>
+    /// Throws <see cref="NonMcpEndpointException"/> when the response is clearly
+    /// not a JSON-RPC 2.0 payload (e.g. React SPA catch-all serving text/html).
+    /// </summary>
+    internal static void DetectAndThrowIfNotMcp(string? contentType, string responseBody)
+    {
+        var snippet = BuildSnippet(responseBody);
+
+        // Heuristic 1: Content-Type is text/html or similar.
+        if (!string.IsNullOrEmpty(contentType))
+        {
+            var lower = contentType.ToLowerInvariant();
+            if (lower.Contains("text/html", StringComparison.Ordinal) ||
+                lower.Contains("application/xhtml+xml", StringComparison.Ordinal))
+            {
+                throw new NonMcpEndpointException(
+                    $"server returned {contentType}, not JSON-RPC",
+                    contentType,
+                    snippet);
+            }
+        }
+
+        // Heuristic 2: Response body begins with HTML markers.
+        if (!string.IsNullOrEmpty(responseBody))
+        {
+            var trimmed = responseBody.TrimStart();
+            if (trimmed.StartsWith("<!doctype", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.StartsWith("<html", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.StartsWith("<body", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new NonMcpEndpointException(
+                    "response body is HTML, not JSON-RPC",
+                    contentType,
+                    snippet);
+            }
+        }
+
+        // Heuristic 3: Response does not look like JSON at all.
+        if (!string.IsNullOrEmpty(responseBody))
+        {
+            var firstNonWhitespace = responseBody.TrimStart().FirstOrDefault();
+            if (firstNonWhitespace != '{' && firstNonWhitespace != '[')
+            {
+                throw new NonMcpEndpointException(
+                    "response body is not JSON",
+                    contentType,
+                    snippet);
+            }
+        }
+    }
+
+    private static string? BuildSnippet(string? body)
+    {
+        if (string.IsNullOrEmpty(body))
+        {
+            return null;
+        }
+        var snippet = body.Length <= 200 ? body : body[..200];
+        // Collapse control characters for safe display.
+        var chars = snippet
+            .Replace('\r', ' ')
+            .Replace('\n', ' ')
+            .Replace('\t', ' ');
+        return new string([.. chars.Where(c => !char.IsControl(c))]);
+    }
+
     private async Task StartProcessAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(_config.Command))
@@ -473,21 +575,7 @@ public sealed class McpConnection : IAsyncDisposable
         var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
         using var response = await _httpClient.PostAsync(uri, content, cancellationToken);
 
-        response.EnsureSuccessStatusCode();
-
-        // Security: Check content length before reading
-        if (response.Content.Headers.ContentLength > MaxResponseSizeBytes)
-        {
-            throw new InvalidOperationException("Response too large");
-        }
-
-        var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        // Security: Double-check after reading
-        if (responseJson.Length > MaxResponseSizeBytes)
-        {
-            throw new InvalidOperationException("Response too large");
-        }
+        var responseJson = await ReadAndInspectHttpResponseAsync(response, MaxResponseSizeBytes, cancellationToken);
 
         using var doc = JsonDocument.Parse(responseJson);
         var root = doc.RootElement;

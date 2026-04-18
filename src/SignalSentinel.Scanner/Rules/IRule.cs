@@ -38,6 +38,14 @@ public interface IRule
     bool EnabledByDefault { get; }
 
     /// <summary>
+    /// OWASP Agentic Skills Top 10 codes (AST01..AST10) that this rule maps to.
+    /// A rule may cover multiple AST categories. Default implementation returns an
+    /// empty list so existing rules remain compatible; v2.3+ rules are expected to
+    /// declare their AST mapping. See <see cref="SignalSentinel.Core.Models.OwaspAstCodes"/>.
+    /// </summary>
+    IReadOnlyList<string> AstCodes => [];
+
+    /// <summary>
     /// Evaluates the rule against enumerated server data.
     /// </summary>
     /// <param name="context">Scan context containing all enumerated servers.</param>

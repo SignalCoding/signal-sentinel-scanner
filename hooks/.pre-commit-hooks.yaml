@@ -1,0 +1,49 @@
+# Signal Sentinel Scanner - pre-commit.com hook definition
+#
+# Usage: in your consumer repo's .pre-commit-config.yaml add:
+#
+#   repos:
+#     - repo: https://github.com/SignalCoding/signal-sentinel-scanner
+#       rev: v2.3.0
+#       hooks:
+#         - id: signal-sentinel
+#
+# Requires: dotnet tool install -g SignalSentinel.Scanner
+# See https://github.com/SignalCoding/signal-sentinel-scanner for details.
+
+- id: signal-sentinel
+  name: Signal Sentinel Scanner
+  description: >-
+    First-pass security scan for Agent Skills and MCP server configs.
+    Blocks commits on Critical or High findings (tune via --fail-on).
+  entry: sentinel-scan
+  args:
+    - --skills
+    - --format
+    - sarif
+    - --min-confidence
+    - "0.75"
+    - --fail-on
+    - high
+  language: system
+  pass_filenames: false
+  files: '^(Skills/.*\.(md|py|sh|ps1|js|ts)|\.sentinel-suppressions\.json)$'
+  stages: [pre-commit]
+
+- id: signal-sentinel-triage
+  name: Signal Sentinel Scanner (triage mode - non-blocking)
+  description: >-
+    Runs Signal Sentinel in triage mode - low-confidence findings are demoted
+    rather than dropped. Never blocks commits; surfaces information only.
+  entry: sentinel-scan
+  args:
+    - --skills
+    - --format
+    - markdown
+    - --triage
+    - --fail-on
+    - critical
+  language: system
+  pass_filenames: false
+  files: '^Skills/.*\.(md|py|sh|ps1|js|ts)$'
+  stages: [pre-commit]

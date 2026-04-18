@@ -156,6 +156,24 @@ public sealed class ToolEnumerator(TimeSpan timeout, bool verbose = false, Actio
                 Log($"  Found {prompts.Count} prompts");
             }
         }
+        catch (NonMcpEndpointException ex)
+        {
+            // v2.3.0: endpoint reachable but not an MCP server. Capture evidence so
+            // SS-INFO-001 can surface an informational finding; do not treat this as
+            // a scan-time error.
+            Log($"  Non-MCP endpoint: {ex.ReasonText}");
+            result = result with
+            {
+                ConnectionSuccessful = false,
+                ConnectionError = $"Non-MCP endpoint: {ex.ReasonText}",
+                NonMcpEvidence = new NonMcpEndpointEvidence
+                {
+                    ContentType = ex.ContentType,
+                    BodySnippet = ex.BodySnippet,
+                    Reason = ex.ReasonText
+                }
+            };
+        }
         catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {
             // Security: Differentiate between user cancellation and timeout
@@ -327,4 +345,33 @@ public sealed record ServerEnumeration
     public IReadOnlyList<McpToolDefinition> Tools { get; init; } = [];
     public IReadOnlyList<McpResourceDefinition> Resources { get; init; } = [];
     public IReadOnlyList<McpPromptDefinition> Prompts { get; init; } = [];
+
+    /// <summary>
+    /// v2.3.0: populated when the scanner detects the remote endpoint is not an MCP
+    /// server at all (e.g. a React SPA returning <c>text/html</c> for every path).
+    /// </summary>
+    public NonMcpEndpointEvidence? NonMcpEvidence { get; init; }
+}
+
+/// <summary>
+/// Evidence captured when an endpoint responds with something that is clearly not an
+/// MCP transport (HTML, non-JSON-RPC body, etc.). Powers SS-INFO-001.
+/// </summary>
+public sealed record NonMcpEndpointEvidence
+{
+    /// <summary>
+    /// Content-Type header observed on the first response (e.g. "text/html; charset=utf-8").
+    /// </summary>
+    public string? ContentType { get; init; }
+
+    /// <summary>
+    /// First ~200 characters of the response body, used only for diagnostic display.
+    /// Already sanitised (control characters removed, newlines collapsed to spaces).
+    /// </summary>
+    public string? BodySnippet { get; init; }
+
+    /// <summary>
+    /// Short explanation of why this was classified as non-MCP.
+    /// </summary>
+    public string? Reason { get; init; }
 }

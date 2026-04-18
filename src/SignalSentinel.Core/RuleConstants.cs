@@ -59,6 +59,28 @@ public static class RuleConstants
         public const string ShadowToolInjection = "SS-023";
         public const string SkillIntegrityVerification = "SS-024";
         public const string ExcessiveToolResponse = "SS-025";
+
+        // v2.3.0 Informational rules
+        public const string NonMcpEndpoint = "SS-INFO-001";
+
+        /// <summary>
+        /// Rules that depend on successful MCP JSON-RPC protocol exchange with the
+        /// target server. When SS-INFO-001 fires on a server, these rules cannot
+        /// meaningfully evaluate and their findings for that server are dropped.
+        /// This matches the promise in the SS-INFO-001 finding text:
+        /// "MCP-protocol rules (SS-001..SS-010, SS-019..SS-025) cannot evaluate
+        /// and were skipped for this target."
+        /// </summary>
+        public static readonly System.Collections.Generic.IReadOnlySet<string> McpProtocolRules =
+            new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal)
+            {
+                ToolPoisoning, OverbroadPermissions, MissingAuthentication, SupplyChain,
+                CodeExecution, MemoryContextWrite, InterAgentProxy, SensitiveDataAccess,
+                ExcessiveDescription, CrossServerAttackPaths,
+                CredentialHygiene, OAuthCompliance, PackageProvenance,
+                RugPullDetection, ShadowToolInjection, SkillIntegrityVerification,
+                ExcessiveToolResponse
+            };
     }
 
     /// <summary>

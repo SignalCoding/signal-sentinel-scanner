@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+# Signal Sentinel Scanner - husky pre-commit hook.
+# Install instructions:
+#   npx husky add .husky/pre-commit "bash hooks/husky/pre-commit"
+# or copy this file into .husky/pre-commit directly.
+
+set -eu
+
+if ! command -v sentinel-scan >/dev/null 2>&1; then
+    echo "sentinel-scan not installed. Run: dotnet tool install -g SignalSentinel.Scanner"
+    echo "Skipping Signal Sentinel checks."
+    exit 0
+fi
+
+# Only run when there are staged changes that look like skill or config files.
+if git diff --cached --name-only | grep -Eq '^(Skills/|\.sentinel-suppressions\.json$|\.mcp/.*\.json$)'; then
+    sentinel-scan \
+        --skills \
+        --format sarif \
+        --min-confidence 0.75 \
+        --fail-on high
+fi

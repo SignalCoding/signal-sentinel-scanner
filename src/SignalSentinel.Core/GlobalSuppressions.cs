@@ -66,6 +66,12 @@ using System.Diagnostics.CodeAnalysis;
     Justification = "Returns URL string used in security reports, not for navigation",
     Scope = "member",
     Target = "~M:SignalSentinel.Core.Models.OwaspAsiCodes.GetDocumentationUrl(System.String)")]
+[assembly: SuppressMessage(
+    "Design",
+    "CA1055:URI-like return values should not be strings",
+    Justification = "Returns URL string used in security reports, not for navigation",
+    Scope = "member",
+    Target = "~M:SignalSentinel.Core.Models.OwaspAstCodes.GetDocumentationUrl(System.String)")]
 
 // CA1308: Use ToUpperInvariant — ToLowerInvariant is intentional in all cases below
 [assembly: SuppressMessage(
@@ -74,6 +80,12 @@ using System.Diagnostics.CodeAnalysis;
     Justification = "URL fragments require lowercase per convention",
     Scope = "member",
     Target = "~M:SignalSentinel.Core.Models.OwaspAsiCodes.GetDocumentationUrl(System.String)")]
+[assembly: SuppressMessage(
+    "Globalization",
+    "CA1308:Normalize strings to uppercase",
+    Justification = "URL fragments require lowercase per convention",
+    Scope = "member",
+    Target = "~M:SignalSentinel.Core.Models.OwaspAstCodes.GetDocumentationUrl(System.String)")]
 [assembly: SuppressMessage(
     "Globalization",
     "CA1308:Normalize strings to uppercase",

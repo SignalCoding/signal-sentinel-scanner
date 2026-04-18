@@ -3,10 +3,12 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![OWASP](https://img.shields.io/badge/OWASP-ASI%20Top%2010-green.svg)](https://owasp.org/www-project-agentic-ai-top-10/)
-[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/SignalCoding/signal-sentinel-scanner/releases)
+[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)](https://github.com/SignalCoding/signal-sentinel-scanner/releases)
 [![SARIF](https://img.shields.io/badge/SARIF-v2.1.0-orange.svg)](https://docs.oasis-open.org/sarif/sarif/v2.1.0/)
 
 **Signal Sentinel** is a security-first MCP (Model Context Protocol) and Agent Skill security product family, designed to address the critical security gap in the agentic AI ecosystem.
+
+> **Positioning:** Signal Sentinel Scanner is a fast, deterministic, offline-capable **first-pass authoring aid** for MCP operators and skill authors. It is not a substitute for a full runtime defence stack — pair it with Bandit, Gitleaks, Semgrep, and (for runtime) Sentinel Gateway / Enkrypt Skill Sentinel for defence in depth. Every report declares its scope explicitly in an "Scanner Scope" section.
 
 ## Products
 
@@ -18,7 +20,19 @@
 
 ## Signal Sentinel Scanner
 
-The Scanner is a command-line tool that audits MCP server configurations and Agent Skill packages for security vulnerabilities. It produces a scored report with OWASP ASI01-ASI10 + MCP01-MCP10 dual mapping and remediation guidance.
+The Scanner is a command-line tool that audits MCP server configurations and Agent Skill packages for security vulnerabilities. It produces a scored report with OWASP ASI01-ASI10 + AST01-AST10 + MCP01-MCP10 triple mapping and remediation guidance.
+
+### What's new in v2.3.0
+
+- `.sentinel-suppressions.json` — accept specific findings with a justification, approver and expiry; retained in every report format for audit.
+- `--min-confidence <f>` and `--triage` — confidence-aware filtering; see [docs/confidence-rubric.md](docs/confidence-rubric.md).
+- `sentinel-scan diff <baseline.json> <current.json>` — resolved / new / grade-attribution deltas between runs.
+- `--save-history`, `--environment`, `--complementary-tools` — per-environment scoping + explicit scope disclosure in reports.
+- `SS-INFO-001` non-MCP endpoint detection — no more misleading "Grade A" against a React SPA. When it fires, every MCP-protocol rule (SS-001..SS-010, SS-019..SS-025) is automatically suppressed for that target so the report is internally consistent.
+- Case-insensitive, lemma-aware `SS-012` — eliminates mechanical false positives from "Network" vs "network access". Lemma table now covers `disk`, `volume`, `mount`, `/proc`, `/sys`, `/dev`, `procfs`, `sysfs` as filesystem synonyms.
+- YAML `capabilities:` block is **authoritative** for SS-012. Declare `capabilities: [read-filesystem, shell_command_execution, network]` in a skill's frontmatter and SS-012 will trust it over prose-based heuristics.
+- Suppressed scans now display a **technical-debt exposure banner**: "if these N suppression(s) were removed, your grade would be X (Y/100) instead of Z (W/100)" — no hidden risk behind a green grade.
+- Pre-commit hook integrations for [pre-commit.com](https://pre-commit.com), [lefthook](https://github.com/evilmartians/lefthook) and [husky](https://typicode.github.io/husky/) under [`hooks/`](hooks/).
 
 ### Installation
 
@@ -209,7 +223,7 @@ signal-sentinel/
       Scoring/                       # OWASP dual mapping and severity scoring
       Reports/                       # JSON, Markdown, HTML, SARIF v2.1.0 report generators
   tests/
-    SignalSentinel.Scanner.Tests/    # Unit and integration tests (195 tests)
+    SignalSentinel.Scanner.Tests/    # Unit and integration tests (254 tests)
   deploy/
     docker/                          # Multi-arch Docker container
   .github/

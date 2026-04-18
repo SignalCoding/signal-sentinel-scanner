@@ -98,6 +98,54 @@ public sealed record Finding
     /// when the same (RuleId, ServerName, Evidence) triple is detected multiple times.
     /// </summary>
     public int OccurrenceCount { get; init; } = 1;
+
+    /// <summary>
+    /// OWASP Agentic Skills Top 10 codes (AST01..AST10) applicable to this finding.
+    /// Empty when the rule has no AST mapping declared. A finding may map to multiple
+    /// AST categories (e.g. AST01 Malicious Skills + AST03 Over-Privileged).
+    /// </summary>
+    public IReadOnlyList<string> AstCodes { get; init; } = [];
+
+    /// <summary>
+    /// When non-null, this finding has been suppressed by a <c>.sentinel-suppressions.json</c>
+    /// entry and should not contribute to the active grade. The metadata is retained on
+    /// the report (under a separate "Accepted risks" section) for audit trail.
+    /// </summary>
+    public SuppressionMetadata? Suppression { get; init; }
+}
+
+/// <summary>
+/// Metadata attached to a finding when it has been matched by a suppression rule.
+/// </summary>
+public sealed record SuppressionMetadata
+{
+    /// <summary>
+    /// Human-readable justification for accepting the finding as risk.
+    /// </summary>
+    public required string Justification { get; init; }
+
+    /// <summary>
+    /// Identifier of the person who approved the suppression (e-mail, GitHub handle,
+    /// Active Directory account, etc.).
+    /// </summary>
+    public string? ApprovedBy { get; init; }
+
+    /// <summary>
+    /// Date the suppression was approved (UTC).
+    /// </summary>
+    public DateTimeOffset? ApprovedOn { get; init; }
+
+    /// <summary>
+    /// Date the suppression expires (UTC). Beyond this date the suppression is ignored
+    /// and the finding is re-emitted with an "[SUPPRESSION EXPIRED]" banner.
+    /// </summary>
+    public DateTimeOffset? ExpiresOn { get; init; }
+
+    /// <summary>
+    /// True when the suppression has passed its <see cref="ExpiresOn"/> date and is no
+    /// longer honoured.
+    /// </summary>
+    public bool Expired { get; init; }
 }
 
 /// <summary>

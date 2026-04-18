@@ -3,9 +3,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <PackageId>SignalSentinel.Scanner</PackageId>
-    <Version>2.2.0</Version>
-    <Description>CLI security scanner for MCP server configurations AND Agent Skill packages. Detects prompt injection, tool poisoning, credential exposure, data exfiltration, supply chain vulnerabilities, rug-pull schema mutations, shadow tool injection, and skill integrity issues. 25 security rules aligned with OWASP Agentic AI Top 10 + OWASP MCP Top 10. Supports stdio, HTTP/SSE, WebSocket transports, SKILL.md scanning, SARIF output, Sigma rule import, and verified offline operation.</Description>
-    <PackageTags>mcp;security;scanner;ai-agents;owasp;agentic-ai;cli;dotnet-tool;websocket;agent-skills;skill-scanning;sarif;sigma;rug-pull;offline</PackageTags>
+    <Version>2.3.0</Version>
+    <Description>Fast, deterministic, offline-capable first-pass security aid for MCP servers and Agent Skill authors. 26 security rules aligned with OWASP Agentic AI Top 10 (ASI) and OWASP Agentic Skills Top 10 (AST). v2.3 adds: .sentinel-suppressions.json for accepted-risk management, confidence-aware triage (--min-confidence / --triage), scan history and diff (sentinel-scan diff), non-MCP endpoint detection (SS-INFO-001), per-environment scoping, explicit scope disclosure in every report, and pre-commit hook integrations.</Description>
+    <PackageTags>mcp;security;scanner;ai-agents;owasp;agentic-ai;cli;dotnet-tool;websocket;agent-skills;skill-scanning;sarif;sigma;suppressions;ast;triage;pre-commit</PackageTags>
     
     <!-- Enable as global dotnet tool -->
     <PackAsTool>true</PackAsTool>
@@ -19,6 +19,23 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- <PackageIcon>icon.png</PackageIcon> -->
     <PackageReleaseNotes>
+v2.3.0 - Triage, Suppressions, Scope Disclosure, Non-MCP Detection
+- NEW: .sentinel-suppressions.json schema v1.0 - formally accept risk on specific findings, with justification, approver, expiry. Retained in JSON/SARIF/Markdown/HTML for audit trail under an "Accepted Risks" section.
+- NEW: SS-INFO-001 Non-MCP Endpoint Detected - surfaces an informational finding when --remote is pointed at a host that does not implement MCP (e.g. React SPA catch-all returning text/html). No more misleading "Grade A" against web apps.
+- NEW: Confidence-aware triage - --min-confidence &lt;f&gt; filters low-confidence findings; --triage demotes them to Low but keeps them visible; --fail-on &lt;severity&gt; replaces legacy pass/fail semantics.
+- NEW: Scan history + delta - --save-history persists runs to .sentinel/history; sentinel-scan diff &lt;baseline.json&gt; &lt;current.json&gt; shows resolved / new / grade-attribution deltas.
+- NEW: Per-environment scoping - --environment &lt;dev|staging|prod&gt;, suppressions can scope to an environment.
+- NEW: OWASP Agentic Skills Top 10 (AST01..AST10) mapping on every finding - SARIF tags + Markdown/HTML headers show both ASI and AST codes.
+- NEW: Explicit scope disclosure block on every report - tells users what was scanned, what was not, and which complementary tools to combine with (Bandit, Gitleaks, Semgrep, Enkrypt Skill Sentinel by default).
+- NEW: --list-rules prints the rule registry with OWASP/AST/severity columns.
+- NEW: --ignore-rule SS-xxx[,SS-yyy] for ephemeral per-run exclusions.
+- IMPROVED: SS-012 now uses case-insensitive capability matching plus a lemma table ("Network" satisfies "network access", "filesystem" satisfies "filesystem access" etc.) - eliminates mechanical false positives from capitalised sentence starts.
+- IMPROVED: 26 total rules (was 25); 240 tests; 0 warnings, 0 errors.
+- FIX: Non-MCP endpoint detection now runs before HTTP status validation - SS-INFO-001 fires even when the SPA catch-all returns 4xx/5xx with HTML or plain-text bodies.
+- FIX: ScanHistoryManager now deserialises lowercase enum strings in v2.2 JSON baselines so `sentinel-scan diff` works across the 2.2 -> 2.3 boundary.
+- POSITIONING: README and report language softened towards "fast, deterministic, first-pass authoring aid" - full positioning reset lands in v3.0.0.
+- BREAKING: None. Scoring rubric unchanged; CI gates from v2.2 continue to work. Grade-semantics reset is scheduled for v3.0.0 (see ROADMAP_V3.0.md).
+
 v2.2.0 - Rug Pull Detection, SARIF, Sigma Rules, Offline Mode
 - NEW: SS-022 Rug Pull Detection - catches silent tool schema mutations between scans via hashed baselines
 - NEW: SS-023 Shadow Tool Injection - typosquat/Levenshtein detection across configured servers
@@ -103,6 +120,10 @@ v1.0.0 - Initial Release
 
   <ItemGroup>
     <ProjectReference Include="..\SignalSentinel.Core\SignalSentinel.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="SignalSentinel.Scanner.Tests" />
   </ItemGroup>
 
   <!-- SourceLink for GitHub -->

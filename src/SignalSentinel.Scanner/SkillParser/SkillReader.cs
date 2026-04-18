@@ -68,7 +68,7 @@ public static class SkillReader
         var extraFields = new Dictionary<string, string>();
         var knownKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "name", "description", "context", "agent"
+            "name", "description", "context", "agent", "capabilities"
         };
 
         foreach (var kvp in parsed.Fields)
@@ -116,7 +116,8 @@ public static class SkillReader
             IsProjectLevel = isProjectLevel,
             Scripts = scripts,
             AdditionalFiles = additionalFiles,
-            ExtraFrontmatter = extraFields
+            ExtraFrontmatter = extraFields,
+            Capabilities = parsed.GetListField("capabilities")
         };
     }
 

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
 using SignalSentinel.Core.Models;
@@ -6,12 +7,15 @@ using SignalSentinel.Core.RuleFormats;
 using SignalSentinel.Scanner.Baseline;
 using SignalSentinel.Scanner.Config;
 using SignalSentinel.Scanner.Dedup;
+using SignalSentinel.Scanner.History;
 using SignalSentinel.Scanner.McpClient;
 using SignalSentinel.Scanner.Offline;
 using SignalSentinel.Scanner.Reports;
 using SignalSentinel.Scanner.Rules;
 using SignalSentinel.Scanner.Scoring;
 using SignalSentinel.Scanner.SkillParser;
+using SignalSentinel.Scanner.Suppressions;
+using SignalSentinel.Scanner.Triage;
 
 namespace SignalSentinel.Scanner;
 
@@ -21,7 +25,8 @@ namespace SignalSentinel.Scanner;
 /// </summary>
 public static class Program
 {
-    private const string Version = "2.2.0";
+    private const string Version = "2.3.0";
+    private const string RubricVersion = "1.0";
 
     // Security: Limits for input validation
     private const int MaxPathLength = 4096;
@@ -175,6 +180,124 @@ public static class Program
                             return null;
                         }
                         config = config with { SigmaRulesPath = path };
+                    }
+                    break;
+
+                case "--suppressions":
+                    if (i + 1 < args.Length)
+                    {
+                        var path = args[++i];
+                        if (!ValidatePath(path, ".json"))
+                        {
+                            Console.Error.WriteLine("Error: Invalid suppressions path");
+                            return null;
+                        }
+                        config = config with { SuppressionsPath = path };
+                    }
+                    break;
+
+                case "--ignore-rule":
+                    if (i + 1 < args.Length)
+                    {
+                        var raw = args[++i];
+                        var ids = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        foreach (var id in ids)
+                        {
+                            if (!Regex.IsMatch(id, @"^SS-(INFO-)?\d{3}$", RegexOptions.None, TimeSpan.FromMilliseconds(100)))
+                            {
+                                Console.Error.WriteLine($"Error: Invalid rule id: {SanitizeForDisplay(id)}");
+                                return null;
+                            }
+                        }
+                        config = config with { IgnoredRules = ids };
+                    }
+                    break;
+
+                case "--fail-on":
+                    if (i + 1 < args.Length)
+                    {
+                        var token = args[++i].ToLowerInvariant();
+                        var severity = token switch
+                        {
+                            "critical" => (Severity?)Severity.Critical,
+                            "high" => Severity.High,
+                            "medium" => Severity.Medium,
+                            "low" => Severity.Low,
+                            "info" => Severity.Info,
+                            _ => null
+                        };
+                        if (severity is null)
+                        {
+                            Console.Error.WriteLine("Error: --fail-on expects one of: critical, high, medium, low, info");
+                            return null;
+                        }
+                        config = config with { FailOn = severity };
+                    }
+                    break;
+
+                case "--min-confidence":
+                    if (i + 1 < args.Length)
+                    {
+                        if (!double.TryParse(args[++i], NumberStyles.Float, CultureInfo.InvariantCulture, out var conf)
+                            || conf is < 0 or > 1)
+                        {
+                            Console.Error.WriteLine("Error: --min-confidence expects a value in [0, 1]");
+                            return null;
+                        }
+                        config = config with { MinConfidence = conf };
+                    }
+                    break;
+
+                case "--triage":
+                    config = config with { Triage = true };
+                    break;
+
+                case "--save-history":
+                    config = config with { SaveHistory = true };
+                    break;
+
+                case "--environment":
+                    if (i + 1 < args.Length)
+                    {
+                        var env = args[++i];
+                        if (!Regex.IsMatch(env, @"^[A-Za-z0-9_\-]{1,32}$", RegexOptions.None, TimeSpan.FromMilliseconds(100)))
+                        {
+                            Console.Error.WriteLine("Error: --environment must be alphanumeric (max 32 chars)");
+                            return null;
+                        }
+                        config = config with { Environment = env };
+                    }
+                    break;
+
+                case "--complementary-tools":
+                    if (i + 1 < args.Length)
+                    {
+                        var raw = args[++i];
+                        var tools = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        config = config with { ComplementaryTools = tools };
+                    }
+                    break;
+
+                case "--list-rules":
+                    config = config with { ListRules = true };
+                    break;
+
+                case "--diff":
+                    if (i + 2 < args.Length)
+                    {
+                        var baselinePath = args[++i];
+                        var currentPath = args[++i];
+                        if (!ValidatePath(baselinePath, ".json") || !ValidatePath(currentPath, ".json"))
+                        {
+                            Console.Error.WriteLine("Error: --diff requires two valid .json scan report paths");
+                            return null;
+                        }
+                        config = config with { DiffBaselinePath = baselinePath, DiffCurrentPath = currentPath };
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine("Error: --diff requires <baseline.json> <current.json>");
+                        return null;
                     }
                     break;
 
@@ -445,26 +568,46 @@ public static class Program
     private static void PrintUsage()
     {
         Console.WriteLine($"""
-            Signal Sentinel Scanner v{Version}
-            MCP & Agent Skill Security Audit Tool - OWASP Agentic AI Top 10 Compliant
+            Signal Sentinel Scanner v{Version} (rubric v{RubricVersion})
+            Fast, deterministic, offline-capable first-pass security aid for
+            MCP servers and Agent Skill authors. OWASP ASI/AST Top 10 aligned.
             
             USAGE:
                 sentinel-scan [OPTIONS]
+                sentinel-scan --list-rules
+                sentinel-scan --diff <baseline.json> <current.json> [-o <out>]
             
-            OPTIONS:
+            SCAN TARGETS:
                 -c, --config <path>     Path to MCP configuration file
                 -r, --remote <url>      Remote MCP server URL (http/https/ws/wss)
                 -d, --discover          Auto-discover MCP configurations
                 -s, --skills [path]     Scan Agent Skills (auto-discover or specify path)
+            
+            OUTPUT:
                 -f, --format <format>   Output format: json, markdown, html, sarif (default: markdown)
                 -o, --output <path>     Output file path (defaults to stdout)
+                    --save-history      Persist run under .sentinel/history/<iso>.json
+            
+            v2.3.0 TRIAGE & ACCEPTED RISK:
+                    --suppressions <p>  Suppressions file (default: ./.sentinel-suppressions.json)
+                    --ignore-rule <ids> Comma-separated rule ids to drop (no justification)
+                    --min-confidence <f> Drop findings below confidence [0..1]
+                    --triage            Demote low-confidence findings to 'low' (keeps them visible)
+                    --fail-on <sev>     Exit 1 at/above severity: critical|high|medium|low|info
+                    --environment <e>   Environment label ("dev"/"staging"/"prod"/custom)
+                    --complementary-tools <csv>  Tools listed in the scope-disclosure block
+            
+            BASELINES & CUSTOM RULES:
                     --baseline <path>   Compare against baseline file (creates if missing)
                     --update-baseline   Regenerate baseline file from current scan
                     --offline           Enforce zero network egress (refuses --remote)
                     --sigma-rules <p>   Load Sigma YAML rules from file or directory
-                    --ci                CI mode - exit code 1 on critical/high findings
+            
+            LEGACY / MISC:
+                    --ci                Legacy CI mode (equivalent to --fail-on high)
                 -v, --verbose           Enable verbose output
                 -t, --timeout <sec>     Connection timeout in seconds (default: 30, max: 300)
+                    --list-rules        Print every registered rule (id/owasp/ast) and exit
                 -h, --help              Show this help message
                     --version           Show version information
             
@@ -501,15 +644,18 @@ public static class Program
                 SS-025  Excessive Tool Response Size (ASI06)
             
             SKILL SECURITY RULES:
-                SS-011  Skill Prompt Injection (ASI01)
-                SS-012  Skill Scope Violation (ASI02)
-                SS-013  Skill Credential Access (ASI03)
-                SS-014  Skill Data Exfiltration (ASI09)
-                SS-015  Skill Obfuscation (ASI01)
-                SS-016  Skill Script Payload (ASI05)
-                SS-017  Skill Excessive Permissions (ASI02)
-                SS-018  Skill Hidden Content (ASI01)
-                SS-024  Skill Integrity Verification (ASI04)
+                SS-011  Skill Prompt Injection (ASI01, AST01/AST04)
+                SS-012  Skill Scope Violation (ASI02, AST03)
+                SS-013  Skill Credential Access (ASI03, AST01)
+                SS-014  Skill Data Exfiltration (ASI09, AST01/AST03)
+                SS-015  Skill Obfuscation (ASI01, AST04)
+                SS-016  Skill Script Payload (ASI05, AST01/AST05)
+                SS-017  Skill Excessive Permissions (ASI02, AST03)
+                SS-018  Skill Hidden Content (ASI01, AST04)
+                SS-024  Skill Integrity Verification (ASI04, AST02/AST07)
+            
+            INFORMATIONAL:
+                SS-INFO-001  Non-MCP Endpoint Detected (ASI10, AST08)
             
             For more information: https://github.com/SignalCoding/signal-sentinel-scanner
             Report security issues: security@signalcoding.co.uk
@@ -533,6 +679,19 @@ public static class Program
         {
             Log($"Signal Sentinel Scanner v{Version}");
             Log("================================");
+
+            // v2.3.0: list-rules (early exit, no scan performed)
+            if (config.ListRules)
+            {
+                PrintRuleList();
+                return 0;
+            }
+
+            // v2.3.0: diff subcommand
+            if (config.DiffBaselinePath is not null && config.DiffCurrentPath is not null)
+            {
+                return await RunDiffAsync(config, cancellationToken);
+            }
 
             // Enforce offline mode as early as possible
             if (config.Offline)
@@ -686,6 +845,65 @@ public static class Program
                 Log($"Deduplicated {collapsedCount} redundant finding(s).");
             }
             ruleResult = ruleResult with { Findings = deduplicated };
+
+            // v2.3.0: drop findings from ignored rules (ephemeral, no justification).
+            if (config.IgnoredRules.Count > 0)
+            {
+                var ignored = new HashSet<string>(config.IgnoredRules, StringComparer.Ordinal);
+                var before = ruleResult.Findings.Count;
+                var kept = ruleResult.Findings.Where(f => !ignored.Contains(f.RuleId)).ToList();
+                if (kept.Count != before)
+                {
+                    Log($"Dropped {before - kept.Count} finding(s) per --ignore-rule");
+                }
+                ruleResult = ruleResult with { Findings = kept };
+            }
+
+            // v2.3.0: confidence-based triage / filtering.
+            var triaged = ConfidenceFilter.Apply(ruleResult.Findings, config.MinConfidence, config.Triage);
+            if (triaged.Count != ruleResult.Findings.Count)
+            {
+                Log($"Confidence filter: dropped {ruleResult.Findings.Count - triaged.Count} finding(s) below {config.MinConfidence:F2}");
+            }
+            ruleResult = ruleResult with { Findings = triaged };
+
+            // v2.3.0: apply suppression file (accepted risks)
+            var suppressionPath = config.SuppressionsPath
+                ?? (File.Exists(".sentinel-suppressions.json") ? ".sentinel-suppressions.json" : null);
+            var suppressedFindings = new List<Finding>();
+            if (suppressionPath is not null)
+            {
+                var file = await SuppressionManager.LoadAsync(suppressionPath, cancellationToken);
+                if (file is null)
+                {
+                    Log($"Suppressions file not found: {SanitizeForDisplay(suppressionPath)}");
+                }
+                else
+                {
+                    Log($"Loaded {file.Suppressions.Count} suppression(s) from {SanitizeForDisplay(suppressionPath)}");
+                    var annotated = SuppressionManager.Apply(ruleResult.Findings, file, config.Environment, DateTimeOffset.UtcNow);
+                    // Split active vs suppressed (expired suppressions stay active with banner).
+                    var active = new List<Finding>();
+                    foreach (var f in annotated)
+                    {
+                        if (f.Suppression is not null && !f.Suppression.Expired)
+                        {
+                            suppressedFindings.Add(f);
+                        }
+                        else if (f.Suppression is not null && f.Suppression.Expired)
+                        {
+                            active.Add(f with { Title = "[SUPPRESSION EXPIRED] " + f.Title });
+                        }
+                        else
+                        {
+                            active.Add(f);
+                        }
+                    }
+                    ruleResult = ruleResult with { Findings = active };
+                    Log($"Accepted {suppressedFindings.Count} finding(s) via suppression; {active.Count} active");
+                }
+            }
+
             Log($"Found {ruleResult.Findings.Count} finding(s), {ruleResult.AttackPaths.Count} attack path(s)");
 
             // Save/update baseline if requested
@@ -697,6 +915,21 @@ public static class Program
 
             // Calculate grade
             var (grade, score) = SeverityScorer.CalculateGrade(ruleResult.Findings, ruleResult.AttackPaths);
+
+            // v2.3.0 fix (Section 0.4): compute the counter-factual grade with
+            // every suppression removed so reports can show technical-debt
+            // exposure alongside the operational grade.
+            SecurityGrade? gradeWithoutSupp = null;
+            int? scoreWithoutSupp = null;
+            if (suppressedFindings.Count > 0)
+            {
+                var combined = new List<Finding>(ruleResult.Findings.Count + suppressedFindings.Count);
+                combined.AddRange(ruleResult.Findings);
+                combined.AddRange(suppressedFindings);
+                var (g, s) = SeverityScorer.CalculateGrade(combined, ruleResult.AttackPaths);
+                gradeWithoutSupp = g;
+                scoreWithoutSupp = s;
+            }
 
             // Build result
             stopwatch.Stop();
@@ -744,8 +977,28 @@ public static class Program
                     TotalSkills = allSkills.Count,
                     TotalScripts = allSkills.Sum(s => s.Scripts.Count),
                     ScanDurationMs = stopwatch.ElapsedMilliseconds
-                }
+                },
+                Environment = config.Environment,
+                RubricVersion = RubricVersion,
+                SuppressedFindings = suppressedFindings,
+                GradeWithoutSuppressions = gradeWithoutSupp,
+                ScoreWithoutSuppressions = scoreWithoutSupp,
+                Scope = BuildScanScope(config, serverEnumerations.Count > 0, allSkills.Count > 0)
             };
+
+            // v2.3.0: persist scan history if requested.
+            if (config.SaveHistory)
+            {
+                try
+                {
+                    var historyPath = await ScanHistoryManager.SaveAsync(result, cancellationToken: cancellationToken);
+                    Log($"Scan history saved: {SanitizeForDisplay(historyPath)}");
+                }
+                catch (Exception ex)
+                {
+                    Log($"Warning: could not save scan history: {SanitizeErrorMessage(ex.Message)}");
+                }
+            }
 
             // Generate report
             IReportGenerator generator = config.OutputFormat switch
@@ -771,12 +1024,17 @@ public static class Program
                 Console.WriteLine(report);
             }
 
-            // CI mode exit code
-            if (config.CiMode)
+            // v2.3.0: --fail-on wins over legacy --ci when both are set.
+            var failThreshold = config.FailOn
+                ?? (config.CiMode ? Severity.High : (Severity?)null);
+
+            if (failThreshold is not null)
             {
-                if (result.Statistics.CriticalFindings > 0 || result.Statistics.HighFindings > 0)
+                var breached = result.Findings.Any(f => f.Severity >= failThreshold.Value);
+                if (breached)
                 {
-                    Log($"CI mode: Exiting with code 1 (Critical: {result.Statistics.CriticalFindings}, High: {result.Statistics.HighFindings})");
+                    var worst = result.Findings.Max(f => f.Severity);
+                    Log($"Exit 1: finding at or above --fail-on {failThreshold.Value.ToString().ToLowerInvariant()} (worst = {worst})");
                     return 1;
                 }
             }
@@ -797,5 +1055,122 @@ public static class Program
             }
             return 2;
         }
+    }
+
+    // v2.3.0 helpers ---------------------------------------------------------
+
+    private static ScanScope BuildScanScope(ScanConfig config, bool hasServers, bool hasSkills)
+    {
+        var scanned = new List<string>();
+        var notScanned = new List<string>();
+
+        if (hasServers)
+        {
+            scanned.Add("MCP server configurations");
+            scanned.Add("Tool/resource/prompt schemas returned by tools/list");
+        }
+        if (hasSkills)
+        {
+            scanned.Add("SKILL.md files (frontmatter + body)");
+            scanned.Add("Bundled skill scripts (.py, .sh, .js, .ps1) - surface scan");
+            scanned.Add("Skill signature artefacts (.sentinel-sig, SHA256SUMS)");
+        }
+
+        notScanned.Add("Transitive third-party dependencies (use Bandit / Gitleaks / Trivy)");
+        notScanned.Add("Runtime behaviour of skills or MCP tools (static scan only)");
+        notScanned.Add("Content referenced by external URLs (not fetched)");
+        if (!hasServers)
+        {
+            notScanned.Add("MCP server protocol surface (no --remote / --discover / --config supplied)");
+        }
+        if (!hasSkills)
+        {
+            notScanned.Add("Agent skills (no --skills supplied)");
+        }
+
+        return new ScanScope
+        {
+            Scanned = scanned,
+            NotScanned = notScanned,
+            ComplementaryTools = config.ComplementaryTools
+        };
+    }
+
+    private static void PrintRuleList()
+    {
+        Console.WriteLine("Signal Sentinel Rule Registry");
+        Console.WriteLine("RuleId       | OWASP ASI | OWASP AST            | Name");
+        Console.WriteLine(new string('-', 80));
+
+        var engine = new Rules.RuleEngine();
+        foreach (var rule in engine.Rules.OrderBy(r => r.Id, StringComparer.Ordinal))
+        {
+            var astCodes = rule.AstCodes.Count > 0
+                ? string.Join(",", rule.AstCodes)
+                : string.Join(",", RuleAstMapping.GetCodes(rule.Id));
+            if (string.IsNullOrEmpty(astCodes)) { astCodes = "-"; }
+            Console.WriteLine($"{rule.Id,-12} | {rule.OwaspCode,-9} | {astCodes,-20} | {rule.Name}");
+        }
+    }
+
+    private static async Task<int> RunDiffAsync(ScanConfig config, CancellationToken cancellationToken)
+    {
+        var baseline = await ScanHistoryManager.LoadAsync(config.DiffBaselinePath!, cancellationToken);
+        var current = await ScanHistoryManager.LoadAsync(config.DiffCurrentPath!, cancellationToken);
+        var diff = ScanDiffer.Compute(baseline, current);
+
+        var buffer = new System.Text.StringBuilder();
+        buffer.AppendLine("# Scan Diff Report");
+        buffer.AppendLine();
+        buffer.AppendLine($"- Baseline: {config.DiffBaselinePath}  (scanner v{baseline.ScannerVersion}, {baseline.ScanTimestamp:o})");
+        buffer.AppendLine($"- Current:  {config.DiffCurrentPath}  (scanner v{current.ScannerVersion}, {current.ScanTimestamp:o})");
+        buffer.AppendLine();
+        buffer.AppendLine($"**Grade**: {diff.BaselineGrade} ({diff.BaselineScore}/100) -> {diff.CurrentGrade} ({diff.CurrentScore}/100)");
+        buffer.AppendLine();
+        buffer.AppendLine($"**Resolved**: {diff.Resolved.Count} | **New**: {diff.Added.Count} | **Unchanged**: {diff.Unchanged.Count}");
+        buffer.AppendLine();
+        if (diff.Resolved.Count > 0)
+        {
+            buffer.AppendLine("## Resolved since baseline");
+            foreach (var f in diff.Resolved)
+            {
+                buffer.AppendLine($"- [FIXED] {f.RuleId} {f.Severity} [{f.ServerName}] {f.Title}");
+            }
+            buffer.AppendLine();
+        }
+        if (diff.Added.Count > 0)
+        {
+            buffer.AppendLine("## New since baseline");
+            foreach (var f in diff.Added)
+            {
+                buffer.AppendLine($"- [NEW]   {f.RuleId} {f.Severity} [{f.ServerName}] {f.Title}");
+            }
+            buffer.AppendLine();
+        }
+        if (diff.ResolvedContribution.Count > 0 || diff.AddedContribution.Count > 0)
+        {
+            buffer.AppendLine("## Grade delta attribution");
+            foreach (var (rule, points) in diff.ResolvedContribution.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+            {
+                buffer.AppendLine($"- {rule}: +{points} (resolved)");
+            }
+            foreach (var (rule, points) in diff.AddedContribution.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+            {
+                buffer.AppendLine($"- {rule}: {points} (new)");
+            }
+        }
+
+        var text = buffer.ToString();
+        if (config.OutputPath is not null)
+        {
+            var full = Path.GetFullPath(config.OutputPath);
+            await File.WriteAllTextAsync(full, text, cancellationToken);
+            Console.WriteLine($"Diff report written to: {full}");
+        }
+        else
+        {
+            Console.WriteLine(text);
+        }
+        return 0;
     }
 }

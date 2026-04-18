@@ -62,3 +62,67 @@ public static class OwaspAsiCodes
         return $"https://owasp.org/www-project-agentic-ai-top-10/#{code.ToLowerInvariant()}";
     }
 }
+
+/// <summary>
+/// OWASP Agentic Skills Top 10 (2026) risk codes (AST01..AST10).
+/// Rules may map to one or more AST categories via <see cref="Finding.AstCodes"/>.
+/// </summary>
+public static class OwaspAstCodes
+{
+    /// <summary>AST01: Malicious Skills - Skill contains a deliberately harmful payload.</summary>
+    public const string AST01 = "AST01";
+
+    /// <summary>AST02: Supply Chain - Skill dependencies are unverified, unpinned, or compromised.</summary>
+    public const string AST02 = "AST02";
+
+    /// <summary>AST03: Over-Privileged - Skill declares or uses broader capabilities than necessary.</summary>
+    public const string AST03 = "AST03";
+
+    /// <summary>AST04: Insecure Metadata - Metadata (description, tags) is inaccurate or contains hidden content.</summary>
+    public const string AST04 = "AST04";
+
+    /// <summary>AST05: Unsafe Deserialisation - Skill uses unsafe YAML/JSON/pickle/etc. loaders.</summary>
+    public const string AST05 = "AST05";
+
+    /// <summary>AST06: Weak Isolation - Skill escapes intended sandbox (shell, network, filesystem).</summary>
+    public const string AST06 = "AST06";
+
+    /// <summary>AST07: Update Drift - Skill integrity cannot be verified across updates.</summary>
+    public const string AST07 = "AST07";
+
+    /// <summary>AST08: Poor Scanning - Sole reliance on a single scanner or regex-only analysis.</summary>
+    public const string AST08 = "AST08";
+
+    /// <summary>AST09: No Governance - No change-management, ownership, or review process for skills.</summary>
+    public const string AST09 = "AST09";
+
+    /// <summary>AST10: Cross-Platform Reuse - Skill mixes incompatible platform semantics unsafely.</summary>
+    public const string AST10 = "AST10";
+
+    /// <summary>
+    /// Gets the short label for an AST code.
+    /// </summary>
+    public static string GetLabel(string code) => code switch
+    {
+        AST01 => "Malicious Skills",
+        AST02 => "Supply Chain",
+        AST03 => "Over-Privileged",
+        AST04 => "Insecure Metadata",
+        AST05 => "Unsafe Deserialisation",
+        AST06 => "Weak Isolation",
+        AST07 => "Update Drift",
+        AST08 => "Poor Scanning",
+        AST09 => "No Governance",
+        AST10 => "Cross-Platform Reuse",
+        _ => "Unknown AST code"
+    };
+
+    /// <summary>
+    /// Gets the documentation URL for an AST code.
+    /// </summary>
+    public static string GetDocumentationUrl(string code)
+    {
+        ArgumentNullException.ThrowIfNull(code);
+        return $"https://owasp.org/www-project-agentic-skills-top-10/#{code.ToLowerInvariant()}";
+    }
+}

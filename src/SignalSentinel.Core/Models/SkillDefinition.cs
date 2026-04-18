@@ -79,6 +79,15 @@ public sealed record SkillDefinition
     /// </summary>
     public IReadOnlyDictionary<string, string> ExtraFrontmatter { get; init; } =
         ImmutableDictionary<string, string>.Empty;
+
+    /// <summary>
+    /// v2.3.0: capabilities declared in the <c>capabilities:</c> frontmatter
+    /// key. Supports inline form (<c>capabilities: [read-filesystem, network]</c>)
+    /// and block form (newline-separated <c>- read-filesystem</c> entries).
+    /// When non-empty, SS-012 treats this list as authoritative and only fires
+    /// on capabilities not declared here.
+    /// </summary>
+    public IReadOnlyList<string> Capabilities { get; init; } = [];
 }
 
 /// <summary>

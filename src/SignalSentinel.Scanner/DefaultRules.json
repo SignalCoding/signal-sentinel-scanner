@@ -1,5 +1,6 @@
 {
-  "version": "2.2.0",
+  "version": "2.3.0",
+  "rubricVersion": "1.0",
   "rules": [
     {
       "id": "SS-001",
@@ -175,6 +176,14 @@
       "owaspCode": "ASI06",
       "enabled": true,
       "severity": "dynamic"
+    },
+    {
+      "id": "SS-INFO-001",
+      "name": "Non-MCP Endpoint Detected",
+      "owaspCode": "ASI10",
+      "astCodes": ["AST08"],
+      "enabled": true,
+      "severity": "info"
     }
   ]
 }

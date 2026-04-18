@@ -32,8 +32,37 @@ public sealed class MarkdownReportGenerator : IReportGenerator
         sb.AppendLine("# Signal Sentinel Security Scan Report");
         sb.AppendLine();
         sb.AppendLine($"**Scan Date:** {result.ScanTimestamp:yyyy-MM-dd HH:mm:ss} UTC");
-        sb.AppendLine($"**Scanner Version:** {result.ScannerVersion}");
+        sb.AppendLine($"**Scanner Version:** {result.ScannerVersion} (rubric v{result.RubricVersion})");
+        sb.AppendLine($"**Environment:** {SanitizeMarkdown(result.Environment)}");
         sb.AppendLine();
+
+        // v2.3.0 scope disclosure - tells users what was and was not scanned.
+        if (result.Scope is not null)
+        {
+            sb.AppendLine("## Scanner Scope");
+            sb.AppendLine();
+            sb.AppendLine("> **Signal Sentinel is a first-pass authoring aid, not an audit tool.** ");
+            sb.AppendLine("> The items below declare exactly what was analysed. Complement with the");
+            sb.AppendLine("> listed third-party tools for defence in depth.");
+            sb.AppendLine();
+            if (result.Scope.Scanned.Count > 0)
+            {
+                sb.AppendLine("**Scanned:**");
+                foreach (var item in result.Scope.Scanned) sb.AppendLine($"- {SanitizeMarkdown(item)}");
+                sb.AppendLine();
+            }
+            if (result.Scope.NotScanned.Count > 0)
+            {
+                sb.AppendLine("**Not scanned:**");
+                foreach (var item in result.Scope.NotScanned) sb.AppendLine($"- {SanitizeMarkdown(item)}");
+                sb.AppendLine();
+            }
+            if (result.Scope.ComplementaryTools.Count > 0)
+            {
+                sb.AppendLine("**Complement with:** " + string.Join(", ", result.Scope.ComplementaryTools.Select(t => SanitizeMarkdown(t))));
+                sb.AppendLine();
+            }
+        }
 
         // Grade Summary
         sb.AppendLine("## Security Grade");
@@ -234,14 +263,26 @@ public sealed class MarkdownReportGenerator : IReportGenerator
                 {
                     sb.AppendLine($"- **Tool:** {SanitizeMarkdown(finding.ToolName)}");
                 }
-                sb.AppendLine($"- **OWASP:** {finding.OwaspCode}");
+                sb.AppendLine($"- **OWASP ASI:** {finding.OwaspCode}");
+                if (finding.AstCodes.Count > 0)
+                {
+                    sb.AppendLine($"- **OWASP AST:** {string.Join(", ", finding.AstCodes)}");
+                }
                 if (finding.McpCode is not null)
                 {
                     sb.AppendLine($"- **MCP Code:** {finding.McpCode}");
                 }
                 if (finding.Confidence.HasValue)
                 {
-                    sb.AppendLine($"- **Confidence:** {finding.Confidence:P0}");
+                    var conf = finding.Confidence.Value;
+                    var label = conf switch
+                    {
+                        >= 0.9 => "high",
+                        >= 0.7 => "medium",
+                        >= 0.5 => "candidate",
+                        _ => "weak"
+                    };
+                    sb.AppendLine($"- **Confidence:** {conf:P0} ({label})");
                 }
                 sb.AppendLine();
                 sb.AppendLine($"**Description:** {SanitizeMarkdown(finding.Description)}");
@@ -254,6 +295,32 @@ public sealed class MarkdownReportGenerator : IReportGenerator
                 }
                 sb.AppendLine();
             }
+        }
+
+        // v2.3.0 Accepted Risks section - suppressed findings retained for audit.
+        if (result.SuppressedFindings.Count > 0)
+        {
+            sb.AppendLine("## Accepted Risks");
+            sb.AppendLine();
+            sb.AppendLine("The following findings have been explicitly accepted via `.sentinel-suppressions.json`.");
+            sb.AppendLine("They are retained here for audit trail purposes and do not contribute to the active grade.");
+            sb.AppendLine();
+            if (result.GradeWithoutSuppressions is not null && result.ScoreWithoutSuppressions is not null)
+            {
+                sb.AppendLine($"> **Technical-debt exposure:** if these {result.SuppressedFindings.Count} suppression(s) were removed, your grade would be **{result.GradeWithoutSuppressions} ({result.ScoreWithoutSuppressions}/100)** instead of {result.Grade} ({result.Score}/100).");
+                sb.AppendLine();
+            }
+            sb.AppendLine("| Rule | Severity | Target | Justification | Approved By | Expires |");
+            sb.AppendLine("|------|----------|--------|---------------|-------------|---------|");
+            foreach (var f in result.SuppressedFindings)
+            {
+                var target = string.IsNullOrEmpty(f.ToolName)
+                    ? SanitizeMarkdown(f.ServerName)
+                    : $"{SanitizeMarkdown(f.ServerName)}:{SanitizeMarkdown(f.ToolName)}";
+                var expires = f.Suppression?.ExpiresOn?.ToString("yyyy-MM-dd") ?? "-";
+                sb.AppendLine($"| {f.RuleId} | {f.Severity} | {target} | {SanitizeMarkdown(f.Suppression?.Justification ?? "")} | {SanitizeMarkdown(f.Suppression?.ApprovedBy ?? "-")} | {expires} |");
+            }
+            sb.AppendLine();
         }
 
         // Footer

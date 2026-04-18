@@ -49,6 +49,63 @@ public sealed record ScanResult
     /// Skill scan summaries (empty if skill scanning was not performed).
     /// </summary>
     public IReadOnlyList<SkillScanSummary> Skills { get; init; } = [];
+
+    /// <summary>
+    /// v2.3.0: environment label ("dev", "staging", "prod", "default").
+    /// </summary>
+    public string Environment { get; init; } = "default";
+
+    /// <summary>
+    /// v2.3.0: scoring rubric version used to compute <see cref="Grade"/>. Stable across
+    /// minor v2.x releases; changes trigger a major version bump.
+    /// </summary>
+    public string RubricVersion { get; init; } = "1.0";
+
+    /// <summary>
+    /// v2.3.0: explicit scope disclosure. Tells users what was and was not scanned.
+    /// </summary>
+    public ScanScope? Scope { get; init; }
+
+    /// <summary>
+    /// v2.3.0: suppressed findings retained separately for audit (accepted risks).
+    /// </summary>
+    public IReadOnlyList<Finding> SuppressedFindings { get; init; } = [];
+
+    /// <summary>
+    /// v2.3.0 fix (Section 0.4): what <see cref="Grade"/> would be if every
+    /// suppression were removed. Null when there are no suppressions; otherwise
+    /// lets reports show technical-debt exposure at a glance.
+    /// </summary>
+    public SecurityGrade? GradeWithoutSuppressions { get; init; }
+
+    /// <summary>
+    /// v2.3.0 fix (Section 0.4): what <see cref="Score"/> would be if every
+    /// suppression were removed. Null when there are no suppressions.
+    /// </summary>
+    public int? ScoreWithoutSuppressions { get; init; }
+}
+
+/// <summary>
+/// v2.3.0: explicit disclosure of what the scanner did and did not analyse. Surfaced
+/// in every report format so users do not over-trust a clean report.
+/// </summary>
+public sealed record ScanScope
+{
+    /// <summary>
+    /// What the scanner analysed (e.g. "SKILL.md", "YAML frontmatter", "bundled scripts surface").
+    /// </summary>
+    public IReadOnlyList<string> Scanned { get; init; } = [];
+
+    /// <summary>
+    /// What the scanner did not analyse (e.g. "transitive Python dependencies",
+    /// "runtime behaviour").
+    /// </summary>
+    public IReadOnlyList<string> NotScanned { get; init; } = [];
+
+    /// <summary>
+    /// Complementary tools recommended by the operator (e.g. Bandit, Gitleaks, Semgrep).
+    /// </summary>
+    public IReadOnlyList<string> ComplementaryTools { get; init; } = [];
 }
 
 /// <summary>

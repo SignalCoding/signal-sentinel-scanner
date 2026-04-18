@@ -68,7 +68,10 @@ public sealed class SarifReportGenerator : IReportGenerator
                         ["securityScore"] = result.Score,
                         ["scanTimestamp"] = result.ScanTimestamp.ToString("o"),
                         ["totalServers"] = result.Statistics.TotalServers,
-                        ["totalSkills"] = result.Statistics.TotalSkills
+                        ["totalSkills"] = result.Statistics.TotalSkills,
+                        ["rubricVersion"] = result.RubricVersion,
+                        ["environment"] = result.Environment,
+                        ["scope"] = result.Scope
                     }
                 }
             ]
@@ -89,6 +92,7 @@ public sealed class SarifReportGenerator : IReportGenerator
             }
 
             var tags = new List<string> { finding.OwaspCode };
+            tags.AddRange(finding.AstCodes);
             if (!string.IsNullOrEmpty(finding.McpCode))
             {
                 tags.Add(finding.McpCode);
@@ -168,7 +172,8 @@ public sealed class SarifReportGenerator : IReportGenerator
                     ["severity"] = finding.Severity.ToString(),
                     ["confidence"] = finding.Confidence,
                     ["occurrenceCount"] = finding.OccurrenceCount,
-                    ["evidence"] = finding.Evidence
+                    ["evidence"] = finding.Evidence,
+                    ["astCodes"] = finding.AstCodes
                 }
             };
 

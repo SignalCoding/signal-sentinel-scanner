@@ -106,4 +106,94 @@ public sealed record FrontmatterResult
 
     public string? GetField(string key) =>
         Fields.TryGetValue(key, out var value) ? value : null;
+
+    /// <summary>
+    /// v2.3.0: parses a list-valued frontmatter field. Supports both inline
+    /// form (<c>key: [a, "b", c]</c>) and block form
+    /// (<c>key:\n  - a\n  - b</c>). Returns an empty list if the field is
+    /// absent or cannot be parsed. Items are stripped of quotes and
+    /// whitespace; empty items are dropped.
+    /// </summary>
+    public IReadOnlyList<string> GetListField(string key)
+    {
+        // Block form first: scanning RawFrontmatter is authoritative because
+        // the inline YAML KV regex can spill across newlines when the block
+        // form is used.
+        if (RawFrontmatter is not null)
+        {
+            var blockItems = ParseBlockList(RawFrontmatter, key);
+            if (blockItems.Count > 0)
+            {
+                return blockItems;
+            }
+        }
+
+        if (!Fields.TryGetValue(key, out var value) || string.IsNullOrWhiteSpace(value))
+        {
+            return System.Array.Empty<string>();
+        }
+
+        // Inline form: [a, b, "c"]  (our KV regex already trimmed to 'a, b, "c"'
+        // but may have retained the brackets - strip defensively).
+        var trimmed = value.Trim().TrimStart('[').TrimEnd(']');
+        var items = trimmed
+            .Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)
+            .Select(s => s.Trim().Trim('"', '\''))
+            .Where(s => s.Length > 0)
+            .ToList();
+
+        return items;
+    }
+
+    private static List<string> ParseBlockList(string frontmatter, string key)
+    {
+        var lines = frontmatter.Split('\n');
+        var result = new List<string>();
+        bool inBlock = false;
+
+        foreach (var raw in lines)
+        {
+            var line = raw.TrimEnd('\r');
+
+            if (!inBlock)
+            {
+                var trimmedStart = line.TrimStart();
+                if (trimmedStart.StartsWith(key + ":", System.StringComparison.OrdinalIgnoreCase)
+                    && string.IsNullOrWhiteSpace(trimmedStart[(key.Length + 1)..]))
+                {
+                    inBlock = true;
+                }
+                continue;
+            }
+
+            if (line.Length > 0 && !char.IsWhiteSpace(line[0]))
+            {
+                // New top-level key - block ended.
+                break;
+            }
+
+            var itemLine = line.TrimStart();
+            if (!itemLine.StartsWith('-'))
+            {
+                if (string.IsNullOrWhiteSpace(itemLine))
+                {
+                    continue;
+                }
+                break;
+            }
+
+            var item = itemLine[1..].Trim().Trim('"', '\'');
+            if (item.Length > 0)
+            {
+                result.Add(item);
+            }
+
+            if (result.Count > 64)
+            {
+                break;
+            }
+        }
+
+        return result;
+    }
 }
