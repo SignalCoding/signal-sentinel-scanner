@@ -35,7 +35,7 @@
 
   <!-- YAML parsing for Sigma rule import (MIT licensed) -->
   <ItemGroup>
-    <PackageReference Include="YamlDotNet" Version="16.3.0" />
+    <PackageReference Include="YamlDotNet" Version="17.1.0" />
   </ItemGroup>
 
 </Project>
