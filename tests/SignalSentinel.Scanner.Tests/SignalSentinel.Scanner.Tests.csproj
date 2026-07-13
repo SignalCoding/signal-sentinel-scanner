@@ -29,7 +29,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Shouldly" Version="4.*" />
-    <PackageReference Include="NSubstitute" Version="5.*" />
+    <PackageReference Include="NSubstitute" Version="6.*" />
   </ItemGroup>
 
 </Project>
