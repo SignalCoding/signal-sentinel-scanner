@@ -25,7 +25,13 @@ namespace SignalSentinel.Scanner;
 /// </summary>
 public static class Program
 {
-    private const string Version = "2.4.0";
+    // v2.5.0: derived from the assembly version (itself driven by the .csproj
+    // <Version> property) instead of a hardcoded literal, so this can no longer
+    // drift out of sync with the package version across releases the way it did
+    // through v2.4.0/v2.4.1/v2.5.0 (this constant was stuck at "2.4.0" while the
+    // .csproj moved to 2.5.0).
+    private static readonly string Version =
+        typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
     private const string RubricVersion = "1.0";
 
     // Security: Limits for input validation
@@ -716,6 +722,7 @@ public static class Program
             
             INFORMATIONAL:
                 SS-INFO-001  Non-MCP Endpoint Detected (ASI10, AST08)
+                SS-INFO-002  Non-Public Scan Target (ASI03)
                 SS-INFO-003  Untrusted Server Certificate (ASI10, AST08)
                 SS-INFO-004  Legacy MCP Protocol / Transport (ASI04, AST08)
             

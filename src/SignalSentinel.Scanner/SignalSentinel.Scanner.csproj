@@ -19,6 +19,29 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- <PackageIcon>icon.png</PackageIcon> -->
     <PackageReleaseNotes>
+v2.5.0 - MCP 2026-07-28 Currency, SkillJacking Detection, Universal Skill Format Fields
+- NOTE: first public release since v2.3.0 - v2.4.0 and v2.4.1 were completed but never pushed/tagged; this changelog folds all three releases' changes together so there is no public gap.
+- NEW: SS-INFO-004 Legacy MCP Protocol / Transport - flags servers negotiating a protocolVersion older than the current MCP specification (2026-07-28), or reached over the deprecated legacy HTTP+SSE transport. Informational currency notice, not a vulnerability, ahead of the spec's 12-month deprecation window.
+- NEW: SS-020 OAuth Compliance extended with an advisory finding disclosing that the behavioural auth probe confirms Bearer enforcement but cannot verify RFC 9207 issuer validation or the DCR-to-CIMD migration introduced by the 2026-07-28 spec.
+- NEW: SS-029 Skill Unpinned Dependency Reference - detects skill instructions or bundled scripts referencing a GitHub dependency by a floating branch (main/master/head/develop/dev/latest/trunk) or an unpinned git+https:// install URL instead of a pinned tag/release/commit SHA. Pulls the core "SkillJacking" supply-chain detection forward from the v3.0 roadmap.
+- NEW: Universal Skill Format risk_tier recognition on SS-017 - a low-declared risk tier contradicted by observed dangerous capabilities produces a High "Risk Tier Understated" finding; an undeclared risk_tier with the same signals produces an Info nudge.
+- NEW: Universal Skill Format permissions.deny_write recognition on SS-028 - escalates High to Critical when the identity file written to is also listed in the skill's own deny_write declaration (self-contradiction).
+- FIX: FrontmatterParser dotted-key regex (network.allow, permissions.deny_write) silently failed to parse from real SKILL.md files; the rule logic consuming these fields was already correct, the parser simply never fed it the data.
+- QUALITY: 32 total rules (was 27); 422 tests (was 395); 0 warnings, 0 errors.
+- COMPATIBILITY: No operator-visible breaks. New fields are additive: SkillDefinition.DenyWrite (empty list when undeclared), SecurityGrade.Inconclusive.
+
+v2.4.1 - Credibility Fixes: Grading, TLS Classification, Skill Identity Persistence
+- NEW: Inconclusive grade for scans with zero scannable surface (zero servers, zero skills), replacing a misleading Grade A.
+- NEW: SS-INFO-003 Untrusted Server Certificate - distinguishes a TLS handshake failing on certificate validation from a generic connectivity failure, with operator-actionable remediation text.
+- NEW: SS-028 Skill Identity/Memory File Write Access - detects skills that write to agent identity/memory files (AGENTS.md, CLAUDE.md, MEMORY.md, SOUL.md), the persistence technique behind the ClawHavoc malicious-skill campaign (Jan-Feb 2026, 1,184 malicious skills).
+- UPGRADED: SS-INFO-001 also fires on 404-without-JSON-RPC responses (not just HTML-200); the auth probe no longer emits a finding when the probe itself failed to complete.
+- UPGRADED: SS-026 extended to evaluate skill frontmatter descriptions and body text, not just MCP tool descriptions.
+- UPGRADED: SS-024 recognises inline signature/content_hash frontmatter for integrity verification; SS-017 recognises a boolean network: grant as strictly worse than a declared network.allow domain allowlist.
+- NEW: Canonical skill identity (SkillDefinition.CanonicalSkillName, Finding.CanonicalSkillName) so SuppressionManager and ScopeManager can no longer disagree about which skill a rule fired on.
+- NEW: ScanResult.SuppressionDelta and ScanStatistics.ServersProbed scan-statistics additions.
+- FIX: corrected the OWASP Agentic Skills Top 10 AST05 label to match the real published taxonomy ("Untrusted External Instructions", not the previously invented "Unsafe Deserialisation").
+- QUALITY: 27 total rules (unchanged); 395 tests (up from 366).
+
 v2.4.0 - Context-Aware Detection, Behavioural Probes and Orchestrator-Agnostic Scope
 - NEW: Orchestrator-agnostic scope model - a `.sentinel-scope.json` file (schema v1.0) and matching CLI flags `--scope`, `--include-skills`, `--exclude-skills`, `--include-servers`, `--exclude-servers` let you declare which skills and MCP servers are live attack surface at your orchestrator. Out-of-scope findings are tagged "dormant" and retained in every report format for audit trail, but do not contribute to the grade. The scanner does not parse orchestrator-native config files of any vendor - any orchestrator, CI pipeline, or human can produce the scope file.
 - NEW: Shared `InjectionPatterns` library tightened (SS-001 Tool Poisoning + SS-011 Skill Injection + SS-014 Skill Exfiltration). `InstructionInjection` now requires canonical prompt-injection phrasing (override-intent verbs + target noun; IMPORTANT: labels; role-hijack phrases; SYSTEM PROMPT: markers) rather than bare modal verbs (MUST / ALWAYS / IMPORTANT). `DataExfiltration` now requires an outbound verb paired with a data-object and a `to / via / through` target, or a network fetcher within 80 characters of an explicit `https?://` URL. `PrivilegeEscalation` now requires a canonical escalation verb or a pinned noun phrase, eliminating false positives on bare words `privilege` and `elevate`.
