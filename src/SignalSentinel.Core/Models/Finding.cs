@@ -112,6 +112,28 @@ public sealed record Finding
     /// the report (under a separate "Accepted risks" section) for audit trail.
     /// </summary>
     public SuppressionMetadata? Suppression { get; init; }
+
+    /// <summary>
+    /// v2.4.0 (G7): scope classification. When set to "dormant" the finding was raised
+    /// against a skill/server that is not in scope per the loaded <c>.sentinel-scope.json</c>
+    /// file (or the CLI --include/--exclude flags). Dormant findings are retained in
+    /// reports for audit trail, demoted to <see cref="Severity.Info"/> by the grading
+    /// algorithm, and surfaced under a "Dormant (not attack surface)" section in
+    /// Markdown/HTML. Null when the finding is in scope or when no scope was configured.
+    /// </summary>
+    public string? Scope { get; init; }
+
+    /// <summary>
+    /// v2.4.1 (G11): stable skill identity, distinct from <see cref="ServerName"/> (which
+    /// historically doubles as "skill name" for skill-sourced findings and reflects
+    /// whatever the frontmatter <c>name:</c> happened to say). Populated by
+    /// <c>RuleEngine</c> for every skill-sourced finding as the skill's normalised
+    /// frontmatter name, falling back to its containing directory name when frontmatter
+    /// has no <c>name:</c>. The suppression manager and scope manager both match against
+    /// this field so suppression files and scope files can never disagree about which
+    /// skill a rule fired on. Null for MCP-sourced findings.
+    /// </summary>
+    public string? CanonicalSkillName { get; init; }
 }
 
 /// <summary>

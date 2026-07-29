@@ -149,6 +149,26 @@ public sealed record ScanConfig
     /// reads from this file instead of performing a scan. Required by the <c>diff</c> subcommand.
     /// </summary>
     public string? DiffCurrentPath { get; init; }
+
+    // v2.4.0 (G7) additions
+
+    /// <summary>
+    /// Optional path to a <c>.sentinel-scope.json</c> file declaring which skills and MCP
+    /// servers are in scope. Defaults to <c>./.sentinel-scope.json</c> when present.
+    /// </summary>
+    public string? ScopePath { get; init; }
+
+    /// <summary>CLI-supplied skill-include allowlist. Overrides any file-sourced include list.</summary>
+    public IReadOnlyList<string> IncludeSkills { get; init; } = [];
+
+    /// <summary>CLI-supplied skill-exclude denylist. Overrides any file-sourced exclude list.</summary>
+    public IReadOnlyList<string> ExcludeSkills { get; init; } = [];
+
+    /// <summary>CLI-supplied server-include allowlist.</summary>
+    public IReadOnlyList<string> IncludeServers { get; init; } = [];
+
+    /// <summary>CLI-supplied server-exclude denylist.</summary>
+    public IReadOnlyList<string> ExcludeServers { get; init; } = [];
 }
 
 /// <summary>

@@ -17,6 +17,7 @@ public sealed class McpConnection : IAsyncDisposable
     private readonly TimeSpan _timeout;
     private Process? _process;
     private HttpClient? _httpClient;
+    private string? _mcpSessionId;
     private ClientWebSocket? _webSocket;
     private int _requestId;
     private bool _disposed;
@@ -90,6 +91,23 @@ public sealed class McpConnection : IAsyncDisposable
 
             // Security: Add user agent for identification
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentString);
+
+            // MCP 2025-06-18 Streamable HTTP transport requires clients to accept
+            // both JSON responses and SSE streams. Omitting these caused 406 from
+            // spec-compliant servers (e.g. ModelContextProtocol.AspNetCore).
+            _httpClient.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+            _httpClient.DefaultRequestHeaders.Accept.ParseAdd("text/event-stream");
+
+            // Apply operator-supplied custom headers (e.g. Authorization: Bearer).
+            // Sensitive; never logged. CRLF/control chars filtered at config-parse time.
+            if (_config.Headers is not null)
+            {
+                foreach (var kv in _config.Headers)
+                {
+                    // TryAddWithoutValidation permits Authorization + other typically-restricted headers.
+                    _httpClient.DefaultRequestHeaders.TryAddWithoutValidation(kv.Key, kv.Value);
+                }
+            }
         }
 
         return await InitializeAsync(cancellationToken);
@@ -142,6 +160,15 @@ public sealed class McpConnection : IAsyncDisposable
 
         // Security: Set user agent
         _webSocket.Options.SetRequestHeader("User-Agent", UserAgentString);
+
+        // Apply operator-supplied custom headers (e.g. Authorization: Bearer).
+        if (_config.Headers is not null)
+        {
+            foreach (var kv in _config.Headers)
+            {
+                _webSocket.Options.SetRequestHeader(kv.Key, kv.Value);
+            }
+        }
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(_timeout);
@@ -211,7 +238,17 @@ public sealed class McpConnection : IAsyncDisposable
         }
 
         var contentType = response.Content.Headers.ContentType?.MediaType;
-        DetectAndThrowIfNotMcp(contentType, body);
+
+        // MCP 2025-06-18 Streamable HTTP transport responds either with
+        // application/json (immediate) or text/event-stream (SSE framed).
+        // Unwrap SSE framing into raw JSON so callers see a uniform payload.
+        if (!string.IsNullOrEmpty(contentType) &&
+            contentType.Contains("text/event-stream", StringComparison.OrdinalIgnoreCase))
+        {
+            body = ExtractJsonFromServerSentEvents(body);
+        }
+
+        DetectAndThrowIfNotMcp(contentType, body, (int)response.StatusCode);
 
         response.EnsureSuccessStatusCode();
 
@@ -219,10 +256,56 @@ public sealed class McpConnection : IAsyncDisposable
     }
 
     /// <summary>
+    /// Extracts the JSON payload from a minimal Server-Sent Events stream
+    /// produced by MCP Streamable HTTP transports. Concatenates all
+    /// <c>data:</c> lines belonging to the first message (per SSE spec,
+    /// multi-line data values are joined with newlines).
+    /// </summary>
+    internal static string ExtractJsonFromServerSentEvents(string body)
+    {
+        if (string.IsNullOrEmpty(body))
+        {
+            return body;
+        }
+
+        var lines = body.Split('\n');
+        var dataParts = new List<string>(lines.Length);
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine.TrimEnd('\r');
+            // Blank line terminates the current SSE event; once we've collected
+            // data for one event, stop so we return only the first frame.
+            if (string.IsNullOrEmpty(line))
+            {
+                if (dataParts.Count > 0)
+                {
+                    break;
+                }
+                continue;
+            }
+            if (line.StartsWith("data:", StringComparison.Ordinal))
+            {
+                // Per SSE spec, a single leading space after the colon is stripped.
+                var payload = line.Length > 5 && line[5] == ' ' ? line[6..] : line[5..];
+                dataParts.Add(payload);
+            }
+            // Ignore event:, id:, retry:, comments, etc.
+        }
+
+        return dataParts.Count == 0 ? body : string.Join("\n", dataParts);
+    }
+
+    /// <summary>
     /// Throws <see cref="NonMcpEndpointException"/> when the response is clearly
     /// not a JSON-RPC 2.0 payload (e.g. React SPA catch-all serving text/html).
     /// </summary>
-    internal static void DetectAndThrowIfNotMcp(string? contentType, string responseBody)
+    /// <param name="contentType">Response Content-Type header value, if any.</param>
+    /// <param name="responseBody">Response body, already size-checked by the caller.</param>
+    /// <param name="statusCode">
+    /// v2.4.1 (G5): HTTP status code of the response. Used only by the 404 heuristic
+    /// below; pass 0 (or any non-404 value) when the status code is not relevant.
+    /// </param>
+    internal static void DetectAndThrowIfNotMcp(string? contentType, string responseBody, int statusCode = 0)
     {
         var snippet = BuildSnippet(responseBody);
 
@@ -267,7 +350,30 @@ public sealed class McpConnection : IAsyncDisposable
                     snippet);
             }
         }
+
+        // v2.4.1 (G5): heuristic 4 - HTTP 404 with a body that IS valid JSON but is
+        // not JSON-RPC shaped (e.g. a REST-style "{"error":"not found"}" body). A
+        // real MCP server's JSON-RPC error responses always carry a "jsonrpc" field
+        // per spec (including error responses), so this cannot misclassify a
+        // legitimate MCP error as non-MCP. Previously this case fell through to
+        // response.EnsureSuccessStatusCode() and surfaced as an opaque HTTP 404
+        // ConnectionError with no finding explaining why - see BACKLOG_V2.4.1 G5.
+        if (statusCode == 404 && !LooksLikeJsonRpc(responseBody))
+        {
+            throw new NonMcpEndpointException(
+                "server returned HTTP 404 with a non-JSON-RPC body - no MCP protocol surface detected at this path",
+                contentType,
+                snippet);
+        }
     }
+
+    /// <summary>
+    /// v2.4.1 (G5): true when the body contains the <c>"jsonrpc"</c> field that every
+    /// JSON-RPC 2.0 message (request, response, or error) is required to carry.
+    /// </summary>
+    private static bool LooksLikeJsonRpc(string responseBody) =>
+        !string.IsNullOrEmpty(responseBody) &&
+        responseBody.Contains("\"jsonrpc\"", StringComparison.Ordinal);
 
     private static string? BuildSnippet(string? body)
     {
@@ -572,8 +678,30 @@ public sealed class McpConnection : IAsyncDisposable
             throw new InvalidOperationException($"Invalid URL: {_config.Url}");
         }
 
-        var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
-        using var response = await _httpClient.PostAsync(uri, content, cancellationToken);
+        using var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = new StringContent(requestJson, Encoding.UTF8, "application/json")
+        };
+
+        // MCP 2025-06-18 Streamable HTTP transport: once the server has issued
+        // an Mcp-Session-Id during initialize, every subsequent request must
+        // carry it; otherwise the server answers 400 Bad Request.
+        if (!string.IsNullOrEmpty(_mcpSessionId))
+        {
+            request.Headers.TryAddWithoutValidation("Mcp-Session-Id", _mcpSessionId);
+        }
+
+        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+        // Capture any session id issued by this response (initialize, or server-refreshed).
+        if (response.Headers.TryGetValues("Mcp-Session-Id", out var sidValues))
+        {
+            var sid = sidValues.FirstOrDefault();
+            if (!string.IsNullOrEmpty(sid) && sid.Length <= 256 && !sid.Any(char.IsControl))
+            {
+                _mcpSessionId = sid;
+            }
+        }
 
         var responseJson = await ReadAndInspectHttpResponseAsync(response, MaxResponseSizeBytes, cancellationToken);
 

@@ -79,21 +79,51 @@ public static partial class InjectionPatterns
     }
 
     /// <summary>
-    /// Pattern 1: Instruction injection keywords.
-    /// Detects attempts to inject instructions via IMPORTANT, ALWAYS, MUST, NEVER, IGNORE.
+    /// Pattern 1: Instruction injection (v2.4.0 tightened).
+    /// <para>
+    /// Detects canonical prompt-injection phrasing - not bare modal verbs. The v2.3.x
+    /// pattern fired on any <c>MUST</c>, <c>ALWAYS</c>, or <c>IMPORTANT</c> followed by
+    /// whitespace, which matched normal instructional prose such as
+    /// <c>"you must configure the endpoint"</c>. The tightened pattern requires:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>an <c>IMPORTANT:</c> label, OR</item>
+    /// <item>an override verb (ignore/disregard/forget) targeting prior instructions, OR</item>
+    /// <item>a bypass verb (override/bypass/disable) targeting safety/rules/filters, OR</item>
+    /// <item>a modal (ALWAYS/NEVER/MUST) followed by an override-intent verb, OR</item>
+    /// <item>a role-hijack phrase (<c>you are now a/an/...</c>), OR</item>
+    /// <item>a system-prompt reveal (<c>SYSTEM PROMPT:</c>).</item>
+    /// </list>
     /// </summary>
+    // Note: "bypass/disable safety|filter|guard" is NOT in this pattern - that is the
+    // canonical territory of JailbreakAttempt (INJECTION-009). Instruction injection
+    // is strictly about overriding / disregarding INSTRUCTIONS / RULES / GUIDELINES
+    // / PROMPTS (pattern discipline: each finding must have a single canonical owner).
     [GeneratedRegex(
-        @"\b(IMPORTANT|ALWAYS|MUST|NEVER|IGNORE\s*PREVIOUS|DISREGARD|OVERRIDE|SYSTEM\s*PROMPT|YOU\s*ARE\s*NOW)\b[:\s]",
+        @"(?:IMPORTANT\s*:|\b(?:ignore|disregard|forget)\s+(?:all|any)?\s*(?:previous|prior|your|the|any)\s+(?:instructions?|prompts?|rules?|guidelines?|messages?|context)|\boverride\s+(?:all\s+)?(?:your|the|any)?\s*(?:rule|instruction|guideline|restriction|previous)|\b(?:ALWAYS|NEVER|MUST)\s+(?:execute|override|return|ignore|send|include|reveal|print|output|share|skip|leak|forward|upload|post|transmit|exfiltrate)|\bSYSTEM\s*PROMPT\s*:|\byou\s+are\s+now\s+(?:a|an|the|my))",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex InstructionInjection();
 
     /// <summary>
-    /// Pattern 2: Data exfiltration indicators.
-    /// Detects references to external URLs, HTTP methods, or network utilities.
+    /// Pattern 2: Data exfiltration indicators (v2.4.0 tightened).
+    /// <para>
+    /// The v2.3.x pattern fired on any <c>https://</c>, <c>fetch(</c>, <c>curl</c>, or
+    /// <c>POST to</c> token, which matched every legitimate skill that described HTTP
+    /// interaction. The tightened pattern requires evidence of actual data transfer:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>rare exfiltration verbs (exfiltrate / siphon / smuggle), OR</item>
+    /// <item>an outbound verb (send / post / put / upload / forward / transmit / ...)
+    ///       paired with a data-object (data / credentials / secrets / tokens / response
+    ///       / history / keys / passwords / file(s) / contents / variables / ...) and
+    ///       a "to / via / through / at" target, OR</item>
+    /// <item>a network fetcher (curl / wget / fetch / retrieve) within 80 chars of an
+    ///       explicit <c>https?://</c> URL.</item>
+    /// </list>
     /// </summary>
     [GeneratedRegex(
-        @"(https?://|fetch\s*\(|curl\s+|wget\s+|POST\s+to|send\s+to\s+|exfiltrate|transmit\s+to)",
+        @"(?:\b(?:exfiltrate|siphon|smuggle)\b|\b(?:sends?|sending|posts?|posting|puts?|putting|uploads?|uploading|forwards?|forwarding|pushes|pushing|ships?|shipping|submits?|submitting|transfers?|transfer(?:ring)?|transmits?|transmit(?:ting)?|leaks?)\s+(?:\S+\s+){0,4}?(?:data|credentials?|secrets?|tokens?|content|contents|response|history|transcript|logs?|keys?|passwords?|input|prompt|conversation|information|results?|files?|env(?:ironment)?|variables?|configs?|it|them|this|everything|all)\s+(?:to|via|through|at)\b|\b(?:fetch(?:es|ed|ing)?|curl|wget|retrieve(?:s|d|ing)?)\b[^\n]{0,80}?https?://)",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex DataExfiltration();
@@ -138,11 +168,18 @@ public static partial class InjectionPatterns
     public static partial Regex Base64Payload();
 
     /// <summary>
-    /// Pattern 7: Privilege escalation.
-    /// Detects instructions involving sudo, admin, root, or elevated permissions.
+    /// Pattern 7: Privilege escalation (v2.4.0 tightened).
+    /// <para>
+    /// The v2.3.x pattern fired on the bare nouns <c>privilege</c> and <c>elevate</c>,
+    /// which occur routinely in benign prose (<c>"elevated privileges are required"</c>,
+    /// <c>"minimum privilege principle"</c>). The tightened pattern now requires either
+    /// a canonical privilege-escalation verb (<c>sudo</c>, <c>as root</c>,
+    /// <c>become root</c>, <c>gain root</c>) or a noun phrase that pins the privilege
+    /// word to an escalation context (<c>elevate privileges</c>, <c>privilege escalation</c>).
+    /// </para>
     /// </summary>
     [GeneratedRegex(
-        @"\b(sudo|as\s+root|as\s+admin|with\s+admin|elevate|privilege|become\s+root)\b",
+        @"\b(?:sudo|as\s+root|as\s+admin|with\s+admin|become\s+root|gain\s+root|root\s+shell|elevated\s+(?:privileges?|permissions?|access|shell)|elevate\s+(?:to\s+)?(?:privileges?|permissions?|admin|root)|privilege\s+(?:escalation|elevate|bypass))\b",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex PrivilegeEscalation();

@@ -63,6 +63,24 @@ public static class RuleConstants
         // v2.3.0 Informational rules
         public const string NonMcpEndpoint = "SS-INFO-001";
 
+        // v2.4.0 Informational rules
+        public const string NonPublicTarget = "SS-INFO-002";
+
+        // v2.4.0 New behavioural rule
+        public const string InstructionalToolDescription = "SS-026";
+
+        // v2.4.1 Informational rule (G3)
+        public const string UntrustedServerCertificate = "SS-INFO-003";
+
+        // v2.4.1 New skill rule (G12b)
+        public const string SkillIdentityFileWrite = "SS-028";
+
+        // v2.5.0 New skill rule (G14 - SkillJacking dependency verification)
+        public const string SkillUnpinnedDependency = "SS-029";
+
+        // v2.5.0 Informational rule (G13a - MCP 2026-07-28 protocol/transport currency)
+        public const string LegacyMcpProtocol = "SS-INFO-004";
+
         /// <summary>
         /// Rules that depend on successful MCP JSON-RPC protocol exchange with the
         /// target server. When SS-INFO-001 fires on a server, these rules cannot

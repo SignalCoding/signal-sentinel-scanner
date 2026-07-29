@@ -15,7 +15,28 @@ public sealed partial class CodeExecutionRule : IRule
     public string Description => "Detects MCP tools that expose code execution capabilities which could be exploited for arbitrary code execution.";
     public bool EnabledByDefault => true;
 
-    [GeneratedRegex(@"\b(exec|eval|execute|run|spawn|shell|bash|cmd|powershell|subprocess|system|popen|compile|interpret)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
+    // v2.4.0 B2: phrase-based code-execution detector. The old pattern matched
+    // bare verbs "execute" / "run" and fired High on read-only tools whose
+    // descriptions happened to contain either. New list requires concrete
+    // execution primitives (eval(), exec(), subprocess, shell -c, etc.) or
+    // explicit "arbitrary code" / "runs a command" phrasing. Process.Start is
+    // included as the C# analogue of Runtime.exec / os.system.
+    [GeneratedRegex(
+        @"(eval\s*\(|evaluates?\s+code" +
+        @"|exec\s*\(|execs?\s*\(" +
+        @"|Runtime\.exec|Process\.Start|os\.system|subprocess\." +
+        @"|spawn\s+(process|a\s+shell|shell)" +
+        @"|shell\s+out|shell=True" +
+        @"|runs?\s+arbitrary|executes?\s+arbitrary" +
+        @"|runs?\s+a\s+(command|script)|executes?\s+a\s+(command|script)" +
+        @"|invokes?\s+(a\s+)?script" +
+        @"|interpret(s|er)\s+(code|expressions?|input)" +
+        @"|PowerShell\s+-Command|PowerShell\s+-EncodedCommand" +
+        @"|cmd\.exe\s+/c|bash\s+-c|sh\s+-c|zsh\s+-c" +
+        @"|\beval\b|\bexec\b" +
+        @")",
+        RegexOptions.IgnoreCase,
+        matchTimeoutMilliseconds: 500)]
     private static partial Regex CodeExecutionKeywords();
 
     [GeneratedRegex(@"\b(python|node|ruby|perl|php|javascript|typescript|script)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]

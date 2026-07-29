@@ -168,6 +168,39 @@ public class SeverityScorerTests
         };
     }
 
+    [Fact]
+    public void CalculateGrade_ZeroServersZeroSkills_ReturnsInconclusive()
+    {
+        // v2.4.1 (G1): no scannable surface at all - must not present as Grade A.
+        var (grade, score) = SeverityScorer.CalculateGrade(
+            Array.Empty<Finding>(), Array.Empty<AttackPath>(), totalServers: 0, totalSkills: 0);
+
+        grade.ShouldBe(SecurityGrade.Inconclusive);
+        score.ShouldBe(0);
+    }
+
+    [Fact]
+    public void CalculateGrade_ZeroServersButSkillsPresent_ReturnsNormalGrade()
+    {
+        var (grade, score) = SeverityScorer.CalculateGrade(
+            Array.Empty<Finding>(), Array.Empty<AttackPath>(), totalServers: 0, totalSkills: 3);
+
+        grade.ShouldBe(SecurityGrade.A);
+        score.ShouldBe(100);
+    }
+
+    [Fact]
+    public void CalculateGrade_NullTotals_PreservesLegacyBehaviour()
+    {
+        // Callers that don't pass totals (e.g. pre-v2.4.1 call sites, other tests
+        // above) must keep the finding-count-driven behaviour, not Inconclusive.
+        var (grade, score) = SeverityScorer.CalculateGrade(
+            Array.Empty<Finding>(), Array.Empty<AttackPath>());
+
+        grade.ShouldBe(SecurityGrade.A);
+        score.ShouldBe(100);
+    }
+
     private static AttackPath CreateAttackPath(Severity severity)
     {
         return new AttackPath

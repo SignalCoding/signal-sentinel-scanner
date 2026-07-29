@@ -81,7 +81,9 @@ public static class OwaspAstCodes
     /// <summary>AST04: Insecure Metadata - Metadata (description, tags) is inaccurate or contains hidden content.</summary>
     public const string AST04 = "AST04";
 
-    /// <summary>AST05: Unsafe Deserialisation - Skill uses unsafe YAML/JSON/pickle/etc. loaders.</summary>
+    /// <summary>AST05: Untrusted External Instructions - Skill treats content fetched from
+    /// an untrusted external source (URL, included file, remote registry) as trusted
+    /// instructions rather than as data.</summary>
     public const string AST05 = "AST05";
 
     /// <summary>AST06: Weak Isolation - Skill escapes intended sandbox (shell, network, filesystem).</summary>
@@ -108,7 +110,7 @@ public static class OwaspAstCodes
         AST02 => "Supply Chain",
         AST03 => "Over-Privileged",
         AST04 => "Insecure Metadata",
-        AST05 => "Unsafe Deserialisation",
+        AST05 => "Untrusted External Instructions",
         AST06 => "Weak Isolation",
         AST07 => "Update Drift",
         AST08 => "Poor Scanning",

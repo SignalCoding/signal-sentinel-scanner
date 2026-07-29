@@ -27,8 +27,14 @@ public sealed partial class SkillObfuscationRule : IRule
         "and other obfuscation techniques in skill instructions and scripts.";
     public bool EnabledByDefault => true;
 
+    // v2.4.0 tightened: conditional-trigger phrasing ("if the user says ...") is normal
+    // skill routing and not obfuscation on its own. The pattern now requires a
+    // covert-action verb (silently / secretly / bypass / exfiltrate / ignore previous
+    // / override / hide / "do not mention") within 120 characters of the trigger phrase.
+    // That keeps the high-fidelity signal (conditional + covert intent) while eliminating
+    // the v2.3.x false-positive firing on descriptive instructions.
     [GeneratedRegex(
-        @"\b(if\s+the\s+user\s+(mentions?|asks?|says?|types?)|when\s+the\s+user\s+(mentions?|asks?|says?)|only\s+when|only\s+if|trigger\s+when|activate\s+when|if\s+prompted\s+with)\b",
+        @"\b(?:if\s+the\s+user\s+(?:mentions?|asks?|says?|types?)|when\s+the\s+user\s+(?:mentions?|asks?|says?)|only\s+when|only\s+if|trigger(?:ed)?\s+when|activate(?:d)?\s+when|if\s+prompted\s+with)\b[^.\n]{0,120}?\b(?:silently|secretly|covertly|quietly|without\s+(?:asking|telling|notifying|warning|informing|the\s+user\s+knowing)|bypass|exfiltrate|leak|siphon|ignore\s+previous|override|hidden|hide|do\s+not\s+(?:mention|tell|show|display|reveal))\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]
     private static partial Regex ConditionalTrigger();

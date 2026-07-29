@@ -6,6 +6,7 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Immutable;
+using System.IO;
 
 namespace SignalSentinel.Core.Models;
 
@@ -88,6 +89,32 @@ public sealed record SkillDefinition
     /// on capabilities not declared here.
     /// </summary>
     public IReadOnlyList<string> Capabilities { get; init; } = [];
+
+    /// <summary>
+    /// v2.5.0 (G15b): filenames declared in a <c>deny_write</c> (or nested
+    /// <c>permissions: deny_write:</c>) frontmatter key, per the OWASP Agentic
+    /// Skills Top 10 "Universal Skill Format" proposal. A skill that explicitly
+    /// commits to not writing a file is making a stronger claim than silence;
+    /// the SS-028 rule (Skill Identity/Memory File Write Access) treats an
+    /// instructions/script write to a file that's also listed here as a
+    /// self-contradiction and escalates severity accordingly.
+    /// </summary>
+    public IReadOnlyList<string> DenyWrite { get; init; } = [];
+
+    /// <summary>
+    /// v2.4.1 (G11): stable skill identity used for suppression/scope matching.
+    /// Normalised frontmatter <see cref="Name"/> (trimmed) when non-empty, else the
+    /// name of the skill's containing directory. Distinct from <see cref="Name"/>
+    /// itself so callers always have one unambiguous identity to key on even when
+    /// <see cref="Name"/> was defaulted to "unnamed-skill" by the parser.
+    /// </summary>
+    public string CanonicalSkillName =>
+        !string.IsNullOrWhiteSpace(Name)
+            ? Name.Trim()
+            : Path.GetFileName(Path.GetDirectoryName(FilePath)?.TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)) is { Length: > 0 } dirName
+                ? dirName
+                : Name;
 }
 
 /// <summary>

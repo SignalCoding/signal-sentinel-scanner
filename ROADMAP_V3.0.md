@@ -26,8 +26,8 @@ goodwill while this roadmap cooks.
 
 ## Market context (post-Mythos)
 
-The product-feedback document (`C:\Sites\CryptoTrader\Skills\SIGNAL_SENTINEL_PRODUCT_FEEDBACK.md`)
-argues that the AI vulnerability-discovery landscape has fundamentally shifted with
+Product-feedback gathered from early operator teams argues that the AI
+vulnerability-discovery landscape has fundamentally shifted with
 Anthropic's Claude Mythos Preview (7 April 2026) and that regex-only defence has a
 12-18 month shelf life. Two caveats before we build strategy on that claim:
 
@@ -80,7 +80,7 @@ per-segment rather than per-document. This is a substantial refactor inside
 `RuleEngine` and every `IRule` implementation.
 
 **Expected impact:** ~80% reduction in the false-positive class observed across
-the CryptoTrader feedback (confirmed in the feedback document cross-check).
+operator feedback (confirmed in cross-checked samples).
 
 **Risks:** grades shift on unchanged source (hence v3.0). Risk of over-pruning if
 a rule's segment declaration is too narrow - mitigated by the benchmark corpus
@@ -120,8 +120,8 @@ industry reference, pending any stronger industry standard.
   `important, crucial, critical, vital, urgent, ignore, disregard, override, bypass`
 - Remove from Signal Sentinel: `must` (as a bare token), `fetch` (as a bare
   token). Keep `fetch(` only inside `js`/`ts` code blocks (requires T1.1).
-- Remove entirely: `when the user asks` - this is canonical OpenClaw phrasing
-  used in every platform skill description.
+- Remove entirely: `when the user asks` - this is canonical routing phrasing
+  used in platform skill descriptions across orchestrators.
 
 Document the rationale and the reference (Snyk W001 commit pin) in
 `docs/keyword-rules.md`.
@@ -133,8 +133,8 @@ the benchmark corpus (T3.2).
 
 **Proposal:** Every finding emits a unified-diff `suggestedFix` block:
 
-    -  /root/crypto-portfolio/state/prices.json
-    +  ${CRYPTO_PORTFOLIO_ROOT:?CRYPTO_PORTFOLIO_ROOT required}/state/prices.json
+    -  /root/example-app/state/data.json
+    +  ${EXAMPLE_APP_ROOT:?EXAMPLE_APP_ROOT required}/state/data.json
 
 Plus a `sentinel-scan --fix` mode that auto-applies accepted fixes in place with
 a `.bak` file alongside.
@@ -208,16 +208,35 @@ and calling out which partners we are talking to. No code.
 
 ### T2.4 Supply-chain / dependency verification (product-feedback #20)
 
-**Deferred to v3.1+.** Track URLs referenced from skill content; emit an
-informational finding per URL with:
+**Partially shipped in v2.5.0 (G14, pulled forward from this roadmap's v3.1.0
+code target at user request).** Air Security's "SkillJacking" research (July
+2026) found 925 published skills resting on take-able dependencies (deleted
+GitHub accounts, expired domains), reaching an estimated 134K agents,
+including a skills.sh skill with 11,483 installs hijacked via a deleted
+account. This is a documented, exploited-in-the-wild class, not a theoretical
+concern.
 
-- Is it HTTPS?
+**Shipped in v2.5.0:** `SS-029` (Skill Unpinned Dependency Reference) flags
+skill instructions/scripts that reference a GitHub dependency by a floating
+branch (`main`/`master`/`head`/`develop`/`dev`/`latest`/`trunk`) or an
+unpinned `git+https://` install URL, rather than a pinned tag, release, or
+commit SHA - the core "trusted at publish time, hijackable after the fact"
+detection.
+
+**Still deferred to v3.1.0:**
+
 - Last-modified / ETag for change detection between scans (hook into the
-  baseline primitive).
+  baseline primitive) - requires a live network fetch per scan, which is a
+  bigger scope/perf/offline-mode change than the static pattern match shipped
+  above.
 - Alert on content change between scans even if the URL itself is unchanged
-  (skill weaponisation TTP).
+  (skill weaponisation TTP) - depends on the ETag/change-detection primitive
+  above.
+- Non-GitHub dependency hosts (npm, PyPI, generic domains) - v2.5.0 only
+  covers `github.com` references.
 
-**v3.0.0 deliverable:** design doc in `SS-SUPPLY-CHAIN.md`. No code.
+**v3.1.0 deliverable:** design doc `SS-SUPPLY-CHAIN.md` covering the
+remaining change-detection and multi-host scope, plus the code for it.
 
 ## Theme 3 - Orchestration and benchmark
 
@@ -298,11 +317,13 @@ Rough quarterly shape; treat dates as intent, not commitment:
   initial benchmark corpus. Breaking change on grade semantics; migration doc
   published.
 - **v3.1.0** (next quarter): Theme 2 core (T2.1 hybrid LLM, T2.2 cross-skill
-  attack paths, T1.4 remediation diffs).
+  attack paths, T1.4 remediation diffs), **T2.4 supply-chain / dependency
+  verification remainder** (ETag/change-detection + non-GitHub hosts - the
+  core unpinned-GitHub-reference detection shipped early as `SS-029` in
+  v2.5.0).
 - **v3.2.0** (following quarter): Theme 3 expansion (T3.1 orchestration beyond
   the initial scanner set, T3.3 adversarial benchmark formalised).
-- **v3.3.0+**: runtime observability (T2.3), supply-chain verification (T2.4),
-  additional partners.
+- **v3.3.0+**: runtime observability (T2.3), additional partners.
 
 ## Acceptance criteria for v3.0.0
 
@@ -328,7 +349,9 @@ Rough quarterly shape; treat dates as intent, not commitment:
 - Full LLM pipeline (T2.1) - phase in during v3.1.
 - Complete orchestrator suite (T3.1) - initial set in v3.0, expansion rolling.
 - Runtime observability (T2.3) - design doc only in v3.0; code in v3.1+.
-- Supply-chain verification (T2.4) - design doc only in v3.0; code in v3.1+.
+- Supply-chain verification (T2.4) - core unpinned-GitHub-reference detection
+  (`SS-029`) shipped early in v2.5.0; remaining ETag/change-detection and
+  non-GitHub-host scope targeted for v3.1.0.
 - Any migration of MCP-server-side rules beyond adding AST codes (handled in
   v2.3).
 - Native VS Code / Cursor extension beyond the MVP in v2.3 (T3 scope is the

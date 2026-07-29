@@ -173,7 +173,11 @@ public sealed class SarifReportGenerator : IReportGenerator
                     ["confidence"] = finding.Confidence,
                     ["occurrenceCount"] = finding.OccurrenceCount,
                     ["evidence"] = finding.Evidence,
-                    ["astCodes"] = finding.AstCodes
+                    ["astCodes"] = finding.AstCodes,
+                    // v2.4.0 (G7): expose scope tag so SARIF consumers (GitHub Code
+                    // Scanning, IDE integrations) can filter dormant findings out of
+                    // the active grade view while still retaining them for audit.
+                    ["scope"] = finding.Scope
                 }
             };
 

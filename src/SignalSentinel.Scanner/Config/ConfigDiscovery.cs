@@ -273,6 +273,7 @@ public static class ConfigDiscovery
             string? command = null;
             List<string>? args = null;
             Dictionary<string, string>? env = null;
+            Dictionary<string, string>? headers = null;
             string? url = null;
             var transport = McpTransportType.Stdio;
 
@@ -349,6 +350,49 @@ public static class ConfigDiscovery
                 }
             }
 
+            // Optional custom HTTP headers (e.g. Authorization: Bearer ...)
+            // applied on every outgoing MCP HTTP/WebSocket request.
+            if (element.TryGetProperty("headers", out var headersElement) &&
+                headersElement.ValueKind == JsonValueKind.Object)
+            {
+                headers = [];
+                var headerCount = 0;
+                foreach (var prop in headersElement.EnumerateObject())
+                {
+                    // Security: Limit number of headers
+                    if (++headerCount > 32)
+                    {
+                        break;
+                    }
+
+                    if (prop.Value.ValueKind != JsonValueKind.String)
+                    {
+                        continue;
+                    }
+
+                    var key = prop.Name;
+                    var value = prop.Value.GetString();
+
+                    // Security: Reject control chars, empty names, CRLF smuggling
+                    if (string.IsNullOrWhiteSpace(key) || key.Length > 256 || value is null)
+                    {
+                        continue;
+                    }
+                    if (key.Any(char.IsControl) || value.Any(c => c == '\r' || c == '\n'))
+                    {
+                        continue;
+                    }
+
+                    // Security: Bound value length
+                    if (value.Length > 4096)
+                    {
+                        value = value[..4096];
+                    }
+
+                    headers[key] = value;
+                }
+            }
+
             if (element.TryGetProperty("url", out var urlElement) &&
                 urlElement.ValueKind == JsonValueKind.String)
             {
@@ -398,6 +442,7 @@ public static class ConfigDiscovery
                 Args = args,
                 Env = env,
                 Url = url,
+                Headers = headers,
                 SourceConfigPath = sourceFile
             };
         }

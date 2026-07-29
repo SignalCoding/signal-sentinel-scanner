@@ -19,8 +19,11 @@ public static partial class ExfiltrationPatterns
     /// <summary>
     /// Detects HTTP POST/PUT/PATCH to external endpoints.
     /// </summary>
+    // v2.4.0 tightened: the v2.3.x pattern fired on any "POST to"/"PUT to"/"upload to"
+    // which matched legitimate API-calling skills. Outbound HTTP verbs now require a
+    // data-object before "to" (POST the response to..., PUT credentials to..., etc.).
     [GeneratedRegex(
-        @"(POST\s+to|PUT\s+to|PATCH\s+to|send\s+(data|response|output|result)\s+to|upload\s+to|transmit\s+to|exfiltrate\s+to|forward\s+(data|response)\s+to)",
+        @"(?:(?:POST|PUT|PATCH)\s+(?:(?:the|all|any|your|user'?s?|this|it)\s+)?(?:data|credentials?|secrets?|tokens?|content|contents|response|history|transcript|logs?|keys?|passwords?|input|prompt|conversation|results?|files?|env(?:ironment)?|variables?|it|them|this|everything)\s+(?:to|via|through)|(?:POST|PUT|PATCH|upload|forward|send|transmit|exfiltrate|push)\s+(?:to|via)\s+https?://|send\s+(?:data|response|output|result|secrets?|credentials?|tokens?|keys?|passwords?|history|transcript|conversation)\s+(?:to|via)|upload\s+(?:the\s+|all\s+|it\s+)?(?:data|response|results?|file|logs?|transcript|history)\s+(?:to|via)|transmit\s+(?:to|via)|exfiltrate\s+(?:to|via)|forward\s+(?:data|response|secrets?|credentials?|history)\s+(?:to|via))",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex HttpDataSend();

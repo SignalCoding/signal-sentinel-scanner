@@ -8,9 +8,11 @@
 namespace SignalSentinel.Core.Models;
 
 /// <summary>
-/// Canonical mapping of Signal Sentinel rule identifiers (SS-001..SS-025, SS-INFO-001)
-/// to OWASP Agentic Skills Top 10 codes. Published alongside the release; see
-/// <c>docs/owasp-ast-mapping.md</c>. Updated in v2.3.0 (schema version 1.0).
+/// Canonical mapping of Signal Sentinel rule identifiers (SS-001..SS-028,
+/// SS-INFO-001, SS-INFO-003) to OWASP Agentic Skills Top 10 codes. Published
+/// alongside the release; see <c>docs/owasp-ast-mapping.md</c>. Introduced in
+/// v2.3.0 (schema version 1.0); corrected in v2.4.1 (G12a) to align AST05 with
+/// its real OWASP AST10 definition ("Untrusted External Instructions").
 /// </summary>
 public static class RuleAstMapping
 {
@@ -22,7 +24,10 @@ public static class RuleAstMapping
             ["SS-002"] = [OwaspAstCodes.AST03],
             ["SS-003"] = [OwaspAstCodes.AST06],
             ["SS-004"] = [OwaspAstCodes.AST02],
-            ["SS-005"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST05],
+            // v2.4.1 (G12a): unsafe deserialisation / code execution is a sandbox-escape
+            // concern, not "untrusted external instructions" (the real meaning of the
+            // OWASP AST05 code) - remapped to AST06 (Weak Isolation).
+            ["SS-005"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST06],
             ["SS-006"] = [OwaspAstCodes.AST06],
             ["SS-007"] = [OwaspAstCodes.AST01],
             ["SS-008"] = [OwaspAstCodes.AST04],
@@ -30,12 +35,17 @@ public static class RuleAstMapping
             ["SS-010"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST03],
 
             // Skill rules (SS-011 to SS-018)
-            ["SS-011"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST04],
+            // v2.4.1 (G12a): SS-011 (skill instruction/prompt injection) is the closest
+            // existing fit for AST05 (Untrusted External Instructions) - it is the rule
+            // that fires when a skill's content tries to act as an instruction rather
+            // than data.
+            ["SS-011"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST04, OwaspAstCodes.AST05],
             ["SS-012"] = [OwaspAstCodes.AST03],
             ["SS-013"] = [OwaspAstCodes.AST01],
             ["SS-014"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST03],
             ["SS-015"] = [OwaspAstCodes.AST04],
-            ["SS-016"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST05],
+            // v2.4.1 (G12a): same AST05 -> AST06 remap rationale as SS-005 above.
+            ["SS-016"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST06],
             ["SS-017"] = [OwaspAstCodes.AST03],
             ["SS-018"] = [OwaspAstCodes.AST04],
 
@@ -50,8 +60,21 @@ public static class RuleAstMapping
             ["SS-024"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07],
             ["SS-025"] = [OwaspAstCodes.AST03],
 
+            // v2.4.0 rules
+            // SS-026 flags description/metadata fields that carry hidden instructions -
+            // squarely AST04 (Insecure Metadata).
+            ["SS-026"] = [OwaspAstCodes.AST04],
+
+            // v2.4.1 rules (G12b/G3)
+            ["SS-028"] = [OwaspAstCodes.AST03],
+            ["SS-INFO-003"] = [OwaspAstCodes.AST08],
+
             // v2.3.0 informational
-            ["SS-INFO-001"] = [OwaspAstCodes.AST08]
+            ["SS-INFO-001"] = [OwaspAstCodes.AST08],
+
+            // v2.5.0 rules (G13a/G14)
+            ["SS-INFO-004"] = [OwaspAstCodes.AST08],
+            ["SS-029"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07]
         };
 
     /// <summary>

@@ -19,7 +19,26 @@ public sealed partial class SensitiveDataRule : IRule
     [GeneratedRegex(@"\b(pii|personal|private|sensitive|confidential|secret|classified|restricted)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex SensitivityKeywords();
 
-    [GeneratedRegex(@"\b(password|credential|token|key|secret|auth|cert|certificate|private[\-_]?key)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
+    // v2.4.0 A3: tightened to match phrases that name secret material. The old
+    // pattern matched bare "cert" / "certificate" which are public by design
+    // (TLS server certs are sent to every connecting client) and fired Critical
+    // on benign tools like `tls_expiry`. New list requires explicit "private
+    // key", "password", "api key", "bearer token" etc. Public terms like
+    // "certificate" / "public key" / "CA bundle" do NOT match.
+    [GeneratedRegex(
+        @"\b(private[\s\-_]?key" +
+        @"|privkey" +
+        @"|passphrase|password" +
+        @"|api[\s\-_]?key" +
+        @"|bearer[\s\-_]?token|access[\s\-_]?token|refresh[\s\-_]?token|session[\s\-_]?token" +
+        @"|credential(s)?" +
+        @"|ssh[\s\-_]?key|pem[\s\-_]?key|pgp[\s\-_]?key|gpg[\s\-_]?key" +
+        @"|secret(s)?" +
+        @"|client[\s\-_]?secret" +
+        @"|vault\s+(key|secret|token)" +
+        @")\b",
+        RegexOptions.IgnoreCase,
+        matchTimeoutMilliseconds: 500)]
     private static partial Regex CredentialKeywords();
 
     [GeneratedRegex(@"\b(user|customer|patient|employee|member|client|account|profile|identity)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]

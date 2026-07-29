@@ -32,6 +32,14 @@ public static class IntegrityVerifier
     ];
 
     /// <summary>
+    /// v2.4.1 (G12d): frontmatter keys from the OWASP Agentic Skills Top 10
+    /// "Universal Skill Format" proposal that indicate the skill carries its own
+    /// inline integrity metadata rather than (or in addition to) a sibling file.
+    /// </summary>
+    private static readonly HashSet<string> InlineIntegrityFrontmatterKeys =
+        new(StringComparer.OrdinalIgnoreCase) { "signature", "content_hash", "content-hash" };
+
+    /// <summary>
     /// Verifies a skill's integrity artefacts.
     /// </summary>
     /// <param name="skill">Skill definition.</param>
@@ -53,6 +61,24 @@ public static class IntegrityVerifier
                 {
                     signaturePresent = true;
                     signatureFileName = candidate;
+                    break;
+                }
+            }
+        }
+
+        // v2.4.1 (G12d): recognise the OWASP Agentic Skills Top 10 "Universal Skill
+        // Format" inline integrity fields (frontmatter signature: / content_hash:)
+        // as an alternative to a sibling signature file. Either form demonstrates
+        // the publisher made integrity verification possible.
+        if (!signaturePresent)
+        {
+            foreach (var kvp in skill.ExtraFrontmatter)
+            {
+                if (!string.IsNullOrWhiteSpace(kvp.Value) &&
+                    InlineIntegrityFrontmatterKeys.Contains(kvp.Key))
+                {
+                    signaturePresent = true;
+                    signatureFileName = $"frontmatter:{kvp.Key}";
                     break;
                 }
             }

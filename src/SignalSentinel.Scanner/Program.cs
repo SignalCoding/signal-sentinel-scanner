@@ -25,7 +25,7 @@ namespace SignalSentinel.Scanner;
 /// </summary>
 public static class Program
 {
-    private const string Version = "2.3.0";
+    private const string Version = "2.4.0";
     private const string RubricVersion = "1.0";
 
     // Security: Limits for input validation
@@ -275,6 +275,56 @@ public static class Program
                         var raw = args[++i];
                         var tools = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                         config = config with { ComplementaryTools = tools };
+                    }
+                    break;
+
+                // v2.4.0 (G7) scope flags
+                case "--scope":
+                    if (i + 1 < args.Length)
+                    {
+                        var scopePath = args[++i];
+                        if (!ValidatePath(scopePath, ".json"))
+                        {
+                            Console.Error.WriteLine("Error: Invalid scope path");
+                            return null;
+                        }
+                        config = config with { ScopePath = scopePath };
+                    }
+                    break;
+
+                case "--include-skills":
+                    if (i + 1 < args.Length)
+                    {
+                        var raw = args[++i];
+                        var names = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        config = config with { IncludeSkills = names };
+                    }
+                    break;
+
+                case "--exclude-skills":
+                    if (i + 1 < args.Length)
+                    {
+                        var raw = args[++i];
+                        var names = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        config = config with { ExcludeSkills = names };
+                    }
+                    break;
+
+                case "--include-servers":
+                    if (i + 1 < args.Length)
+                    {
+                        var raw = args[++i];
+                        var names = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        config = config with { IncludeServers = names };
+                    }
+                    break;
+
+                case "--exclude-servers":
+                    if (i + 1 < args.Length)
+                    {
+                        var raw = args[++i];
+                        var names = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        config = config with { ExcludeServers = names };
                     }
                     break;
 
@@ -596,7 +646,14 @@ public static class Program
                     --fail-on <sev>     Exit 1 at/above severity: critical|high|medium|low|info
                     --environment <e>   Environment label ("dev"/"staging"/"prod"/custom)
                     --complementary-tools <csv>  Tools listed in the scope-disclosure block
-            
+
+            v2.4.0 SCOPE (orchestrator-agnostic):
+                    --scope <path>      Scope file (default: ./.sentinel-scope.json)
+                    --include-skills <csv>  Only these skills count toward grade
+                    --exclude-skills <csv>  These skills count as dormant
+                    --include-servers <csv> Only these MCP servers count toward grade
+                    --exclude-servers <csv> These servers count as dormant
+
             BASELINES & CUSTOM RULES:
                     --baseline <path>   Compare against baseline file (creates if missing)
                     --update-baseline   Regenerate baseline file from current scan
@@ -642,20 +699,25 @@ public static class Program
                 SS-022  Rug Pull Detection / Schema Mutation (ASI01)
                 SS-023  Shadow Tool Injection (ASI01)
                 SS-025  Excessive Tool Response Size (ASI06)
+                SS-026  Instructional Tool/Skill Description (ASI01, AST04)
             
             SKILL SECURITY RULES:
-                SS-011  Skill Prompt Injection (ASI01, AST01/AST04)
+                SS-011  Skill Prompt Injection (ASI01, AST01/AST04/AST05)
                 SS-012  Skill Scope Violation (ASI02, AST03)
                 SS-013  Skill Credential Access (ASI03, AST01)
                 SS-014  Skill Data Exfiltration (ASI09, AST01/AST03)
                 SS-015  Skill Obfuscation (ASI01, AST04)
-                SS-016  Skill Script Payload (ASI05, AST01/AST05)
+                SS-016  Skill Script Payload (ASI05, AST01/AST06)
                 SS-017  Skill Excessive Permissions (ASI02, AST03)
                 SS-018  Skill Hidden Content (ASI01, AST04)
                 SS-024  Skill Integrity Verification (ASI04, AST02/AST07)
+                SS-028  Skill Identity/Memory File Write Access (ASI02, AST03)
+                SS-029  Skill Unpinned Dependency Reference (ASI04, AST02/AST07)
             
             INFORMATIONAL:
                 SS-INFO-001  Non-MCP Endpoint Detected (ASI10, AST08)
+                SS-INFO-003  Untrusted Server Certificate (ASI10, AST08)
+                SS-INFO-004  Legacy MCP Protocol / Transport (ASI04, AST08)
             
             For more information: https://github.com/SignalCoding/signal-sentinel-scanner
             Report security issues: security@signalcoding.co.uk
@@ -867,6 +929,46 @@ public static class Program
             }
             ruleResult = ruleResult with { Findings = triaged };
 
+            // v2.4.0 (G7): load scope file and apply. Findings against out-of-scope
+            // skills/servers are tagged Scope="dormant" and retained (not dropped).
+            // The grading algorithm ignores dormant findings; reports surface them
+            // under a "Dormant (not attack surface)" section.
+            Scope.SentinelScopeFile? activeScope = null;
+            var scopePath = config.ScopePath
+                ?? (File.Exists(".sentinel-scope.json") ? ".sentinel-scope.json" : null);
+            if (scopePath is not null)
+            {
+                var fileScope = await Scope.ScopeManager.LoadAsync(scopePath, cancellationToken);
+                if (fileScope is null)
+                {
+                    Log($"Scope file not found: {SanitizeForDisplay(scopePath)}");
+                }
+                else
+                {
+                    var src = fileScope.Source ?? "file";
+                    var inc = fileScope.Skills?.Include?.Count ?? 0;
+                    var exc = fileScope.Skills?.Exclude?.Count ?? 0;
+                    Log($"Loaded scope from {SanitizeForDisplay(scopePath)} (source={src}, skills: {inc} include / {exc} exclude)");
+                    activeScope = fileScope;
+                }
+            }
+            var cliScope = Scope.ScopeManager.FromCliFlags(
+                config.IncludeSkills.Count > 0 ? config.IncludeSkills : null,
+                config.ExcludeSkills.Count > 0 ? config.ExcludeSkills : null,
+                config.IncludeServers.Count > 0 ? config.IncludeServers : null,
+                config.ExcludeServers.Count > 0 ? config.ExcludeServers : null);
+            activeScope = Scope.ScopeManager.Merge(activeScope, cliScope);
+            if (activeScope is not null)
+            {
+                var scoped = Scope.ScopeManager.Apply(ruleResult.Findings, activeScope);
+                var dormantCount = scoped.Count(f => f.Scope == Scope.ScopeManager.DormantTag);
+                if (dormantCount > 0)
+                {
+                    Log($"Scope: {dormantCount} finding(s) tagged dormant (not attack surface)");
+                }
+                ruleResult = ruleResult with { Findings = scoped };
+            }
+
             // v2.3.0: apply suppression file (accepted risks)
             var suppressionPath = config.SuppressionsPath
                 ?? (File.Exists(".sentinel-suppressions.json") ? ".sentinel-suppressions.json" : null);
@@ -881,6 +983,25 @@ public static class Program
                 else
                 {
                     Log($"Loaded {file.Suppressions.Count} suppression(s) from {SanitizeForDisplay(suppressionPath)}");
+
+                    // v2.4.0 (N4): identify stale suppressions before applying. We
+                    // want the pre-apply findings so the check sees the real world,
+                    // not a post-filtered view. Warnings are logged now and the
+                    // collection is threaded through to the report generators.
+                    var staleSuppressions = SuppressionManager.DetectStale(
+                        file, ruleResult.Findings, config.Environment, DateTimeOffset.UtcNow);
+                    if (staleSuppressions.Count > 0)
+                    {
+                        foreach (var stale in staleSuppressions)
+                        {
+                            var reasonLabel = stale.Reason == Suppressions.StaleSuppressionReason.Expired
+                                ? "expired"
+                                : "no matching finding in this scan";
+                            Log($"  Stale suppression #{stale.Index} (rule {SanitizeForDisplay(stale.Entry.RuleId)}): {reasonLabel}");
+                        }
+                        Log($"Warning: {staleSuppressions.Count} stale suppression(s) detected. Consider removing them from {SanitizeForDisplay(suppressionPath)}.");
+                    }
+
                     var annotated = SuppressionManager.Apply(ruleResult.Findings, file, config.Environment, DateTimeOffset.UtcNow);
                     // Split active vs suppressed (expired suppressions stay active with banner).
                     var active = new List<Finding>();
@@ -914,25 +1035,70 @@ public static class Program
             }
 
             // Calculate grade
-            var (grade, score) = SeverityScorer.CalculateGrade(ruleResult.Findings, ruleResult.AttackPaths);
+            // v2.4.1 (G1): pass total server/skill counts so a scan that evaluated no
+            // scannable surface at all reports Inconclusive instead of a misleading
+            // Grade A.
+            var (grade, score) = SeverityScorer.CalculateGrade(
+                ruleResult.Findings, ruleResult.AttackPaths,
+                serverEnumerations.Count, allSkills.Count);
 
             // v2.3.0 fix (Section 0.4): compute the counter-factual grade with
             // every suppression removed so reports can show technical-debt
             // exposure alongside the operational grade.
             SecurityGrade? gradeWithoutSupp = null;
             int? scoreWithoutSupp = null;
+            int? suppressionDelta = null;
             if (suppressedFindings.Count > 0)
             {
                 var combined = new List<Finding>(ruleResult.Findings.Count + suppressedFindings.Count);
                 combined.AddRange(ruleResult.Findings);
                 combined.AddRange(suppressedFindings);
-                var (g, s) = SeverityScorer.CalculateGrade(combined, ruleResult.AttackPaths);
+                var (g, s) = SeverityScorer.CalculateGrade(
+                    combined, ruleResult.AttackPaths,
+                    serverEnumerations.Count, allSkills.Count);
                 gradeWithoutSupp = g;
                 scoreWithoutSupp = s;
+                // v2.4.1 (G9): explicit numeric delta so consumers don't have to
+                // recompute score - scoreWithoutSupp.
+                suppressionDelta = score - s;
             }
 
             // Build result
             stopwatch.Stop();
+
+            // v2.4.0 (G7): compute in-scope / dormant skill+server name lists for disclosure.
+            var inScopeSkills = new List<string>();
+            var dormantSkills = new List<string>();
+            var inScopeServers = new List<string>();
+            var dormantServers = new List<string>();
+            if (activeScope is not null)
+            {
+                foreach (var skill in allSkills)
+                {
+                    if (activeScope.Skills is null ||
+                        Scope.ScopeManager.Matches(activeScope.Skills, skill.Name))
+                    {
+                        inScopeSkills.Add(skill.Name);
+                    }
+                    else
+                    {
+                        dormantSkills.Add(skill.Name);
+                    }
+                }
+                foreach (var server in serverEnumerations)
+                {
+                    if (activeScope.Servers is null ||
+                        Scope.ScopeManager.Matches(activeScope.Servers, server.ServerName))
+                    {
+                        inScopeServers.Add(server.ServerName);
+                    }
+                    else
+                    {
+                        dormantServers.Add(server.ServerName);
+                    }
+                }
+            }
+
             var result = new ScanResult
             {
                 ScanTimestamp = DateTimeOffset.UtcNow,
@@ -968,22 +1134,43 @@ public static class Program
                     TotalTools = serverEnumerations.Sum(s => s.Tools.Count),
                     TotalResources = serverEnumerations.Sum(s => s.Resources.Count),
                     TotalPrompts = serverEnumerations.Sum(s => s.Prompts.Count),
-                    CriticalFindings = ruleResult.Findings.Count(f => f.Severity == Severity.Critical),
-                    HighFindings = ruleResult.Findings.Count(f => f.Severity == Severity.High),
-                    MediumFindings = ruleResult.Findings.Count(f => f.Severity == Severity.Medium),
-                    LowFindings = ruleResult.Findings.Count(f => f.Severity == Severity.Low),
-                    InfoFindings = ruleResult.Findings.Count(f => f.Severity == Severity.Info),
+                    // v2.4.0 (G7): summary counts reflect the active attack surface, so
+                    // a Grade B report does not show an alarming "32 Critical" alongside
+                    // it when those criticals are dormant findings retained for audit.
+                    CriticalFindings = ruleResult.Findings.Count(f =>
+                        f.Severity == Severity.Critical && !string.Equals(f.Scope, Scope.ScopeManager.DormantTag, StringComparison.Ordinal)),
+                    HighFindings = ruleResult.Findings.Count(f =>
+                        f.Severity == Severity.High && !string.Equals(f.Scope, Scope.ScopeManager.DormantTag, StringComparison.Ordinal)),
+                    MediumFindings = ruleResult.Findings.Count(f =>
+                        f.Severity == Severity.Medium && !string.Equals(f.Scope, Scope.ScopeManager.DormantTag, StringComparison.Ordinal)),
+                    LowFindings = ruleResult.Findings.Count(f =>
+                        f.Severity == Severity.Low && !string.Equals(f.Scope, Scope.ScopeManager.DormantTag, StringComparison.Ordinal)),
+                    InfoFindings = ruleResult.Findings.Count(f =>
+                        f.Severity == Severity.Info && !string.Equals(f.Scope, Scope.ScopeManager.DormantTag, StringComparison.Ordinal)),
                     AttackPathCount = ruleResult.AttackPaths.Count,
                     TotalSkills = allSkills.Count,
                     TotalScripts = allSkills.Sum(s => s.Scripts.Count),
-                    ScanDurationMs = stopwatch.ElapsedMilliseconds
+                    ScanDurationMs = stopwatch.ElapsedMilliseconds,
+                    // v2.4.1 (G10): true only when at least one server was actually
+                    // configured/discovered for this scan, i.e. probing was attempted
+                    // rather than skipped entirely (skills-only scan, no config found).
+                    ServersProbed = serverEnumerations.Count > 0
                 },
                 Environment = config.Environment,
                 RubricVersion = RubricVersion,
                 SuppressedFindings = suppressedFindings,
                 GradeWithoutSuppressions = gradeWithoutSupp,
                 ScoreWithoutSuppressions = scoreWithoutSupp,
-                Scope = BuildScanScope(config, serverEnumerations.Count > 0, allSkills.Count > 0)
+                SuppressionDelta = suppressionDelta,
+                Scope = BuildScanScope(
+                    config,
+                    serverEnumerations.Count > 0,
+                    allSkills.Count > 0,
+                    activeScope,
+                    inScopeSkills,
+                    dormantSkills,
+                    inScopeServers,
+                    dormantServers)
             };
 
             // v2.3.0: persist scan history if requested.
@@ -1059,7 +1246,15 @@ public static class Program
 
     // v2.3.0 helpers ---------------------------------------------------------
 
-    private static ScanScope BuildScanScope(ScanConfig config, bool hasServers, bool hasSkills)
+    private static ScanScope BuildScanScope(
+        ScanConfig config,
+        bool hasServers,
+        bool hasSkills,
+        Scope.SentinelScopeFile? activeScope = null,
+        IReadOnlyList<string>? inScopeSkills = null,
+        IReadOnlyList<string>? dormantSkills = null,
+        IReadOnlyList<string>? inScopeServers = null,
+        IReadOnlyList<string>? dormantServers = null)
     {
         var scanned = new List<string>();
         var notScanned = new List<string>();
@@ -1092,7 +1287,12 @@ public static class Program
         {
             Scanned = scanned,
             NotScanned = notScanned,
-            ComplementaryTools = config.ComplementaryTools
+            ComplementaryTools = config.ComplementaryTools,
+            ScopeSource = activeScope?.Source,
+            InScopeSkills = inScopeSkills ?? [],
+            DormantSkills = dormantSkills ?? [],
+            InScopeServers = inScopeServers ?? [],
+            DormantServers = dormantServers ?? []
         };
     }
 

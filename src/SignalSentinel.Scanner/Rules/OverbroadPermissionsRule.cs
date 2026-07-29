@@ -19,7 +19,28 @@ public sealed partial class OverbroadPermissionsRule : IRule
     [GeneratedRegex(@"\*|any|all|full|unrestricted|unlimited", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex WildcardPattern();
 
-    [GeneratedRegex(@"root|admin|system|sudo|superuser", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
+    // v2.4.0 B1: phrase-based administrative-privilege detector. The old pattern
+    // matched bare words "root" / "admin" / "system" and fired High on any tool
+    // whose description happened to mention "system" (e.g. `get_system_status`).
+    // New list requires explicit privilege-escalation phrases.
+    [GeneratedRegex(
+        @"\b(root\s+access" +
+        @"|as\s+root" +
+        @"|runas\s+root" +
+        @"|sudo(\s|$)" +
+        @"|su\s+-" +
+        @"|setuid" +
+        @"|admin(istrative)?\s+privilege" +
+        @"|system\(\)|system\s+call|syscall" +
+        @"|elevated\s+(privileges?|access|token)" +
+        @"|(privilege|priv)\s+escal(ation|ate)" +
+        @"|priv\s+esc" +
+        @"|impersonat(e|ion|es|ing)" +
+        @"|runas\s+administrator|run\s+as\s+administrator" +
+        @"|root\s+shell" +
+        @")",
+        RegexOptions.IgnoreCase,
+        matchTimeoutMilliseconds: 500)]
     private static partial Regex AdminPattern();
 
     private static readonly HashSet<string> DangerousOperations = new(StringComparer.OrdinalIgnoreCase)

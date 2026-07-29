@@ -117,7 +117,15 @@ public static class SkillReader
             Scripts = scripts,
             AdditionalFiles = additionalFiles,
             ExtraFrontmatter = extraFields,
-            Capabilities = parsed.GetListField("capabilities")
+            Capabilities = parsed.GetListField("capabilities"),
+            // v2.5.0 (G15b): supports both the nested block form
+            // (permissions:\n  deny_write:\n    - X) and the flat dotted form
+            // (permissions.deny_write: [X, Y]) - GetListField's block scanner
+            // matches on the trailing key segment regardless of indentation, and
+            // the dotted form is matched directly.
+            DenyWrite = parsed.GetListField("deny_write") is { Count: > 0 } nested
+                ? nested
+                : parsed.GetListField("permissions.deny_write")
         };
     }
 

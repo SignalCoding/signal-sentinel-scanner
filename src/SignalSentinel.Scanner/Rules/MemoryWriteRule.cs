@@ -15,11 +15,48 @@ public sealed partial class MemoryWriteRule : IRule
     public string Description => "Detects MCP tools with write access to agent memory, vector databases, or context that could enable memory poisoning attacks.";
     public bool EnabledByDefault => true;
 
-    [GeneratedRegex(@"\b(memory|context|conversation|history|session|state|cache)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
+    // v2.4.0 B3: the old MemoryKeywords pattern matched the bare word "memory",
+    // which fired on `memory_usage` (RAM) and on tools that did not mention
+    // memory at all (lemma bleed from `conversation` / `history` / `cache` on
+    // unrelated tools). MemoryKeywords is now the agent-memory / RAG-context
+    // vocabulary only; host-resource tools ("memory_usage", "RAM", "heap")
+    // cannot match.
+    [GeneratedRegex(
+        @"\b(agent[\s\-_]?memory" +
+        @"|long[\s\-_]?term[\s\-_]?memory" +
+        @"|conversation[\s\-_]?memory|conversation[\s\-_]?history" +
+        @"|session[\s\-_]?memory" +
+        @"|episodic[\s\-_]?memory|semantic[\s\-_]?memory" +
+        @"|chat[\s\-_]?history" +
+        @"|working[\s\-_]?memory" +
+        @"|knowledge[\s\-_]?base|knowledge[\s\-_]?store" +
+        @")\b",
+        RegexOptions.IgnoreCase,
+        matchTimeoutMilliseconds: 500)]
     private static partial Regex MemoryKeywords();
 
-    [GeneratedRegex(@"\b(vector|embedding|semantic|rag|knowledge|index|retrieval)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
+    [GeneratedRegex(
+        @"\b(vector(\s+(store|database|db|index))?" +
+        @"|embedding(s)?" +
+        @"|semantic[\s\-_]?search" +
+        @"|\bRAG\b|retrieval[\s\-_]?augmented" +
+        @"|chroma|faiss|pinecone|weaviate|qdrant|milvus|pgvector" +
+        @")\b",
+        RegexOptions.IgnoreCase,
+        matchTimeoutMilliseconds: 500)]
     private static partial Regex VectorKeywords();
+
+    // v2.4.0 B3: explicit negative guard. Even if a broader term matches later,
+    // these OS-resource phrases must never trigger Memory/Vector findings.
+    [GeneratedRegex(
+        @"\b(memory[\s\-_]?usage|memory[\s\-_]?stats?" +
+        @"|\bRAM\b|heap[\s\-_]?usage|stack[\s\-_]?usage|swap[\s\-_]?usage" +
+        @"|free\s+memory|used\s+memory|total\s+memory" +
+        @"|/proc/meminfo" +
+        @")\b",
+        RegexOptions.IgnoreCase,
+        matchTimeoutMilliseconds: 500)]
+    private static partial Regex HostResourceMemoryPattern();
 
     [GeneratedRegex(@"\b(write|store|save|update|modify|add|insert|put|set|create|append|push)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex WriteKeywords();
@@ -40,6 +77,14 @@ public sealed partial class MemoryWriteRule : IRule
                 var name = tool.Name;
                 var description = tool.Description ?? string.Empty;
                 var combined = $"{name} {description}";
+
+                // v2.4.0 B3: host-resource memory tools (memory_usage, RAM stats,
+                // /proc/meminfo) must never fire Memory/Vector findings. The rule
+                // is about agent-memory / RAG poisoning, not about OS metrics.
+                if (HostResourceMemoryPattern().IsMatch(combined))
+                {
+                    continue;
+                }
 
                 var hasMemoryRef = MemoryKeywords().IsMatch(combined);
                 var hasVectorRef = VectorKeywords().IsMatch(combined);

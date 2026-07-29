@@ -76,13 +76,35 @@ public sealed record ScanResult
     /// suppression were removed. Null when there are no suppressions; otherwise
     /// lets reports show technical-debt exposure at a glance.
     /// </summary>
+    /// <remarks>
+    /// v2.4.1 (G9) semantics clarification: this is the grade computed <b>as if zero
+    /// suppressions had ever been applied</b> - i.e. every currently-suppressed
+    /// finding (active or expired) is scored as if it were a normal active finding.
+    /// It is not "the grade excluding only expired suppressions"; expired
+    /// suppressions are already re-emitted as active findings (with a
+    /// "[SUPPRESSION EXPIRED]" title prefix) before <see cref="Grade"/> itself is
+    /// computed, so <see cref="Grade"/> already reflects them. This field only
+    /// exists to answer "what if none of this had been suppressed at all".
+    /// </remarks>
     public SecurityGrade? GradeWithoutSuppressions { get; init; }
 
     /// <summary>
     /// v2.3.0 fix (Section 0.4): what <see cref="Score"/> would be if every
-    /// suppression were removed. Null when there are no suppressions.
+    /// suppression were removed. Null when there are no suppressions. See the
+    /// remarks on <see cref="GradeWithoutSuppressions"/> for exact semantics.
     /// </summary>
     public int? ScoreWithoutSuppressions { get; init; }
+
+    /// <summary>
+    /// v2.4.1 (G9): numeric grade-point delta contributed by currently-active, valid
+    /// suppressions, i.e. <see cref="Score"/> minus <see cref="ScoreWithoutSuppressions"/>.
+    /// Positive when suppressions are improving the reported score. Null under the
+    /// same conditions as <see cref="ScoreWithoutSuppressions"/> (no suppressions
+    /// present in this scan). A dashboard can render "Grade A (100), +15 from 12
+    /// active suppressions" directly from <see cref="Score"/> and this field without
+    /// having to compute the delta itself.
+    /// </summary>
+    public int? SuppressionDelta { get; init; }
 }
 
 /// <summary>
@@ -106,6 +128,34 @@ public sealed record ScanScope
     /// Complementary tools recommended by the operator (e.g. Bandit, Gitleaks, Semgrep).
     /// </summary>
     public IReadOnlyList<string> ComplementaryTools { get; init; } = [];
+
+    /// <summary>
+    /// v2.4.0 (G7): source of the active scope ("file", "cli", "file+cli", or null when no
+    /// scope was configured). Surfaces in the scope disclosure block so reviewers can see
+    /// how the grade's attack surface was narrowed.
+    /// </summary>
+    public string? ScopeSource { get; init; }
+
+    /// <summary>
+    /// v2.4.0 (G7): skills found on disk that are in scope for grading.
+    /// </summary>
+    public IReadOnlyList<string> InScopeSkills { get; init; } = [];
+
+    /// <summary>
+    /// v2.4.0 (G7): skills found on disk that are not in scope at the orchestrator and
+    /// whose findings are tagged dormant.
+    /// </summary>
+    public IReadOnlyList<string> DormantSkills { get; init; } = [];
+
+    /// <summary>
+    /// v2.4.0 (G7): MCP servers that are in scope for grading.
+    /// </summary>
+    public IReadOnlyList<string> InScopeServers { get; init; } = [];
+
+    /// <summary>
+    /// v2.4.0 (G7): MCP servers that are not in scope at the orchestrator.
+    /// </summary>
+    public IReadOnlyList<string> DormantServers { get; init; } = [];
 }
 
 /// <summary>
@@ -264,6 +314,17 @@ public sealed record ScanStatistics
     /// Scan duration in milliseconds.
     /// </summary>
     public long ScanDurationMs { get; init; }
+
+    /// <summary>
+    /// v2.4.1 (G10): true when the scanner actually attempted MCP protocol probing
+    /// during this scan (at least one server was configured and enumeration was
+    /// attempted against it), false when no server probing was attempted at all
+    /// (e.g. a skills-only scan, or a misconfigured target with zero servers
+    /// discovered). Distinguishes "we tried and connected to 0 servers" from
+    /// "we never tried" - both of which otherwise present identically as
+    /// <see cref="TotalServers"/> == 0 and <see cref="ServersConnected"/> == 0.
+    /// </summary>
+    public bool ServersProbed { get; init; }
 }
 
 /// <summary>
@@ -294,5 +355,13 @@ public enum SecurityGrade
     /// <summary>
     /// F: Multiple critical findings or high-severity attack paths.
     /// </summary>
-    F
+    F,
+
+    /// <summary>
+    /// v2.4.1 (G1): the scan evaluated no scannable surface at all - zero servers
+    /// configured/reachable and zero skills supplied. Distinct from <see cref="A"/>
+    /// so a mistyped <c>--remote</c> URL or an empty CI invocation cannot present as
+    /// a clean bill of health.
+    /// </summary>
+    Inconclusive
 }

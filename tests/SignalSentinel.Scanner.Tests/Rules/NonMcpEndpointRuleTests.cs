@@ -50,7 +50,7 @@ public class NonMcpEndpointRuleTests
     public async Task ServerWithEvidence_ProducesInfoFinding()
     {
         var rule = new NonMcpEndpointRule();
-        var context = MakeContext(MakeServer("openclaw-vucp",
+        var context = MakeContext(MakeServer("test-mcp-server",
             new NonMcpEndpointEvidence
             {
                 ContentType = "text/html",
@@ -64,7 +64,7 @@ public class NonMcpEndpointRuleTests
         var f = findings[0];
         Assert.Equal("SS-INFO-001", f.RuleId);
         Assert.Equal(Severity.Info, f.Severity);
-        Assert.Contains("openclaw-vucp", f.Title, StringComparison.Ordinal);
+        Assert.Contains("test-mcp-server", f.Title, StringComparison.Ordinal);
         Assert.Contains("AST08", f.AstCodes);
         Assert.Contains("text/html", f.Evidence, StringComparison.Ordinal);
         Assert.NotNull(f.Confidence);
@@ -96,5 +96,45 @@ public class NonMcpEndpointRuleTests
     public void DetectAndThrowIfNotMcp_JsonBody_DoesNotThrow()
     {
         McpConnection.DetectAndThrowIfNotMcp("application/json", "{\"jsonrpc\":\"2.0\",\"result\":{}}");
+    }
+
+    [Fact]
+    public void DetectAndThrowIfNotMcp_404WithNonJsonRpcJsonBody_Throws()
+    {
+        // v2.4.1 (G5): a REST-style 404 body that IS valid JSON but has no
+        // "jsonrpc" field should still be classified as non-MCP.
+        var ex = Assert.Throws<NonMcpEndpointException>(() =>
+            McpConnection.DetectAndThrowIfNotMcp(
+                "application/json", "{\"error\":\"not found\",\"status\":404}", statusCode: 404));
+        Assert.Contains("404", ex.ReasonText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DetectAndThrowIfNotMcp_404WithJsonRpcErrorBody_DoesNotThrow()
+    {
+        // A real MCP JSON-RPC error response carries "jsonrpc" even on a 404 -
+        // must not be misclassified as non-MCP.
+        McpConnection.DetectAndThrowIfNotMcp(
+            "application/json",
+            "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32601,\"message\":\"Not Found\"},\"id\":1}",
+            statusCode: 404);
+    }
+
+    [Fact]
+    public async Task DetectAndThrowIfNotMcp_NonMcp404_ProducesFindingViaEnumeration()
+    {
+        var rule = new NonMcpEndpointRule();
+        var context = MakeContext(MakeServer("rest-api-404",
+            new NonMcpEndpointEvidence
+            {
+                ContentType = "application/json",
+                BodySnippet = "{\"error\":\"not found\"}",
+                Reason = "server returned HTTP 404 with a non-JSON-RPC body - no MCP protocol surface detected at this path"
+            }));
+
+        var findings = (await rule.EvaluateAsync(context)).ToList();
+
+        Assert.Single(findings);
+        Assert.Equal("SS-INFO-001", findings[0].RuleId);
     }
 }

@@ -101,6 +101,36 @@ public sealed class HtmlReportGenerator : IReportGenerator
                 sb.AppendLine("          <p>" + string.Join(", ", result.Scope.ComplementaryTools.Select(t => Encode(t))) + "</p>");
                 sb.AppendLine("        </div>");
             }
+            // v2.4.0 (G7) attack-surface block
+            if (result.Scope.ScopeSource is not null ||
+                result.Scope.InScopeSkills.Count > 0 ||
+                result.Scope.DormantSkills.Count > 0 ||
+                result.Scope.InScopeServers.Count > 0 ||
+                result.Scope.DormantServers.Count > 0)
+            {
+                sb.AppendLine("        <div class=\"scope-block\">");
+                sb.AppendLine("          <h4>Attack surface (v2.4.0 scope)</h4>");
+                sb.AppendLine("          <ul>");
+                if (result.Scope.ScopeSource is not null)
+                {
+                    sb.AppendLine($"            <li>Source: <code>{Encode(result.Scope.ScopeSource)}</code></li>");
+                }
+                if (result.Scope.InScopeSkills.Count > 0 || result.Scope.DormantSkills.Count > 0)
+                {
+                    sb.AppendLine(
+                        $"            <li>Skills: {result.Scope.InScopeSkills.Count} in-scope, "
+                        + $"{result.Scope.DormantSkills.Count} dormant (not attack surface)</li>");
+                }
+                if (result.Scope.InScopeServers.Count > 0 || result.Scope.DormantServers.Count > 0)
+                {
+                    sb.AppendLine(
+                        $"            <li>Servers: {result.Scope.InScopeServers.Count} in-scope, "
+                        + $"{result.Scope.DormantServers.Count} dormant</li>");
+                }
+                sb.AppendLine("          </ul>");
+                sb.AppendLine("          <p class=\"scope-caveat\">Dormant findings are retained below for audit trail but do not contribute to the grade.</p>");
+                sb.AppendLine("        </div>");
+            }
             sb.AppendLine("      </div>");
             sb.AppendLine("    </section>");
         }
@@ -176,12 +206,15 @@ public sealed class HtmlReportGenerator : IReportGenerator
             sb.AppendLine("    </section>");
         }
 
-        // Findings
+        // Findings (active only; dormant rendered separately below per v2.4.0 G7)
+        var activeFindingsHtml = result.Findings
+            .Where(f => !string.Equals(f.Scope, "dormant", StringComparison.Ordinal))
+            .ToList();
         sb.AppendLine("    <section>");
         sb.AppendLine("      <h2>Detailed Findings</h2>");
         foreach (var severity in new[] { Severity.Critical, Severity.High, Severity.Medium, Severity.Low, Severity.Info })
         {
-            var severityFindings = result.Findings.Where(f => f.Severity == severity).ToList();
+            var severityFindings = activeFindingsHtml.Where(f => f.Severity == severity).ToList();
             if (severityFindings.Count == 0) continue;
 
             var color = SeverityScorer.GetSeverityColor(severity);
@@ -228,6 +261,30 @@ public sealed class HtmlReportGenerator : IReportGenerator
             }
         }
         sb.AppendLine("    </section>");
+
+        // v2.4.0 (G7) Dormant findings audit table
+        var dormantFindingsHtml = result.Findings
+            .Where(f => string.Equals(f.Scope, "dormant", StringComparison.Ordinal))
+            .ToList();
+        if (dormantFindingsHtml.Count > 0)
+        {
+            sb.AppendLine("    <section class=\"dormant-findings\">");
+            sb.AppendLine("      <h2>Dormant (not attack surface)</h2>");
+            sb.AppendLine($"      <p class=\"scope-caveat\">The following {dormantFindingsHtml.Count} finding(s) were raised against skills or servers that are not enabled at the live orchestrator. They are retained for audit trail and do not contribute to the grade.</p>");
+            sb.AppendLine("      <table class=\"compliance-table\">");
+            sb.AppendLine("        <thead><tr><th>Rule</th><th>Severity</th><th>Target</th><th>Title</th></tr></thead>");
+            sb.AppendLine("        <tbody>");
+            foreach (var f in dormantFindingsHtml)
+            {
+                var target = string.IsNullOrEmpty(f.ToolName)
+                    ? Encode(f.ServerName)
+                    : $"{Encode(f.ServerName)}:{Encode(f.ToolName)}";
+                sb.AppendLine($"          <tr><td><code>{Encode(f.RuleId)}</code></td><td>{Encode(f.Severity.ToString())}</td><td>{target}</td><td>{TruncateAndEncode(f.Title, MaxTitleLength)}</td></tr>");
+            }
+            sb.AppendLine("        </tbody>");
+            sb.AppendLine("      </table>");
+            sb.AppendLine("    </section>");
+        }
 
         // v2.3.0 Accepted Risks audit table
         if (result.SuppressedFindings.Count > 0)

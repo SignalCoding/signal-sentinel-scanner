@@ -79,7 +79,7 @@ public class SkillScopeViolationYamlTests
     [Fact]
     public async Task DiskAliasInDescription_SatisfiesFilesystem()
     {
-        // The sentinel-monitor case: description says "disk/memory/CPU", body
+        // Monitoring-skill case: description says "disk/memory/CPU", body
         // uses "filesystem" terminology. Without YAML capabilities, the extended
         // lemma table should still recognise the synonym.
         var rule = new SkillScopeViolationRule();

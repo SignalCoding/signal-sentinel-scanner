@@ -89,6 +89,47 @@ public class FrontmatterParserTests
         result.GetField("nonexistent").ShouldBeNull();
     }
 
+    // v2.5.0 (G15a): dotted flat-key convention used by network.allow and
+    // permissions.deny_write (Universal Skill Format). Before this fix, the key
+    // regex's character class excluded '.', so these lines silently failed to
+    // parse at all.
+    [Fact]
+    public void Parse_WithDottedKey_ExtractsField()
+    {
+        var content = """
+            ---
+            name: net-skill
+            network.allow: [api.example.com, github.com]
+            permissions.deny_write: [AGENTS.md]
+            ---
+            Body.
+            """;
+
+        var result = FrontmatterParser.Parse(content);
+
+        result.GetField("network.allow").ShouldBe("[api.example.com, github.com]");
+        result.GetListField("network.allow").ShouldBe(["api.example.com", "github.com"]);
+        result.GetListField("permissions.deny_write").ShouldBe(["AGENTS.md"]);
+    }
+
+    [Fact]
+    public void Parse_WithDottedKeyBlockList_ExtractsField()
+    {
+        var content = """
+            ---
+            name: net-skill
+            permissions.deny_write:
+              - AGENTS.md
+              - MEMORY.md
+            ---
+            Body.
+            """;
+
+        var result = FrontmatterParser.Parse(content);
+
+        result.GetListField("permissions.deny_write").ShouldBe(["AGENTS.md", "MEMORY.md"]);
+    }
+
     [Fact]
     public void Parse_PreservesRawFrontmatter()
     {

@@ -12,7 +12,7 @@ namespace SignalSentinel.Scanner.Tests.Suppressions;
 
 public class SuppressionManagerTests
 {
-    private static Finding MakeFinding(string ruleId, string serverName, string? toolName = null, string? evidence = null, string? skillPath = null)
+    private static Finding MakeFinding(string ruleId, string serverName, string? toolName = null, string? evidence = null, string? skillPath = null, string? canonicalSkillName = null)
     {
         return new Finding
         {
@@ -26,6 +26,7 @@ public class SuppressionManagerTests
             ToolName = toolName,
             Evidence = evidence,
             SkillFilePath = skillPath,
+            CanonicalSkillName = canonicalSkillName,
             Confidence = 0.9
         };
     }
@@ -203,7 +204,7 @@ public class SuppressionManagerTests
                     new SuppressionEntry
                     {
                         RuleId = "SS-020",
-                        ServerName = "openclaw-vucp",
+                        ServerName = "test-mcp-server",
                         Justification = "Traefik geo-fence + basic auth + rate-limit",
                         ApprovedBy = "security@example.com",
                         ApprovedOn = new DateTimeOffset(2026, 4, 17, 0, 0, 0, TimeSpan.Zero),
@@ -216,9 +217,56 @@ public class SuppressionManagerTests
             Assert.NotNull(loaded);
             Assert.Single(loaded!.Suppressions);
             Assert.Equal("SS-020", loaded.Suppressions[0].RuleId);
-            Assert.Equal("openclaw-vucp", loaded.Suppressions[0].ServerName);
+            Assert.Equal("test-mcp-server", loaded.Suppressions[0].ServerName);
         }
         finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void Apply_SkillNameMatchesCanonicalName_AnnotatesSuppression()
+    {
+        // v2.4.1 (G11): the finding's raw ServerName is the directory slug, but the
+        // suppression entry is written against the frontmatter-declared skill name.
+        var file = new SuppressionFile
+        {
+            Suppressions = new[]
+            {
+                new SuppressionEntry { RuleId = "SS-024", SkillName = "pdf-tools", Justification = "signed via CI" }
+            }
+        };
+        var finding = MakeFinding("SS-024", "pdf-tools-dir-slug", canonicalSkillName: "pdf-tools");
+        var result = SuppressionManager.Apply(new[] { finding }, file, "default", DateTimeOffset.UtcNow);
+        Assert.NotNull(result[0].Suppression);
+    }
+
+    [Fact]
+    public void Apply_SkillNameFallsBackToServerNameWhenCanonicalMissing()
+    {
+        var file = new SuppressionFile
+        {
+            Suppressions = new[]
+            {
+                new SuppressionEntry { RuleId = "SS-024", SkillName = "pdf-tools", Justification = "signed via CI" }
+            }
+        };
+        var finding = MakeFinding("SS-024", "pdf-tools");
+        var result = SuppressionManager.Apply(new[] { finding }, file, "default", DateTimeOffset.UtcNow);
+        Assert.NotNull(result[0].Suppression);
+    }
+
+    [Fact]
+    public void Apply_SkillNameMismatch_LeavesFindingUnsuppressed()
+    {
+        var file = new SuppressionFile
+        {
+            Suppressions = new[]
+            {
+                new SuppressionEntry { RuleId = "SS-024", SkillName = "pdf-tools", Justification = "signed via CI" }
+            }
+        };
+        var finding = MakeFinding("SS-024", "unrelated-dir-slug", canonicalSkillName: "other-skill");
+        var result = SuppressionManager.Apply(new[] { finding }, file, "default", DateTimeOffset.UtcNow);
+        Assert.Null(result[0].Suppression);
     }
 
     [Fact]

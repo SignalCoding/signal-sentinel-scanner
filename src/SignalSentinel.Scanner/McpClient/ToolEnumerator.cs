@@ -84,6 +84,25 @@ public sealed class ToolEnumerator(TimeSpan timeout, bool verbose = false, Actio
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(_timeout.Add(TimeSpan.FromSeconds(30))); // Extra buffer for cleanup
 
+        // v2.4.0 (A2): fire a deliberate unauthenticated probe before the real
+        // authenticated connect. This lets the MissingAuthProbeRule classify the
+        // server's auth posture behaviourally. Probe is a no-op for stdio, non-public
+        // targets, or non-HTTP schemes; does not throw on connection failures.
+        AuthProbeResult? probeResult = null;
+        try
+        {
+            probeResult = await AuthProbeService.ProbeAsync(config, _timeout, timeoutCts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            // Probe failure must never prevent the real scan.
+            probeResult = null;
+        }
+
         try
         {
             await using var connection = new McpConnection(config, _timeout);
@@ -186,14 +205,28 @@ public sealed class ToolEnumerator(TimeSpan timeout, bool verbose = false, Actio
         }
         catch (Exception ex)
         {
-            // Security: Sanitize error messages before logging
-            var safeError = SanitizeErrorMessage(ex.Message);
+            // v2.4.1 (G3): capture structured evidence when the failure is a TLS
+            // certificate-validation error specifically, so SS-INFO-003 can surface
+            // it as its own informational finding instead of it being buried in an
+            // opaque ConnectionError string.
+            var tlsEvidence = ClassifyTlsError(ex);
+
+            // v2.4.1 (G4): translate common .NET TLS/connection error messages into
+            // operator-actionable language before sanitising for logging/storage.
+            var safeError = SanitizeErrorMessage(TranslateConnectionError(ex.Message));
             Log($"  Error: {safeError}");
             result = result with
             {
                 ConnectionSuccessful = false,
-                ConnectionError = safeError
+                ConnectionError = safeError,
+                TlsEvidence = tlsEvidence
             };
+        }
+
+        // Attach the v2.4.0 A2 probe result (may be null for stdio / non-public / etc.).
+        if (probeResult is not null)
+        {
+            result = result with { AuthProbe = probeResult };
         }
 
         return result;
@@ -280,6 +313,68 @@ public sealed class ToolEnumerator(TimeSpan timeout, bool verbose = false, Actio
     }
 
     /// <summary>
+    /// v2.4.1 (G3): detects whether an exception raised during connection represents
+    /// a TLS certificate-validation failure (as opposed to a generic connectivity
+    /// problem) and captures structured evidence for <c>SS-INFO-003</c>.
+    /// </summary>
+    private static TlsErrorEvidence? ClassifyTlsError(Exception ex)
+    {
+        var authEx = ex as System.Security.Authentication.AuthenticationException
+            ?? ex.InnerException as System.Security.Authentication.AuthenticationException;
+        if (authEx is null)
+        {
+            return null;
+        }
+
+        var lower = authEx.Message.ToLowerInvariant();
+        var reason = lower.Contains("certificate", StringComparison.Ordinal) ||
+            lower.Contains("trust", StringComparison.Ordinal)
+            ? "certificate validation failed"
+            : "TLS handshake failed";
+
+        return new TlsErrorEvidence
+        {
+            Reason = reason,
+            RawMessage = SanitizeForLogging(authEx.Message)
+        };
+    }
+
+    /// <summary>
+    /// v2.4.1 (G4): maps common stock .NET TLS/connection exception messages to
+    /// operator-actionable language. Falls through unchanged for anything not
+    /// recognised - this is a best-effort translation layer, not an exhaustive one.
+    /// </summary>
+    private static string TranslateConnectionError(string message)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            return message;
+        }
+
+        if (message.Contains("could not be established", StringComparison.OrdinalIgnoreCase) &&
+            message.Contains("SSL", StringComparison.OrdinalIgnoreCase))
+        {
+            return "TLS handshake failed: server certificate is not trusted by this system. " +
+                "If the server uses a private CA, install its root certificate; if " +
+                "self-signed, this scan cannot verify it and treats the connection as failed.";
+        }
+
+        if (message.Contains("remote certificate is invalid according to the validation procedure", StringComparison.OrdinalIgnoreCase))
+        {
+            return "TLS handshake failed: certificate validation rejected the server " +
+                "certificate (hostname mismatch, expiry, or chain issue).";
+        }
+
+        if (message.Contains("actively refused it", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Target host refused the connection. Check that the MCP server is " +
+                "bound to a public interface on the expected port.";
+        }
+
+        return message;
+    }
+
+    /// <summary>
     /// Sanitizes error messages to prevent sensitive data leakage.
     /// </summary>
     private static string SanitizeErrorMessage(string message)
@@ -351,6 +446,48 @@ public sealed record ServerEnumeration
     /// server at all (e.g. a React SPA returning <c>text/html</c> for every path).
     /// </summary>
     public NonMcpEndpointEvidence? NonMcpEvidence { get; init; }
+
+    /// <summary>
+    /// v2.4.0 (A2): populated for HTTP / Streamable-HTTP / WebSocket transports when
+    /// the scanner has sent a deliberate unauthenticated probe to the target to
+    /// determine whether the server enforces authentication. <see langword="null"/>
+    /// when no probe was sent (stdio transport, non-public target, or probe failed
+    /// for a non-auth reason).
+    /// </summary>
+    public AuthProbeResult? AuthProbe { get; init; }
+
+    /// <summary>
+    /// v2.4.1 (G3): populated when the connection attempt failed specifically due to
+    /// TLS certificate validation (as opposed to a generic connectivity failure).
+    /// Powers <c>SS-INFO-003</c>.
+    /// </summary>
+    public TlsErrorEvidence? TlsEvidence { get; init; }
+}
+
+/// <summary>
+/// v2.4.0 (A2): outcome of a deliberate unauthenticated request to a remote MCP
+/// server. Used by the MissingAuthProbeRule to decide whether the server enforces
+/// authentication instead of introspecting the operator's config.
+/// </summary>
+public sealed record AuthProbeResult
+{
+    /// <summary>HTTP status code returned for the unauthenticated probe. 0 if the request could not be completed.</summary>
+    public int StatusCode { get; init; }
+
+    /// <summary>Full value of the <c>WWW-Authenticate</c> response header if present. Truncated to 4 KB.</summary>
+    public string? WwwAuthenticate { get; init; }
+
+    /// <summary>True when the probe successfully returned an MCP initialize result without auth (server is open).</summary>
+    public bool AnonymousInitializeSucceeded { get; init; }
+
+    /// <summary>True when the probe received an HTTP 401 with a valid Bearer challenge (server enforces auth).</summary>
+    public bool AuthEnforced { get; init; }
+
+    /// <summary>Short label for reports: "enforced" / "open" / "unclear" / "not-probed".</summary>
+    public required string Classification { get; init; }
+
+    /// <summary>Diagnostic note when the probe could not conclusively classify.</summary>
+    public string? Note { get; init; }
 }
 
 /// <summary>
@@ -374,4 +511,21 @@ public sealed record NonMcpEndpointEvidence
     /// Short explanation of why this was classified as non-MCP.
     /// </summary>
     public string? Reason { get; init; }
+}
+
+/// <summary>
+/// v2.4.1 (G3): evidence captured when a connection attempt fails specifically
+/// because of TLS certificate validation. Powers <c>SS-INFO-003</c>.
+/// </summary>
+public sealed record TlsErrorEvidence
+{
+    /// <summary>
+    /// Short classification: "certificate validation failed" or "TLS handshake failed".
+    /// </summary>
+    public required string Reason { get; init; }
+
+    /// <summary>
+    /// Sanitised message from the underlying <see cref="System.Security.Authentication.AuthenticationException"/>.
+    /// </summary>
+    public string? RawMessage { get; init; }
 }

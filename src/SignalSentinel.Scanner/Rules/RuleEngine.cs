@@ -59,7 +59,20 @@ public sealed class RuleEngine
             new PackageProvenanceRule(),
 
             // v2.3.0 informational
-            new NonMcpEndpointRule()
+            new NonMcpEndpointRule(),
+
+            // v2.4.0 rules
+            new NonPublicTargetRule(),          // SS-INFO-002 (A1 / A4)
+            new MissingAuthProbeRule(),         // behavioural SS-020 (A2)
+            new InstructionalDescriptionRule(), // SS-026 (N5), also covers skills (G6)
+
+            // v2.4.1 rules
+            new UntrustedCertificateRule(),      // SS-INFO-003 (G3)
+            new SkillIdentityFileWriteRule(),    // SS-028 (G12b)
+
+            // v2.5.0 rules
+            new LegacyMcpProtocolRule(),          // SS-INFO-004 (G13a)
+            new SkillUnpinnedDependencyRule(),    // SS-029 (G14, SkillJacking)
         };
 
         if (customRules is not null)
@@ -189,13 +202,8 @@ public sealed class RuleEngine
         {
             var ruleFindings = await rule.EvaluateAsync(context, cancellationToken);
 
-            // v2.3.0: enrich findings with OWASP AST codes from the central mapping.
-            // Rules that already set AstCodes explicitly (e.g. SS-012) are preserved;
-            // rules without explicit codes inherit from their rule id mapping.
             var findingsList = ruleFindings
-                .Select(f => f.AstCodes.Count > 0
-                    ? f
-                    : f with { AstCodes = RuleAstMapping.GetCodes(f.RuleId) })
+                .Select(f => EnrichFinding(f, context))
                 .ToList();
             stopwatch.Stop();
 
@@ -226,6 +234,39 @@ public sealed class RuleEngine
                 Error = SanitiseErrorMessage(ex.Message)
             };
         }
+    }
+
+    /// <summary>
+    /// v2.3.0: enriches a finding with OWASP AST codes from the central mapping when
+    /// the rule did not set them explicitly (e.g. SS-012 sets its own).
+    /// v2.4.1 (G11): also stamps <see cref="Finding.CanonicalSkillName"/> for
+    /// skill-sourced findings, looked up from <see cref="ScanContext.Skills"/> by
+    /// ordinal-case-insensitive name match against <see cref="Finding.ServerName"/>
+    /// (which doubles as "skill name" for skill findings). Falls back to
+    /// <see cref="Finding.ServerName"/> itself when no matching skill definition is
+    /// found in context (e.g. in unit tests that construct findings directly).
+    /// </summary>
+    private static Finding EnrichFinding(Finding finding, ScanContext context)
+    {
+        var astCodes = finding.AstCodes.Count > 0
+            ? finding.AstCodes
+            : RuleAstMapping.GetCodes(finding.RuleId);
+
+        var canonicalSkillName = finding.CanonicalSkillName;
+        if (finding.Source == FindingSource.Skill && canonicalSkillName is null)
+        {
+            var skill = context.Skills.FirstOrDefault(s =>
+                string.Equals(s.Name, finding.ServerName, StringComparison.OrdinalIgnoreCase));
+            canonicalSkillName = skill?.CanonicalSkillName ?? finding.ServerName;
+        }
+
+        if (ReferenceEquals(astCodes, finding.AstCodes) &&
+            string.Equals(canonicalSkillName, finding.CanonicalSkillName, StringComparison.Ordinal))
+        {
+            return finding;
+        }
+
+        return finding with { AstCodes = astCodes, CanonicalSkillName = canonicalSkillName };
     }
 
     private static string SanitiseErrorMessage(string message)

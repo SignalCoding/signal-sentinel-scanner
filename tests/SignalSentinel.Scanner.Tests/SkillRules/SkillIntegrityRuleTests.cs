@@ -78,4 +78,66 @@ public class SkillIntegrityRuleTests
         var findings = await _rule.EvaluateAsync(new ScanContext { Servers = [], Skills = [] });
         findings.ShouldBeEmpty();
     }
+
+    [Fact]
+    public async Task Evaluate_SkillWithInlineFrontmatterSignature_ReturnsNoFindings()
+    {
+        // v2.4.1 (G12d): Universal Skill Format inline "signature:" frontmatter key
+        // should satisfy integrity verification without a sibling file.
+        var tempDir = Path.Combine(Path.GetTempPath(), $"skill-integrity-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var skillPath = Path.Combine(tempDir, "SKILL.md");
+            File.WriteAllText(skillPath, "# Test skill");
+
+            var skill = new SkillDefinition
+            {
+                Name = "test",
+                InstructionsBody = string.Empty,
+                RawContent = "# Test skill",
+                FilePath = skillPath,
+                ExtraFrontmatter = new Dictionary<string, string> { ["signature"] = "sig:abc123" }
+            };
+
+            var context = new ScanContext { Servers = [], Skills = [skill] };
+            var findings = await _rule.EvaluateAsync(context);
+
+            findings.ShouldBeEmpty();
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task Evaluate_SkillWithInlineFrontmatterContentHash_ReturnsNoFindings()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"skill-integrity-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var skillPath = Path.Combine(tempDir, "SKILL.md");
+            File.WriteAllText(skillPath, "# Test skill");
+
+            var skill = new SkillDefinition
+            {
+                Name = "test",
+                InstructionsBody = string.Empty,
+                RawContent = "# Test skill",
+                FilePath = skillPath,
+                ExtraFrontmatter = new Dictionary<string, string> { ["content_hash"] = "sha256:deadbeef" }
+            };
+
+            var context = new ScanContext { Servers = [], Skills = [skill] };
+            var findings = await _rule.EvaluateAsync(context);
+
+            findings.ShouldBeEmpty();
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
 }

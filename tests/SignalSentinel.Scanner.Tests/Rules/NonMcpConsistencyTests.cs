@@ -83,11 +83,11 @@ public class NonMcpConsistencyTests
         // we add stub MCP rules via customRules to simulate SS-020 et al firing.
         var engine = new RuleEngine(customRules: new IRule[]
         {
-            new StubMcpRule(RuleConstants.Rules.OAuthCompliance, "openclaw-vucp"),
-            new StubMcpRule(RuleConstants.Rules.MissingAuthentication, "openclaw-vucp"),
-            new StubMcpRule(RuleConstants.Rules.ExcessiveToolResponse, "openclaw-vucp")
+            new StubMcpRule(RuleConstants.Rules.OAuthCompliance, "test-mcp-server"),
+            new StubMcpRule(RuleConstants.Rules.MissingAuthentication, "test-mcp-server"),
+            new StubMcpRule(RuleConstants.Rules.ExcessiveToolResponse, "test-mcp-server")
         });
-        var context = MakeContext("openclaw-vucp");
+        var context = MakeContext("test-mcp-server");
 
         // Act
         var result = await engine.ExecuteAsync(context);
@@ -111,7 +111,7 @@ public class NonMcpConsistencyTests
         {
             new StubMcpRule(RuleConstants.Rules.OAuthCompliance, "other-server")
         });
-        var context = MakeContext("openclaw-vucp");
+        var context = MakeContext("test-mcp-server");
 
         var result = await engine.ExecuteAsync(context);
 
@@ -126,10 +126,10 @@ public class NonMcpConsistencyTests
         // skip MCP-protocol rules.
         var engine = new RuleEngine(customRules: new IRule[]
         {
-            new StubMcpRule(RuleConstants.Rules.SkillInjection, "openclaw-vucp"),
-            new StubMcpRule(RuleConstants.Rules.SkillScopeViolation, "openclaw-vucp")
+            new StubMcpRule(RuleConstants.Rules.SkillInjection, "test-mcp-server"),
+            new StubMcpRule(RuleConstants.Rules.SkillScopeViolation, "test-mcp-server")
         });
-        var context = MakeContext("openclaw-vucp");
+        var context = MakeContext("test-mcp-server");
 
         var result = await engine.ExecuteAsync(context);
 

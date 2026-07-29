@@ -24,8 +24,13 @@ public static partial class FrontmatterParser
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex FrontmatterBlock();
 
+    // v2.5.0 (G15): the key character class includes '.' so dotted flat-key
+    // conventions like "network.allow: [...]" or "permissions.deny_write: [...]"
+    // parse correctly. Prior to this fix, a dot in the key made the whole line fail
+    // to match, so those fields were silently unparseable from real SKILL.md files
+    // even though rule logic already checked for them via ExtraFrontmatter.
     [GeneratedRegex(
-        @"^([a-zA-Z_][a-zA-Z0-9_-]*)\s*:\s*(.*)$",
+        @"^([a-zA-Z_][a-zA-Z0-9_.-]*)\s*:\s*(.*)$",
         RegexOptions.Multiline | RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]
     private static partial Regex YamlKeyValue();

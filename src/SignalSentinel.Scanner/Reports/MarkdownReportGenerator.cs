@@ -62,6 +62,35 @@ public sealed class MarkdownReportGenerator : IReportGenerator
                 sb.AppendLine("**Complement with:** " + string.Join(", ", result.Scope.ComplementaryTools.Select(t => SanitizeMarkdown(t))));
                 sb.AppendLine();
             }
+
+            // v2.4.0 (G7) attack-surface disclosure
+            if (result.Scope.ScopeSource is not null ||
+                result.Scope.InScopeSkills.Count > 0 ||
+                result.Scope.DormantSkills.Count > 0 ||
+                result.Scope.InScopeServers.Count > 0 ||
+                result.Scope.DormantServers.Count > 0)
+            {
+                sb.AppendLine("**Attack surface (v2.4.0 scope):**");
+                if (result.Scope.ScopeSource is not null)
+                {
+                    sb.AppendLine($"- Source: `{SanitizeMarkdown(result.Scope.ScopeSource)}`");
+                }
+                if (result.Scope.InScopeSkills.Count > 0 || result.Scope.DormantSkills.Count > 0)
+                {
+                    sb.AppendLine($"- Skills: {result.Scope.InScopeSkills.Count} in-scope, "
+                        + $"{result.Scope.DormantSkills.Count} dormant (not attack surface)");
+                }
+                if (result.Scope.InScopeServers.Count > 0 || result.Scope.DormantServers.Count > 0)
+                {
+                    sb.AppendLine($"- Servers: {result.Scope.InScopeServers.Count} in-scope, "
+                        + $"{result.Scope.DormantServers.Count} dormant");
+                }
+                sb.AppendLine();
+                sb.AppendLine("> Dormant findings are retained for audit trail below but do not");
+                sb.AppendLine("> contribute to the grade. Enable a skill at the orchestrator to");
+                sb.AppendLine("> promote its findings back into the live grade.");
+                sb.AppendLine();
+            }
         }
 
         // Grade Summary
@@ -227,13 +256,17 @@ public sealed class MarkdownReportGenerator : IReportGenerator
             }
         }
 
-        // Findings by Severity
+        // Findings by Severity (active only; dormant rendered separately below per v2.4.0 G7)
         sb.AppendLine("## Findings");
         sb.AppendLine();
 
+        var activeFindings = result.Findings
+            .Where(f => !string.Equals(f.Scope, "dormant", StringComparison.Ordinal))
+            .ToList();
+
         foreach (var severity in new[] { Severity.Critical, Severity.High, Severity.Medium, Severity.Low, Severity.Info })
         {
-            var severityFindings = result.Findings.Where(f => f.Severity == severity).ToList();
+            var severityFindings = activeFindings.Where(f => f.Severity == severity).ToList();
             if (severityFindings.Count == 0)
             {
                 continue;
@@ -297,6 +330,30 @@ public sealed class MarkdownReportGenerator : IReportGenerator
             }
         }
 
+        // v2.4.0 (G7) Dormant section - findings on out-of-scope targets.
+        var dormantFindings = result.Findings
+            .Where(f => string.Equals(f.Scope, "dormant", StringComparison.Ordinal))
+            .ToList();
+        if (dormantFindings.Count > 0)
+        {
+            sb.AppendLine("## Dormant (not attack surface)");
+            sb.AppendLine();
+            sb.AppendLine($"The following {dormantFindings.Count} finding(s) were raised against skills or servers");
+            sb.AppendLine("that are not enabled at the live orchestrator. They are retained for audit trail and");
+            sb.AppendLine("do not contribute to the grade. Enable the target at the orchestrator to promote them.");
+            sb.AppendLine();
+            sb.AppendLine("| Rule | Severity | Target | Title |");
+            sb.AppendLine("|------|----------|--------|-------|");
+            foreach (var f in dormantFindings)
+            {
+                var target = string.IsNullOrEmpty(f.ToolName)
+                    ? SanitizeMarkdown(f.ServerName)
+                    : $"{SanitizeMarkdown(f.ServerName)}:{SanitizeMarkdown(f.ToolName)}";
+                sb.AppendLine($"| {f.RuleId} | {f.Severity} | {target} | {SanitizeMarkdown(f.Title)} |");
+            }
+            sb.AppendLine();
+        }
+
         // v2.3.0 Accepted Risks section - suppressed findings retained for audit.
         if (result.SuppressedFindings.Count > 0)
         {
@@ -308,6 +365,11 @@ public sealed class MarkdownReportGenerator : IReportGenerator
             if (result.GradeWithoutSuppressions is not null && result.ScoreWithoutSuppressions is not null)
             {
                 sb.AppendLine($"> **Technical-debt exposure:** if these {result.SuppressedFindings.Count} suppression(s) were removed, your grade would be **{result.GradeWithoutSuppressions} ({result.ScoreWithoutSuppressions}/100)** instead of {result.Grade} ({result.Score}/100).");
+                if (result.SuppressionDelta is not null)
+                {
+                    var sign = result.SuppressionDelta >= 0 ? "+" : string.Empty;
+                    sb.AppendLine($"> Active suppressions currently contribute **{sign}{result.SuppressionDelta}** point(s) to the reported score.");
+                }
                 sb.AppendLine();
             }
             sb.AppendLine("| Rule | Severity | Target | Justification | Approved By | Expires |");

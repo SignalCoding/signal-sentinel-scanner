@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![OWASP](https://img.shields.io/badge/OWASP-ASI%20Top%2010-green.svg)](https://owasp.org/www-project-agentic-ai-top-10/)
-[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)](https://github.com/SignalCoding/signal-sentinel-scanner/releases)
+[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/SignalCoding/signal-sentinel-scanner/releases)
 [![SARIF](https://img.shields.io/badge/SARIF-v2.1.0-orange.svg)](https://docs.oasis-open.org/sarif/sarif/v2.1.0/)
 
 **Signal Sentinel** is a security-first MCP (Model Context Protocol) and Agent Skill security product family, designed to address the critical security gap in the agentic AI ecosystem.
@@ -22,7 +22,24 @@
 
 The Scanner is a command-line tool that audits MCP server configurations and Agent Skill packages for security vulnerabilities. It produces a scored report with OWASP ASI01-ASI10 + AST01-AST10 + MCP01-MCP10 triple mapping and remediation guidance.
 
-### What's new in v2.3.0
+### What's new in v2.5.0
+
+- **MCP 2026-07-28 spec currency**: `SS-INFO-004` flags servers still negotiating an older `protocolVersion` or reachable only over the deprecated legacy HTTP+SSE transport. `SS-020` gained an advisory finding disclosing that the scanner cannot yet verify RFC 9207 issuer validation or the DCR→CIMD migration.
+- **`SS-029` Skill Unpinned Dependency Reference** — detects skills that reference a GitHub dependency by a floating branch (`main`/`master`/...) or an unpinned `git+https://` install URL instead of a pinned tag/release/commit SHA, the documented "SkillJacking" account/repo hijacking vector.
+- **Universal Skill Format fields**: `risk_tier` recognition on `SS-017` (flags a self-declared low risk tier contradicted by actual permission requests, and missing declarations on skills that do request elevated permissions) and `permissions.deny_write` recognition on `SS-028` (escalates to Critical when a skill writes to a file it explicitly promised not to touch).
+- Fixed a frontmatter-parsing bug where dotted keys (`network.allow`, `permissions.deny_write`) silently failed to parse from real `SKILL.md` files.
+
+### v2.4.x highlights
+
+- **`Inconclusive` grade** for scans with zero scannable surface (zero servers, zero skills), instead of a misleading `A`.
+- Behavioural auth-probe hardening, TLS/certificate error classification (`SS-INFO-003`), and non-MCP endpoint detection extended to unusual JSON-RPC-less 404 responses.
+- `SS-026` (instructional tool/skill description) extended to cover skill metadata, not just MCP tool descriptions.
+- `SS-028` Skill Identity/Memory File Write Access — detects skills that write to agent identity/memory files (`AGENTS.md`, `CLAUDE.md`, `MEMORY.md`, `SOUL.md`), the persistence technique behind the ClawHavoc malicious-skill campaign.
+- `SS-024` recognises inline `signature`/`content_hash` frontmatter for skill integrity verification; `SS-017` recognises a boolean `network:` grant as strictly worse than a declared `network.allow` domain allowlist.
+- Canonical skill identity (`CanonicalSkillName`) for suppression/scope matching, `SuppressionDelta` and `ServersProbed` scan statistics, and orchestrator-agnostic scope filtering (`.sentinel-scope.json` + `--include-skills`/`--exclude-skills`/`--include-servers`/`--exclude-servers`).
+- Corrected the `AST05` OWASP Agentic Skills Top 10 label to match the real published taxonomy (see [docs/owasp-ast-mapping.md](docs/owasp-ast-mapping.md)).
+
+### v2.3.0 highlights
 
 - `.sentinel-suppressions.json` — accept specific findings with a justification, approver and expiry; retained in every report format for audit.
 - `--min-confidence <f>` and `--triage` — confidence-aware filtering; see [docs/confidence-rubric.md](docs/confidence-rubric.md).
@@ -109,7 +126,7 @@ sentinel-scan --discover --skills --ci --format json
 
 ### Security Rules
 
-25 security rules across MCP and Agent Skill scanning, aligned with OWASP Agentic AI Top 10 and OWASP MCP Top 10:
+32 security rules across MCP and Agent Skill scanning, aligned with OWASP Agentic AI Top 10 and OWASP MCP Top 10. Every rule also carries an OWASP Agentic Skills Top 10 (AST) code where applicable - see [`docs/owasp-ast-mapping.md`](docs/owasp-ast-mapping.md) for the full dual mapping.
 
 #### MCP Rules
 
@@ -126,11 +143,12 @@ sentinel-scan --discover --skills --ci --format json
 | SS-009 | ASI01 | Excessive Description Length |
 | SS-010 | ASI02 | Cross-Server Attack Path Analysis |
 | SS-019 | ASI03 | Credential Hygiene Check |
-| SS-020 | ASI03 | OAuth 2.1 Compliance Check |
+| SS-020 | ASI03 | OAuth 2.1 Compliance Check *(v2.5: advisory for MCP 2026-07-28 CIMD/RFC 9207 hardening)* |
 | SS-021 | ASI04 | Package Provenance Check |
-| SS-022 | ASI01 | Rug Pull Detection / Schema Mutation *(v2.2)* |
-| SS-023 | ASI01 | Shadow Tool Injection (typosquat) *(v2.2)* |
-| SS-025 | ASI06 | Excessive Tool Response Size *(v2.2)* |
+| SS-022 | ASI01 | Rug Pull Detection / Schema Mutation |
+| SS-023 | ASI01 | Shadow Tool Injection (typosquat) |
+| SS-025 | ASI06 | Excessive Tool Response Size |
+| SS-026 | ASI01 | Instructional Tool/Skill Description (hidden agent-directed instructions in tool/skill metadata) |
 
 #### Skill Rules
 
@@ -142,9 +160,20 @@ sentinel-scan --discover --skills --ci --format json
 | SS-014 | ASI09 | Skill Data Exfiltration Detection |
 | SS-015 | ASI01 | Skill Obfuscation Detection |
 | SS-016 | ASI05 | Skill Script Payload Detection |
-| SS-017 | ASI02 | Skill Excessive Permissions Detection |
+| SS-017 | ASI02 | Skill Excessive Permissions Detection (recognises Universal Skill Format `network.allow`, `risk_tier`) |
 | SS-018 | ASI01 | Skill Hidden Content Detection |
-| SS-024 | ASI04 | Skill Integrity Verification *(v2.2)* |
+| SS-024 | ASI04 | Skill Integrity Verification (inline `signature`/`content_hash` frontmatter) |
+| SS-028 | ASI02 | Skill Identity/Memory File Write Access (ClawHavoc backdoor persistence pattern) |
+| SS-029 | ASI04 | Skill Unpinned Dependency Reference *(v2.5, "SkillJacking" account/branch hijacking)* |
+
+#### Informational Rules
+
+| Rule | OWASP | Description |
+|------|-------|-------------|
+| SS-INFO-001 | ASI10 | Non-MCP Endpoint Detected (auto-suppresses MCP-protocol rules for that target) |
+| SS-INFO-002 | ASI03 | Non-Public Scan Target |
+| SS-INFO-003 | ASI10 | Untrusted Server Certificate (TLS trust-chain failure distinct from generic connectivity errors) |
+| SS-INFO-004 | ASI04 | Legacy MCP Protocol / Transport *(v2.5, tracks the MCP 2026-07-28 specification's deprecation clock)* |
 
 ### Supported Platforms (Auto-Discovery)
 
@@ -167,15 +196,18 @@ sentinel-scan --discover --skills --ci --format json
 | **C** | 1-2 high findings or 1 attack path |
 | **D** | Critical findings present |
 | **F** | Multiple critical findings or attack paths |
+| **Inconclusive** | Zero servers and zero skills were scanned - not a security posture result, check your `--config`/`--remote`/`--skills` arguments |
 
 ### Transports
 
 | Transport | Status |
 |-----------|--------|
 | stdio | Supported |
-| HTTP/SSE | Supported |
+| HTTP/SSE | Supported *(deprecated by the MCP 2026-07-28 spec - flagged by SS-INFO-004)* |
 | Streamable HTTP | Supported |
 | WebSocket (ws/wss) | Supported |
+
+The scanner tracks the current MCP specification revision (`2026-07-28`) and flags servers still negotiating an older `protocolVersion` or reachable only over the legacy HTTP+SSE transport (`SS-INFO-004`). This is a currency notice, not a vulnerability - both remain functional through the spec's 12-month backward-compatibility window.
 
 ## Building from Source
 
@@ -218,12 +250,12 @@ signal-sentinel/
       Baseline/                      # Schema hasher + baseline manager (v2.2)
       Dedup/                         # Finding deduplication engine (v2.2)
       Offline/                       # Offline guard and violation exception (v2.2)
-      Rules/                         # MCP security rules (SS-001..SS-010, SS-019..SS-023, SS-025)
-        SkillRules/                  # Skill security rules (SS-011..SS-018, SS-024)
+      Rules/                         # MCP + informational security rules (SS-001..SS-010, SS-019..SS-023, SS-025, SS-026, SS-INFO-*)
+        SkillRules/                  # Skill security rules (SS-011..SS-018, SS-024, SS-028, SS-029)
       Scoring/                       # OWASP dual mapping and severity scoring
       Reports/                       # JSON, Markdown, HTML, SARIF v2.1.0 report generators
   tests/
-    SignalSentinel.Scanner.Tests/    # Unit and integration tests (254 tests)
+    SignalSentinel.Scanner.Tests/    # Unit and integration tests (422 tests)
   deploy/
     docker/                          # Multi-arch Docker container
   .github/

@@ -1,5 +1,5 @@
 {
-  "version": "2.3.0",
+  "version": "2.5.0",
   "rubricVersion": "1.0",
   "rules": [
     {
@@ -178,9 +178,56 @@
       "severity": "dynamic"
     },
     {
+      "id": "SS-026",
+      "name": "Instructional Tool/Skill Description",
+      "owaspCode": "ASI01",
+      "astCodes": ["AST04"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-028",
+      "name": "Skill Identity/Memory File Write Access",
+      "owaspCode": "ASI02",
+      "astCodes": ["AST03"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-029",
+      "name": "Skill Unpinned Dependency Reference (SkillJacking)",
+      "owaspCode": "ASI04",
+      "astCodes": ["AST02", "AST07"],
+      "enabled": true,
+      "severity": "medium"
+    },
+    {
       "id": "SS-INFO-001",
       "name": "Non-MCP Endpoint Detected",
       "owaspCode": "ASI10",
+      "astCodes": ["AST08"],
+      "enabled": true,
+      "severity": "info"
+    },
+    {
+      "id": "SS-INFO-002",
+      "name": "Non-Public Scan Target",
+      "owaspCode": "ASI03",
+      "enabled": true,
+      "severity": "info"
+    },
+    {
+      "id": "SS-INFO-003",
+      "name": "Untrusted Server Certificate",
+      "owaspCode": "ASI10",
+      "astCodes": ["AST08"],
+      "enabled": true,
+      "severity": "info"
+    },
+    {
+      "id": "SS-INFO-004",
+      "name": "Legacy MCP Protocol / Transport",
+      "owaspCode": "ASI04",
       "astCodes": ["AST08"],
       "enabled": true,
       "severity": "info"

@@ -9,8 +9,8 @@ namespace SignalSentinel.Scanner.Tests.History;
 
 /// <summary>
 /// Regression: v2.2 JSON scan reports (lowercase severity strings) must be
-/// loadable by the v2.3 diff command. This was caught during the OpenClaw
-/// scan run on 2026-04-18 - the enum converter had to be added to
+/// loadable by the v2.3 diff command. This was caught during a live scan
+/// run on 2026-04-18 - the enum converter had to be added to
 /// ScanHistoryManager.JsonOptions.
 /// </summary>
 public class ScanHistoryManagerRoundTripTests

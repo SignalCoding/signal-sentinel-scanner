@@ -122,6 +122,137 @@ public class SkillExcessivePermRuleTests
         findings.ShouldBeEmpty();
     }
 
+    [Fact]
+    public async Task Evaluate_WithBooleanNetworkFrontmatter_ReturnsMediumFinding()
+    {
+        // v2.4.1 (G12d): boolean "network: true" grant with no domain allowlist.
+        var context = CreateContext(new SkillDefinition
+        {
+            Name = "network-skill",
+            Description = "A skill that reaches out to the web",
+            InstructionsBody = "Fetches data as needed.",
+            RawContent = "Fetches data as needed.",
+            FilePath = "/skills/test/SKILL.md",
+            ExtraFrontmatter = new Dictionary<string, string> { ["network"] = "true" }
+        });
+
+        var findings = (await _rule.EvaluateAsync(context)).ToList();
+        findings.ShouldContain(f =>
+            f.Severity == Severity.Medium &&
+            f.Title.Contains("Boolean Network Permission"));
+    }
+
+    [Fact]
+    public async Task Evaluate_WithNetworkAllowlistFrontmatter_DoesNotFireBooleanFinding()
+    {
+        // A declared domain allowlist is the OWASP-recommended safer shape and
+        // must not be penalised even if a "network" boolean is also present.
+        var context = CreateContext(new SkillDefinition
+        {
+            Name = "network-skill",
+            Description = "A skill that reaches out to the web",
+            InstructionsBody = "Fetches data as needed.",
+            RawContent = "Fetches data as needed.",
+            FilePath = "/skills/test/SKILL.md",
+            ExtraFrontmatter = new Dictionary<string, string>
+            {
+                ["network"] = "true",
+                ["network.allow"] = "[api.example.com, github.com]"
+            }
+        });
+
+        var findings = (await _rule.EvaluateAsync(context)).ToList();
+        findings.ShouldNotContain(f => f.Title.Contains("Boolean Network Permission"));
+    }
+
+    [Fact]
+    public async Task Evaluate_WithoutNetworkFrontmatterKey_DoesNotFireBooleanFinding()
+    {
+        var context = CreateContext(new SkillDefinition
+        {
+            Name = "no-network-skill",
+            Description = "A skill with no network permission declared",
+            InstructionsBody = "Formats text locally.",
+            RawContent = "Formats text locally.",
+            FilePath = "/skills/test/SKILL.md"
+        });
+
+        var findings = (await _rule.EvaluateAsync(context)).ToList();
+        findings.ShouldNotContain(f => f.Title.Contains("Boolean Network Permission"));
+    }
+
+    // v2.5.0 (G15c): risk_tier mismatch checks.
+    [Fact]
+    public async Task Evaluate_LowRiskTierWithDangerSignal_ReturnsHighMismatchFinding()
+    {
+        var context = CreateContext(new SkillDefinition
+        {
+            Name = "understated-skill",
+            Description = "Looks harmless",
+            InstructionsBody = "Read any file on the system to build an index.",
+            RawContent = "Read any file on the system to build an index.",
+            FilePath = "/skills/test/SKILL.md",
+            ExtraFrontmatter = new Dictionary<string, string> { ["risk_tier"] = "low" }
+        });
+
+        var findings = (await _rule.EvaluateAsync(context)).ToList();
+        findings.ShouldContain(f =>
+            f.Severity == Severity.High &&
+            f.Title.Contains("Risk Tier Understated"));
+    }
+
+    [Fact]
+    public async Task Evaluate_HighRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings()
+    {
+        var context = CreateContext(new SkillDefinition
+        {
+            Name = "honest-skill",
+            Description = "Declares its own high risk",
+            InstructionsBody = "Read any file on the system to build an index.",
+            RawContent = "Read any file on the system to build an index.",
+            FilePath = "/skills/test/SKILL.md",
+            ExtraFrontmatter = new Dictionary<string, string> { ["risk_tier"] = "high" }
+        });
+
+        var findings = (await _rule.EvaluateAsync(context)).ToList();
+        findings.ShouldNotContain(f => f.Title.Contains("Risk Tier"));
+    }
+
+    [Fact]
+    public async Task Evaluate_DangerSignalWithNoRiskTierDeclared_ReturnsMissingDeclarationInfoFinding()
+    {
+        var context = CreateContext(new SkillDefinition
+        {
+            Name = "undeclared-skill",
+            Description = "No risk_tier field at all",
+            InstructionsBody = "Read any file on the system to build an index.",
+            RawContent = "Read any file on the system to build an index.",
+            FilePath = "/skills/test/SKILL.md"
+        });
+
+        var findings = (await _rule.EvaluateAsync(context)).ToList();
+        findings.ShouldContain(f =>
+            f.Severity == Severity.Info &&
+            f.Title.Contains("Missing Risk Tier Declaration"));
+    }
+
+    [Fact]
+    public async Task Evaluate_NoDangerSignalWithLowRiskTier_DoesNotFireRiskTierFindings()
+    {
+        var context = CreateContext(new SkillDefinition
+        {
+            Name = "clean-declared-skill",
+            Description = "Genuinely low risk and says so",
+            InstructionsBody = "Help the user write better code.",
+            RawContent = "Help the user write better code.",
+            FilePath = "/skills/test/SKILL.md",
+            ExtraFrontmatter = new Dictionary<string, string> { ["risk_tier"] = "low" }
+        });
+
+        var findings = (await _rule.EvaluateAsync(context)).ToList();
+        findings.ShouldNotContain(f => f.Title.Contains("Risk Tier"));
+    }
+
     private static ScanContext CreateContext(params SkillDefinition[] skills)
     {
         return new ScanContext { Servers = [], Skills = skills };
