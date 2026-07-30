@@ -8,6 +8,12 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-all</AnalysisLevel>
     
+    <!-- Single source of truth for the product version. Both packages, the
+         scanner binary's --version output and the container's OCI version label
+         all derive from this one line; release-please rewrites it on release.
+         Never set <Version> in an individual .csproj or via -p:Version. -->
+    <Version>2.5.0</Version> <!-- x-release-please-version -->
+
     <!-- Package metadata -->
     <Authors>Signal Coding Limited</Authors>
     <Company>Signal Coding Limited</Company>

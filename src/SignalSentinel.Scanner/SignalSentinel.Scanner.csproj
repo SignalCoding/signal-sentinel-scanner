@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <PackageId>SignalSentinel.Scanner</PackageId>
-    <Version>2.5.0</Version>
-    <Description>Fast, deterministic, offline-capable first-pass security aid for MCP servers and Agent Skill authors. 32 security rules aligned with OWASP Agentic AI Top 10 (ASI) and OWASP Agentic Skills Top 10 (AST). v2.5 tracks the MCP 2026-07-28 specification (stateless core, legacy transport/protocol currency notice), adds a skill supply-chain rule for unpinned GitHub dependency references (SkillJacking), recognises Universal Skill Format risk_tier and permissions.deny_write fields, and consolidates the full v2.4.x backlog: orchestrator-agnostic scope filtering, phrase-based detection for MCP and skill rule families, corrected OWASP AST10 taxonomy alignment, canonical skill identity for suppression/scope matching, and behavioural auth/TLS/non-MCP-endpoint probing.</Description>
+    <!-- Version comes from Directory.Build.props - do not set it here. -->
+    <Description>Fast, deterministic, offline-capable first-pass security aid for MCP servers and Agent Skill authors. Security rules aligned with OWASP Agentic AI Top 10 (ASI) and OWASP Agentic Skills Top 10 (AST), covering tool poisoning, rug pulls, prompt injection, credential exfiltration, skill supply-chain risk and MCP specification currency. Ships SARIF and Sigma output, suppressions, triage, baselines and offline mode. See the changelog for what each release adds.</Description>
     <PackageTags>mcp;security;scanner;ai-agents;owasp;agentic-ai;cli;dotnet-tool;websocket;agent-skills;skill-scanning;sarif;sigma;suppressions;ast;triage;pre-commit</PackageTags>
     
     <!-- Enable as global dotnet tool -->
@@ -18,126 +18,7 @@
     <!-- NuGet Package Configuration -->
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- <PackageIcon>icon.png</PackageIcon> -->
-    <PackageReleaseNotes>
-v2.5.0 - MCP 2026-07-28 Currency, SkillJacking Detection, Universal Skill Format Fields
-- NOTE: first public release since v2.3.0 - v2.4.0 and v2.4.1 were completed but never pushed/tagged; this changelog folds all three releases' changes together so there is no public gap.
-- NEW: SS-INFO-004 Legacy MCP Protocol / Transport - flags servers negotiating a protocolVersion older than the current MCP specification (2026-07-28), or reached over the deprecated legacy HTTP+SSE transport. Informational currency notice, not a vulnerability, ahead of the spec's 12-month deprecation window.
-- NEW: SS-020 OAuth Compliance extended with an advisory finding disclosing that the behavioural auth probe confirms Bearer enforcement but cannot verify RFC 9207 issuer validation or the DCR-to-CIMD migration introduced by the 2026-07-28 spec.
-- NEW: SS-029 Skill Unpinned Dependency Reference - detects skill instructions or bundled scripts referencing a GitHub dependency by a floating branch (main/master/head/develop/dev/latest/trunk) or an unpinned git+https:// install URL instead of a pinned tag/release/commit SHA. Pulls the core "SkillJacking" supply-chain detection forward from the v3.0 roadmap.
-- NEW: Universal Skill Format risk_tier recognition on SS-017 - a low-declared risk tier contradicted by observed dangerous capabilities produces a High "Risk Tier Understated" finding; an undeclared risk_tier with the same signals produces an Info nudge.
-- NEW: Universal Skill Format permissions.deny_write recognition on SS-028 - escalates High to Critical when the identity file written to is also listed in the skill's own deny_write declaration (self-contradiction).
-- FIX: FrontmatterParser dotted-key regex (network.allow, permissions.deny_write) silently failed to parse from real SKILL.md files; the rule logic consuming these fields was already correct, the parser simply never fed it the data.
-- QUALITY: 32 total rules (was 27); 422 tests (was 395); 0 warnings, 0 errors.
-- COMPATIBILITY: No operator-visible breaks. New fields are additive: SkillDefinition.DenyWrite (empty list when undeclared), SecurityGrade.Inconclusive.
-
-v2.4.1 - Credibility Fixes: Grading, TLS Classification, Skill Identity Persistence
-- NEW: Inconclusive grade for scans with zero scannable surface (zero servers, zero skills), replacing a misleading Grade A.
-- NEW: SS-INFO-003 Untrusted Server Certificate - distinguishes a TLS handshake failing on certificate validation from a generic connectivity failure, with operator-actionable remediation text.
-- NEW: SS-028 Skill Identity/Memory File Write Access - detects skills that write to agent identity/memory files (AGENTS.md, CLAUDE.md, MEMORY.md, SOUL.md), the persistence technique behind the ClawHavoc malicious-skill campaign (Jan-Feb 2026, 1,184 malicious skills).
-- UPGRADED: SS-INFO-001 also fires on 404-without-JSON-RPC responses (not just HTML-200); the auth probe no longer emits a finding when the probe itself failed to complete.
-- UPGRADED: SS-026 extended to evaluate skill frontmatter descriptions and body text, not just MCP tool descriptions.
-- UPGRADED: SS-024 recognises inline signature/content_hash frontmatter for integrity verification; SS-017 recognises a boolean network: grant as strictly worse than a declared network.allow domain allowlist.
-- NEW: Canonical skill identity (SkillDefinition.CanonicalSkillName, Finding.CanonicalSkillName) so SuppressionManager and ScopeManager can no longer disagree about which skill a rule fired on.
-- NEW: ScanResult.SuppressionDelta and ScanStatistics.ServersProbed scan-statistics additions.
-- FIX: corrected the OWASP Agentic Skills Top 10 AST05 label to match the real published taxonomy ("Untrusted External Instructions", not the previously invented "Unsafe Deserialisation").
-- QUALITY: 27 total rules (unchanged); 395 tests (up from 366).
-
-v2.4.0 - Context-Aware Detection, Behavioural Probes and Orchestrator-Agnostic Scope
-- NEW: Orchestrator-agnostic scope model - a `.sentinel-scope.json` file (schema v1.0) and matching CLI flags `--scope`, `--include-skills`, `--exclude-skills`, `--include-servers`, `--exclude-servers` let you declare which skills and MCP servers are live attack surface at your orchestrator. Out-of-scope findings are tagged "dormant" and retained in every report format for audit trail, but do not contribute to the grade. The scanner does not parse orchestrator-native config files of any vendor - any orchestrator, CI pipeline, or human can produce the scope file.
-- NEW: Shared `InjectionPatterns` library tightened (SS-001 Tool Poisoning + SS-011 Skill Injection + SS-014 Skill Exfiltration). `InstructionInjection` now requires canonical prompt-injection phrasing (override-intent verbs + target noun; IMPORTANT: labels; role-hijack phrases; SYSTEM PROMPT: markers) rather than bare modal verbs (MUST / ALWAYS / IMPORTANT). `DataExfiltration` now requires an outbound verb paired with a data-object and a `to / via / through` target, or a network fetcher within 80 characters of an explicit `https?://` URL. `PrivilegeEscalation` now requires a canonical escalation verb or a pinned noun phrase, eliminating false positives on bare words `privilege` and `elevate`.
-- NEW: `SkillObfuscationRule.ConditionalTrigger` now requires a covert-action verb within 120 characters of the trigger phrase, so "If the user says X, respond with Y" no longer misclassifies as obfuscation.
-- NEW: `SkillExcessivePermRule.UnrestrictedNetwork` now requires a request / grant / declaration context or a YAML-style `network: unrestricted` declared-capability form, eliminating false positives on "any URL" in descriptive prose.
-- NEW: `ExfiltrationPatterns.HttpDataSend` (SS-014 EXFIL-001) now requires a data-object before `to`, so legitimate `POST to /api/status` no longer fires. URL-adjacent outbound verbs (`POST to https://...`) still fire.
-- NEW: SS-INFO-002 Non-Public Target notice - surfaces an informational finding when the scanner is pointed at a loopback, RFC 1918, link-local or non-public-hostname target. Makes scan scope explicit and exempts transport-posture rules (SS-020) that only make sense against a public endpoint.
-- NEW: SS-026 Instructional Tool Description - Medium-severity rule catching tool descriptions written to drive the agent ("you must call this first", "ignore all previous instructions") rather than describe the tool. Both a tool-poisoning signature and a skill-authoring anti-pattern.
-- NEW: SS-020 behavioural auth probe - sends one deliberate unauthenticated MCP `initialize` request and classifies the server as enforced / open / unclear based on the WWW-Authenticate challenge. Behavioural posture replaces config introspection, so auth configured via v2.3.1 `headers: { Authorization: Bearer ... }` is now recognised alongside `env`-based credentials.
-- NEW: Stale suppression detection - warns the operator when a `.sentinel-suppressions.json` entry has expired or no longer matches any finding in the current scan.
-- UPGRADED: SS-008 (sensitive data) now distinguishes public TLS material (certificate, CA bundle, public key) from secret credential material (private key, password, api key, bearer/access/refresh token, client secret, vault secret). Tools like `tls_expiry` and `get_certificate` are classified correctly.
-- UPGRADED: SS-002 (overbroad permissions) is now phrase-based. Recognises `root access`, `sudo`, `su -`, `setuid`, `admin privilege`, `privilege escalation`, `elevated token`, `runas administrator`, `root shell`, `impersonate`.
-- UPGRADED: SS-005 (code execution) is now phrase-based. Recognises concrete primitives (`eval(`, `exec(`, `Runtime.exec`, `Process.Start`, `os.system`, `subprocess.`, `shell -c`, `bash -c`, `PowerShell -Command`, `cmd.exe /c`) and `runs arbitrary code` phrasing.
-- UPGRADED: SS-006 (memory write) distinguishes agent-memory vocabulary (long-term memory, conversation history, episodic/semantic memory, knowledge base) from host-resource vocabulary (memory usage, /proc/meminfo, heap, swap). Vector store coverage extended to Chroma, FAISS, Pinecone, Weaviate, Qdrant, Milvus, pgvector.
-- QUALITY: 27 total rules (was 26); 366 tests (was 254); 0 warnings, 0 errors. The expanded suite adds 16 scope-manager tests and a substantial pattern-accuracy regression suite that locks in observed production false-positive kills.
-- COMPATIBILITY: No operator-visible breaks. Scoring rubric, suppression schema (v1.0) and existing report shapes unchanged. New fields (`Finding.Scope`, `ScanScope.ScopeSource`, `ScanScope.InScopeSkills`, `ScanScope.DormantSkills`, `ScanScope.InScopeServers`, `ScanScope.DormantServers`) are additive and nullable.
-
-v2.3.0 - Triage, Suppressions, Scope Disclosure, Non-MCP Detection
-- NEW: .sentinel-suppressions.json schema v1.0 - formally accept risk on specific findings, with justification, approver, expiry. Retained in JSON/SARIF/Markdown/HTML for audit trail under an "Accepted Risks" section.
-- NEW: SS-INFO-001 Non-MCP Endpoint Detected - surfaces an informational finding when --remote is pointed at a host that does not implement MCP (e.g. React SPA catch-all returning text/html). No more misleading "Grade A" against web apps.
-- NEW: Confidence-aware triage - --min-confidence &lt;f&gt; filters low-confidence findings; --triage demotes them to Low but keeps them visible; --fail-on &lt;severity&gt; replaces legacy pass/fail semantics.
-- NEW: Scan history + delta - --save-history persists runs to .sentinel/history; sentinel-scan diff &lt;baseline.json&gt; &lt;current.json&gt; shows resolved / new / grade-attribution deltas.
-- NEW: Per-environment scoping - --environment &lt;dev|staging|prod&gt;, suppressions can scope to an environment.
-- NEW: OWASP Agentic Skills Top 10 (AST01..AST10) mapping on every finding - SARIF tags + Markdown/HTML headers show both ASI and AST codes.
-- NEW: Explicit scope disclosure block on every report - tells users what was scanned, what was not, and which complementary tools to combine with (Bandit, Gitleaks, Semgrep, Enkrypt Skill Sentinel by default).
-- NEW: --list-rules prints the rule registry with OWASP/AST/severity columns.
-- NEW: --ignore-rule SS-xxx[,SS-yyy] for ephemeral per-run exclusions.
-- IMPROVED: SS-012 now uses case-insensitive capability matching plus a lemma table ("Network" satisfies "network access", "filesystem" satisfies "filesystem access" etc.) - eliminates mechanical false positives from capitalised sentence starts.
-- IMPROVED: 26 total rules (was 25); 240 tests; 0 warnings, 0 errors.
-- FIX: Non-MCP endpoint detection now runs before HTTP status validation - SS-INFO-001 fires even when the SPA catch-all returns 4xx/5xx with HTML or plain-text bodies.
-- FIX: ScanHistoryManager now deserialises lowercase enum strings in v2.2 JSON baselines so `sentinel-scan diff` works across the 2.2 -> 2.3 boundary.
-- POSITIONING: README and report language softened towards "fast, deterministic, first-pass authoring aid" - full positioning reset lands in v3.0.0.
-- BREAKING: None. Scoring rubric unchanged; CI gates from v2.2 continue to work. Grade-semantics reset is scheduled for v3.0.0 (see ROADMAP_V3.0.md).
-
-v2.2.0 - Rug Pull Detection, SARIF, Sigma Rules, Offline Mode
-- NEW: SS-022 Rug Pull Detection - catches silent tool schema mutations between scans via hashed baselines
-- NEW: SS-023 Shadow Tool Injection - typosquat/Levenshtein detection across configured servers
-- NEW: SS-024 Skill Integrity Verification - hash and signature checks for Agent Skills
-- NEW: SS-025 Excessive Tool Response Size - bounds live MCP tool responses
-- NEW: SARIF v2.1.0 output format (--format sarif) for GitHub Code Scanning and IDE integration
-- NEW: --baseline/--update-baseline flags to persist and compare tool schemas between scans
-- NEW: --offline flag enforces zero-egress operation, verified by dedicated offline-verification CI job
-- NEW: --sigma-rules flag loads Sigma YAML rules for custom MCP/Skill pattern detection
-- NEW: Finding deduplication engine collapses identical matches with OccurrenceCount indicator
-- 25 total security rules (16 MCP + 9 Skill); 195 tests; 0 warnings, 0 errors
-
-v2.1.1 - Security Hardening Release
-- SECURITY: All GitHub Actions pinned to SHA hashes (supply chain protection)
-- SECURITY: SSRF protection on --remote URL (blocks private IPs, cloud metadata)
-- SECURITY: Symlink escape protection in skill parser (resolves symlinks before path checks)
-- SECURITY: Environment variable denylist for stdio MCP transport (blocks PATH, LD_PRELOAD, etc.)
-- SECURITY: TLS 1.2/1.3 enforcement on HTTP connections
-- SECURITY: Bounded stdio reads (10MB limit prevents memory exhaustion)
-- SECURITY: Proper JsonDocument disposal prevents memory leaks
-- SECURITY: WebSocket dispose timeout prevents hangs
-- SECURITY: Regex timeouts added to all 23 MCP rule patterns (consistency with skill rules)
-- SECURITY: Markdown report hardening (escaping + truncation)
-- SECURITY: Trivy scan now blocks release on CRITICAL/HIGH CVEs
-- SECURITY: CI vulnerability check now fails build on detected vulnerabilities
-- FIX: RegexOptions.Compiled removed from source-generated regex (ignored by generator)
-- FIX: HashPinning handles duplicate tool names without crash
-- FIX: Finding.Confidence validates 0.0-1.0 range
-- FIX: Environment.Exit(0) replaced with proper return flow
-- 44 security audit findings addressed (1 Critical, 7 High, 17 Medium, 12 Low)
-
-v2.1.0 - Enhanced Inline Code Block Scanning
-- ENHANCED: SS-016 now scans markdown code blocks (bash, python, etc.) for malicious patterns
-- ENHANCED: SS-016 detects hardcoded absolute user paths (/root/, /home/user/, C:\Users\) in code blocks
-- ENHANCED: SS-012 detects inline code execution (python3 -c, bash -c, node -e) as scope violation
-- These enhancements catch skills that embed executable commands in markdown code fences
-
-v2.0.0 - Agent Skill Scanning + New MCP Rules
-- NEW: Agent Skill scanning (SKILL.md format) with 8 dedicated rules (SS-011 to SS-018)
-- NEW: Skill auto-discovery for Claude Code, Codex CLI, Cursor, Windsurf
-- NEW: Bundled script analysis (.py, .sh, .ps1, .js, .ts)
-- NEW: Credential Hygiene rule (SS-019) - detects hardcoded secrets in MCP configs
-- NEW: OAuth 2.1 Compliance rule (SS-020) - verifies remote server authentication
-- NEW: Package Provenance rule (SS-021) - checks npm/PyPI supply chain
-- NEW: OWASP MCP Top 10 dual mapping alongside ASI01-ASI10
-- NEW: Shared detection patterns (Exfiltration, Credential, Obfuscation)
-- NEW: --skills CLI flag for skill scanning
-- 21 total security rules (13 MCP + 8 Skill)
-- Combined MCP + Skill unified reporting
-
-v1.1.0 - WebSocket Transport Support
-- Added WebSocket transport (ws:// and wss:// URLs)
-- Auto-detection of transport from URL scheme
-- Config file support for websocket transport type
-
-v1.0.0 - Initial Release
-- 10 security rules mapped to OWASP Agentic AI Top 10 (ASI01-ASI10)
-- Auto-discovery for Claude Desktop, Cursor, VS Code, Windsurf, Zed
-- A-F scoring system with OWASP compliance matrix
-- JSON, Markdown, and HTML report generation
-- CI mode with exit codes for automated pipelines
-    </PackageReleaseNotes>
+    <PackageReleaseNotes>See https://github.com/SignalCoding/signal-sentinel-scanner/blob/main/CHANGELOG.md</PackageReleaseNotes>
     
     <!-- SourceLink for debugging support -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

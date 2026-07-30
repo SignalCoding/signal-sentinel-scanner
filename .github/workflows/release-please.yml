@@ -1,0 +1,71 @@
+# -----------------------------------------------------------------------
+# Signal Sentinel - Release Please Workflow
+# Copyright 2026 Signal Coding Limited. All rights reserved.
+# Licensed under the Apache License, Version 2.0.
+# -----------------------------------------------------------------------
+# Owns versioning and tagging. On every push to main, release-please opens (or
+# updates) a release PR that bumps the version everywhere and writes CHANGELOG.md.
+# Merging that PR creates the tag and the GitHub Release, which gates the reusable
+# release workflow below.
+#
+# The default GITHUB_TOKEN is used deliberately - no PAT, no App. The consequence
+# is that a tag pushed by this workflow will NOT trigger a separate tag-triggered
+# workflow, which is why release.yml is invoked directly via workflow_call rather
+# than left on a 'push: tags' trigger.
+#
+# Requires: Settings -> Actions -> General -> "Allow GitHub Actions to create and
+# approve pull requests" must be enabled, or the release PR cannot be opened.
+#
+# All actions pinned to SHA hashes for supply chain security.
+
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+# Deny by default; each job grants only what it needs.
+permissions: {}
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false # never cancel a run that may be mid-tag
+
+jobs:
+  release-please:
+    name: Release PR / Tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the release branch, create the tag and release
+      pull-requests: write # open and update the release PR
+      issues: write # the autorelease:* labels it uses to find merged release PRs
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      version: ${{ steps.release.outputs.version }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+
+    steps:
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  release:
+    name: Publish
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    # This block is the ceiling for every job inside release.yml - a called
+    # workflow can only downgrade what the caller grants, never raise it.
+    permissions:
+      contents: write # attach .nupkg assets to the release
+      packages: write # push to GHCR
+      security-events: write # upload the Trivy SARIF
+      actions: read # required by upload-sarif on private repositories
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ${{ needs.release-please.outputs.version }}
+      tag: ${{ needs.release-please.outputs.tag_name }}
+    secrets: inherit
