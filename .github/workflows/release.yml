@@ -3,7 +3,12 @@
 # Copyright 2026 Signal Coding Limited. All rights reserved.
 # Licensed under the Apache License, Version 2.0.
 # -----------------------------------------------------------------------
-# Triggered on version tags (v*) - publishes to NuGet and GitHub Container Registry
+# Publishes to NuGet and GitHub Container Registry. Two entry points:
+#   1. push: tags 'v*'   - manual/emergency releases (git tag vX.Y.Z && git push --tags).
+#   2. workflow_call     - the normal path, invoked by release-please.yml once it has
+#      created the tag and a draft release. `version`/`tag` inputs are used instead of
+#      parsing GITHUB_REF, since a workflow_call run's triggering ref is the branch
+#      that release-please pushed to (main), not the tag itself.
 # All actions pinned to SHA hashes for supply chain security.
 
 name: Release
@@ -12,6 +17,16 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version without the leading v, e.g. 2.6.0'
+        required: true
+        type: string
+      tag:
+        description: 'Full tag name, e.g. v2.6.0'
+        required: true
+        type: string
 
 env:
   DOTNET_VERSION: '10.0.x'
@@ -69,9 +84,14 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       
-      - name: Extract version from tag
+      - name: Determine version
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "VERSION=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          fi
       
       - name: Pack Scanner
         run: |
@@ -128,15 +148,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       
-      - name: Extract version from tag
+      - name: Determine version
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "VERSION=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Lowercase image name
         id: image
         run: echo "NAME=${IMAGE_NAME,,}" >> $GITHUB_OUTPUT
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
+
+      - name: Compute semver components
+        id: semver
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          echo "MAJOR=${VERSION%%.*}" >> "$GITHUB_OUTPUT"
+          echo "MAJOR_MINOR=${VERSION%.*}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
@@ -154,9 +186,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ steps.image.outputs.NAME }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=raw,value=${{ steps.version.outputs.VERSION }}
+            type=raw,value=${{ steps.semver.outputs.MAJOR_MINOR }}
+            type=raw,value=${{ steps.semver.outputs.MAJOR }}
             type=raw,value=latest,enable={{is_default_branch}}
       
       - name: Build and push Docker image
@@ -201,9 +233,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       
-      - name: Extract version from tag
+      - name: Determine version
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "VERSION=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          fi
       
       - name: Download NuGet artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -214,7 +251,14 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
+          # release-please already created the tag (and, per release-please-config.json's
+          # draft:true, an unpublished draft release with its own conventional-commits
+          # changelog as the body). tag_name is explicit because github.ref is the
+          # branch that triggered release-please.yml, not the tag, on this path.
+          tag_name: ${{ inputs.tag || format('v{0}', steps.version.outputs.VERSION) }}
           name: Signal Sentinel v${{ steps.version.outputs.VERSION }}
+          append_body: true
+          generate_release_notes: ${{ inputs.tag == '' }}
           body: |
             ## Signal Sentinel Scanner v${{ steps.version.outputs.VERSION }}
             
@@ -242,4 +286,3 @@ jobs:
             ./artifacts/*.nupkg
           draft: false
           prerelease: false
-          generate_release_notes: true

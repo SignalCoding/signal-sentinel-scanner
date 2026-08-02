@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![OWASP](https://img.shields.io/badge/OWASP-ASI%20Top%2010-green.svg)](https://owasp.org/www-project-agentic-ai-top-10/)
-[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/SignalCoding/signal-sentinel-scanner/releases)
+[![Version](https://img.shields.io/static/v1?label=version&color=blue&message=2.5.0)](https://github.com/SignalCoding/signal-sentinel-scanner/releases) <!-- x-release-please-version -->
 [![SARIF](https://img.shields.io/badge/SARIF-v2.1.0-orange.svg)](https://docs.oasis-open.org/sarif/sarif/v2.1.0/)
 
 **Signal Sentinel** is a security-first MCP (Model Context Protocol) and Agent Skill security product family, designed to address the critical security gap in the agentic AI ecosystem.

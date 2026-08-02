@@ -1,0 +1,39 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "d6b32ad077a4d25b62ffdacc54c1ad41b0f4c108",
+  "include-component-in-tag": false,
+  "draft": true,
+  "force-tag-creation": true,
+  "changelog-sections": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "perf", "section": "Performance Improvements" },
+    { "type": "deps", "section": "Dependencies" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "revert", "section": "Reverts" },
+    { "type": "refactor", "section": "Code Refactoring", "hidden": true },
+    { "type": "test", "section": "Tests", "hidden": true },
+    { "type": "build", "section": "Build System", "hidden": true },
+    { "type": "ci", "section": "Continuous Integration", "hidden": true },
+    { "type": "chore", "section": "Miscellaneous", "hidden": true }
+  ],
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "package-name": "signal-sentinel-scanner",
+      "extra-files": [
+        "Directory.Build.props",
+        "deploy/docker/Dockerfile.scanner",
+        "hooks/.pre-commit-hooks.yaml",
+        "README.md",
+        "INSTALLATION_AND_USAGE.md",
+        "docs/owasp-ast-mapping.md",
+        {
+          "type": "json",
+          "path": "src/SignalSentinel.Scanner/DefaultRules.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    }
+  }
+}

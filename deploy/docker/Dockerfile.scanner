@@ -84,6 +84,15 @@ ENTRYPOINT ["/app/sentinel-scan"]
 # Default to help if no arguments provided
 CMD ["--help"]
 
+# The release workflow passes --build-arg VERSION=<release version>. The default
+# below is rewritten by release-please so local and CI builds still label
+# themselves correctly. Dockerfiles have no inline comments, so this needs the
+# block form of the annotation - keep it wrapped tightly around the ARG, since
+# block mode rewrites the first version-shaped token on every line it covers.
+# x-release-please-start-version
+ARG VERSION=2.5.0
+# x-release-please-end
+
 # OCI Image Labels (https://github.com/opencontainers/image-spec/blob/main/annotations.md)
 LABEL org.opencontainers.image.title="Signal Sentinel Scanner" \
       org.opencontainers.image.description="MCP Security Audit Tool - OWASP Agentic AI Top 10 Compliant" \
@@ -92,7 +101,7 @@ LABEL org.opencontainers.image.title="Signal Sentinel Scanner" \
       org.opencontainers.image.source="https://github.com/SignalCoding/signal-sentinel-scanner" \
       org.opencontainers.image.documentation="https://github.com/SignalCoding/signal-sentinel-scanner#readme" \
       org.opencontainers.image.url="https://signalcoding.co.uk/products/sentinel-scanner/" \
-      org.opencontainers.image.version="2.5.0" \
+      org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine"
 
 # Build-time labels (set via --build-arg)

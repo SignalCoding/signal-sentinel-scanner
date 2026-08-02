@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Core.RuleFormats;
@@ -25,13 +26,20 @@ namespace SignalSentinel.Scanner;
 /// </summary>
 public static class Program
 {
-    // v2.5.0: derived from the assembly version (itself driven by the .csproj
-    // <Version> property) instead of a hardcoded literal, so this can no longer
-    // drift out of sync with the package version across releases the way it did
-    // through v2.4.0/v2.4.1/v2.5.0 (this constant was stuck at "2.4.0" while the
-    // .csproj moved to 2.5.0).
+    // Derived from the assembly rather than a hardcoded literal, so it cannot
+    // drift from the package version the way it did through v2.4.0/v2.4.1/v2.5.0
+    // (this constant was stuck at "2.4.0" while the project moved to 2.5.0).
+    //
+    // InformationalVersion is preferred over AssemblyVersion because the latter is
+    // a four-part numeric quad: MSBuild strips semver prerelease labels from it, so
+    // a 2.6.0-rc.1 build would report itself as plain "2.6.0". SourceLink appends
+    // "+<commit sha>" to InformationalVersion, hence the split.
     private static readonly string Version =
-        typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
+        typeof(Program).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion.Split('+')[0]
+        ?? typeof(Program).Assembly.GetName().Version?.ToString(3)
+        ?? "0.0.0";
     private const string RubricVersion = "1.0";
 
     // Security: Limits for input validation

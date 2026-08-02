@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>SignalSentinel.Core</PackageId>
-    <Version>2.5.0</Version>
+    <!-- Version comes from Directory.Build.props - do not set it here. -->
     <Description>Core library for Signal Sentinel MCP and Agent Skill security tools. Contains MCP protocol models, skill definition models, shared security patterns (injection, exfiltration, credential, obfuscation), and OWASP dual mapping utilities.</Description>
     <PackageTags>mcp;security;ai-agents;owasp;agentic-ai;library;agent-skills</PackageTags>
     <IsPackable>true</IsPackable>

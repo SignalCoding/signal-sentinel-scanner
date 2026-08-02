@@ -40,7 +40,7 @@ the AST code definitions themselves live in
 | AST09 | No Governance                   | No change-management, ownership, or review process for skills.                                      |
 | AST10 | Cross-Platform Reuse            | Skill mixes incompatible platform semantics unsafely.                                               |
 
-## Rule-to-AST map (v2.5.0)
+## Rule-to-AST map (v2.5.0) <!-- x-release-please-version -->
 
 | Rule ID      | ASI   | AST                  | Notes                                                   |
 |--------------|-------|----------------------|----------------------------------------------------------|
