@@ -33,8 +33,13 @@ public sealed partial class SkillScriptPayloadRule : IRule
         matchTimeoutMilliseconds: 500)]
     private static partial Regex RemoteCodeExecution();
 
+    // v2.5.1 tightened: ".profile" (and siblings) had no word boundary, so it matched
+    // inside ordinary property-access expressions like "resp.profile" in JS/TS scripts -
+    // a real-world review found 4 such false positives. A negative lookbehind now
+    // requires the dotfile name not be preceded by a word character, so "resp.profile"
+    // no longer matches while "~/.profile", "source .profile", etc. still do.
     [GeneratedRegex(
-        @"(crontab|cron\.d|systemctl\s+enable|schtasks\s+/create|Register-ScheduledTask|\.bashrc|\.zshrc|\.bash_profile|\.profile|shell:startup|autostart|launchctl\s+load|launchd)",
+        @"(crontab|cron\.d|systemctl\s+enable|schtasks\s+/create|Register-ScheduledTask|(?<!\w)\.bashrc\b|(?<!\w)\.zshrc\b|(?<!\w)\.bash_profile\b|(?<!\w)\.profile\b|shell:startup|autostart|launchctl\s+load|launchd)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]
     private static partial Regex PersistenceMechanism();
@@ -94,11 +99,19 @@ public sealed partial class SkillScriptPayloadRule : IRule
             {
                 if (script.Content is null) continue;
 
+                // v2.5.1: strip the shebang line before matching. FileSystemTraversal's
+                // path alternatives include bare "/usr/" etc., which matched inside
+                // every "#!/usr/bin/env ..." shebang - a real-world review found this
+                // accounted for 170 of 240 script-payload false positives. A shebang
+                // line is never itself meaningful evidence for any of these patterns,
+                // so stripping it is safe for the whole ScriptPatterns pass.
+                var scriptContent = StripShebangLine(script.Content);
+
                 foreach (var (pattern, name, severity, description, remediation) in ScriptPatterns)
                 {
-                    if (SafeIsMatch(pattern, script.Content))
+                    if (SafeIsMatch(pattern, scriptContent))
                     {
-                        var match = SafeMatches(pattern, script.Content).FirstOrDefault();
+                        var match = SafeMatches(pattern, scriptContent).FirstOrDefault();
 
                         findings.Add(new Finding
                         {
@@ -120,8 +133,13 @@ public sealed partial class SkillScriptPayloadRule : IRule
                 }
 
                 // Check shared obfuscation patterns in scripts
-                if (InjectionPatterns.SafeIsMatch(ObfuscationPatterns.DynamicExecution(), script.Content))
+                if (InjectionPatterns.SafeIsMatch(ObfuscationPatterns.DynamicExecution(), scriptContent))
                 {
+                    // v2.5.1: this finding previously never populated Evidence at all,
+                    // so there was no way to see what actually matched.
+                    var obfuscationMatch = SafeMatches(ObfuscationPatterns.DynamicExecution(), scriptContent)
+                        .FirstOrDefault();
+
                     findings.Add(new Finding
                     {
                         RuleId = Id,
@@ -133,6 +151,7 @@ public sealed partial class SkillScriptPayloadRule : IRule
                         Remediation = "Remove dynamic code execution (eval, exec, Function constructor).",
                         ServerName = skill.Name,
                         ToolName = script.RelativePath,
+                        Evidence = TruncateEvidence(obfuscationMatch?.Value ?? "(matched)"),
                         Confidence = 0.85,
                         Source = FindingSource.Skill,
                         SkillFilePath = skill.FilePath
@@ -154,7 +173,7 @@ public sealed partial class SkillScriptPayloadRule : IRule
 
         foreach (var block in codeBlocks)
         {
-            var code = block.Groups[1].Value;
+            var code = StripShebangLine(block.Groups[1].Value);
 
             foreach (var (pattern, name, severity, description, remediation) in ScriptPatterns)
             {
@@ -204,6 +223,23 @@ public sealed partial class SkillScriptPayloadRule : IRule
                 });
             }
         }
+    }
+
+    /// <summary>
+    /// Removes a leading shebang line (e.g. <c>#!/usr/bin/env python3</c>) before pattern
+    /// matching. Shebang lines are never meaningful evidence for these checks, but their
+    /// system paths (<c>/usr/</c>, etc.) collide with legitimate traversal/persistence
+    /// pattern fragments.
+    /// </summary>
+    private static string StripShebangLine(string content)
+    {
+        if (!content.StartsWith("#!", StringComparison.Ordinal))
+        {
+            return content;
+        }
+
+        var newlineIndex = content.IndexOf('\n');
+        return newlineIndex >= 0 ? content[(newlineIndex + 1)..] : string.Empty;
     }
 
     private static bool SafeIsMatch(Regex pattern, string? input)

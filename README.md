@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![OWASP](https://img.shields.io/badge/OWASP-ASI%20Top%2010-green.svg)](https://owasp.org/www-project-agentic-ai-top-10/)
-[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/SignalCoding/signal-sentinel-scanner/releases)
+[![Version](https://img.shields.io/badge/version-2.5.1-blue.svg)](https://github.com/SignalCoding/signal-sentinel-scanner/releases)
 [![SARIF](https://img.shields.io/badge/SARIF-v2.1.0-orange.svg)](https://docs.oasis-open.org/sarif/sarif/v2.1.0/)
 
 **Signal Sentinel** is a security-first MCP (Model Context Protocol) and Agent Skill security product family, designed to address the critical security gap in the agentic AI ecosystem.
@@ -21,6 +21,31 @@
 ## Signal Sentinel Scanner
 
 The Scanner is a command-line tool that audits MCP server configurations and Agent Skill packages for security vulnerabilities. It produces a scored report with OWASP ASI01-ASI10 + AST01-AST10 + MCP01-MCP10 triple mapping and remediation guidance.
+
+### What's new in v2.5.1
+
+False-positive remediation patch for the skill-scanning rules, informed by a real-world
+review of 65 production Claude skills (Grade F / 584 findings, of which none were an
+actual vulnerability). All fixes are regex/logic tightenings; no rules were removed.
+
+- Bare `.env` filename mentions in documentation prose no longer fire `SS-014`/`SS-011`
+  credential/injection findings; a genuine access verb or call (`cat .env`,
+  `load_dotenv(`, `dotenv.config(`, etc.) is now required.
+- `#!/usr/bin/env ...` shebang lines no longer trip `SS-016`'s file-system-traversal
+  check via the bare `/usr/` path fragment.
+- `<meta charset>`/`<meta name="viewport">` etc. no longer trip `SS-018`'s dangerous-tag
+  check; only `<meta http-equiv>` (a genuine hidden-redirect vector) is flagged.
+- A bare mention of "exfiltrate"/"siphon"/"smuggle" (e.g. in a skill's own
+  anti-exfiltration guidance) no longer fires `SS-011`/`SS-014`; an outbound verb still
+  requires a data-object and a destination.
+- `.profile`/`.bashrc`/etc. no longer match inside ordinary property-access expressions
+  (`resp.profile`) in `SS-016`'s persistence-mechanism check.
+- The `Function(` obfuscation check no longer matches inside ordinary identifiers
+  (`someFunction(`), and the "Dynamic Code Execution" finding now populates `Evidence`
+  (it previously never did).
+- A single zero-width character (common in legitimate emoji ZWJ sequences) no longer
+  trips the hidden-content check; a cluster of 2+ consecutive characters is now
+  required, matching the already-correct threshold used elsewhere in the codebase.
 
 ### What's new in v2.5.0
 

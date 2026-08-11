@@ -46,8 +46,13 @@ public static partial class CredentialPatterns
     /// <summary>
     /// Detects references to credential/secret files.
     /// </summary>
+    // v2.5.1 tightened: bare ".env" fired on any mention of the filename, including
+    // documentation prose ("store your key in a .env file") - the single largest false
+    // positive source found in a real-world 65-skill review (52/56 credential-access
+    // hits). The .env branch now requires an actual access verb/call, not just the name;
+    // the other secret-file paths are unchanged since they were not shown to false-fire.
     [GeneratedRegex(
-        @"(\.env\b|\.env\.local|\.env\.production|\.aws/credentials|\.azure/credentials|\.config/gcloud|\.kube/config|\.docker/config\.json|\.netrc|\.npmrc|\.pypirc|credentials\.json|service[_-]?account[_-]?key\.json|keystore\.jks|\.p12\b|\.pfx\b|\.pem\b)",
+        @"(\b(?:cat|source|less|head|tail|type|nano|vim|vi|read(?:s|ing)?)\s+\.env(?:\.local|\.production)?\b|\bload_dotenv\s*\(|\bdotenv\.config\s*\(|from\s+dotenv\s+import|require\s*\(\s*['""]dotenv['""]\s*\)|\bopen\s*\(\s*['""]\.env|readFileSync\s*\(\s*['""]\.env|readFile\s*\(\s*['""]\.env|\.aws/credentials|\.azure/credentials|\.config/gcloud|\.kube/config|\.docker/config\.json|\.netrc|\.npmrc|\.pypirc|credentials\.json|service[_-]?account[_-]?key\.json|keystore\.jks|\.p12\b|\.pfx\b|\.pem\b)",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex SecretFileAccess();

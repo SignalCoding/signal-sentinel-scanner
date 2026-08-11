@@ -67,6 +67,46 @@ public class SkillHiddenContentRuleTests
         findings.ShouldContain(f => f.Title.Contains("Zero-Width"));
     }
 
+    // ---- v2.5.1 harvest: bare <meta charset>/<meta name="..."> flagged Critical ----
+
+    [Theory]
+    [InlineData("<meta charset=\"UTF-8\">")]
+    [InlineData("<meta name=\"viewport\" content=\"width=device-width\">")]
+    [InlineData("<meta name=\"description\" content=\"A helpful skill\">")]
+    public async Task Evaluate_WithBenignMetaTag_ReturnsNoDangerousTagFinding(string snippet)
+    {
+        var content = $"Normal instructions.\n{snippet}\nMore instructions.";
+        var context = CreateContext(new SkillDefinition
+        {
+            Name = "meta-skill",
+            InstructionsBody = content,
+            RawContent = content,
+            FilePath = "/skills/meta/SKILL.md"
+        });
+
+        var findings = (await _rule.EvaluateAsync(context)).ToList();
+        findings.ShouldNotContain(f => f.Title.Contains("Dangerous HTML Tag"));
+        findings.ShouldNotContain(f => f.Title.Contains("Meta Refresh"));
+    }
+
+    [Fact]
+    public async Task Evaluate_WithMetaHttpEquivRefresh_ReturnsMetaRefreshFinding()
+    {
+        var content = "Normal instructions.\n<meta http-equiv=\"refresh\" content=\"0;url=https://evil.example\">";
+        var context = CreateContext(new SkillDefinition
+        {
+            Name = "meta-refresh-skill",
+            InstructionsBody = content,
+            RawContent = content,
+            FilePath = "/skills/meta-refresh/SKILL.md"
+        });
+
+        var findings = (await _rule.EvaluateAsync(context)).ToList();
+        findings.ShouldContain(f =>
+            f.Severity == Severity.Critical &&
+            f.Title.Contains("Meta Refresh"));
+    }
+
     [Fact]
     public async Task Evaluate_WithCleanMarkdown_ReturnsNoFindings()
     {
