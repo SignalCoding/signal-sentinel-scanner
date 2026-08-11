@@ -1,6 +1,6 @@
 # Signal Sentinel Scanner v2.5.1
 
-**Release date:** 2026-08-02
+**Release date:** 2026-08-11
 **Positioning:** false-positive remediation patch for the Agent Skill scanning rules.
 **Theme:** regex/logic precision fixes, informed by a real-world review of 65 production Claude skills.
 
