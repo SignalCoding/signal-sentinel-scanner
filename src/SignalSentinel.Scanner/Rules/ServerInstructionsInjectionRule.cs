@@ -52,10 +52,11 @@ public sealed partial class ServerInstructionsInjectionRule : IRule
     [GeneratedRegex(
         @"\b(" +
         @"(do\s+not|don't|never)\s+(use|call|trust|invoke)\s+(any\s+)?(other|another|third[- ]party)\s+(server|tool)s?" +
-        @"|(always|only)\s+(use|prefer|call)\s+(this|these|our)\s+(server|tool)s?" +
+        @"|(always|only)\s+(use|prefer|call)\s+(this|these|our)\s+(server|tool)s?\s+(instead\s+of|over|rather\s+than|not|for\s+all)\b" +
         @"|(before|instead\s+of)\s+(using|calling)\s+(any\s+)?other\s+(server|tool)s?" +
         @"|ignore\s+(the\s+)?(description|instruction)s?\s+(of|from)\s+other\s+(server|tool)s?" +
-        @"|(disable|bypass|skip)\s+(the\s+)?(user\s+)?(confirmation|approval|permission)s?" +
+        @"|(disable|bypass|skip)\s+(the\s+)?(user|human)\s+(confirmation|approval|permission)s?" +
+        @"|without\s+(asking|confirming\s+with|prompting)\s+(the\s+)?(user|human)" +
         @")",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]

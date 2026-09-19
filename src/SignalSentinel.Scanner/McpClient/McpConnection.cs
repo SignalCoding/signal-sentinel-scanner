@@ -245,6 +245,21 @@ public sealed class McpConnection : IAsyncDisposable
         int maxBytes,
         CancellationToken cancellationToken)
     {
+        var frames = await ReadAndInspectHttpFramesAsync(response, maxBytes, cancellationToken);
+        return frames[0];
+    }
+
+    /// <summary>
+    /// As <see cref="ReadAndInspectHttpResponseAsync"/> but returns every JSON frame in
+    /// the body. A plain JSON body yields one frame; an SSE body yields one frame per
+    /// event, in order, so callers can pick out server-initiated messages that arrived
+    /// ahead of the actual response. Always returns at least one element.
+    /// </summary>
+    internal static async Task<IReadOnlyList<string>> ReadAndInspectHttpFramesAsync(
+        HttpResponseMessage response,
+        int maxBytes,
+        CancellationToken cancellationToken)
+    {
         ArgumentNullException.ThrowIfNull(response);
 
         if (response.Content.Headers.ContentLength > maxBytes)
@@ -264,17 +279,22 @@ public sealed class McpConnection : IAsyncDisposable
         // MCP 2025-06-18 Streamable HTTP transport responds either with
         // application/json (immediate) or text/event-stream (SSE framed).
         // Unwrap SSE framing into raw JSON so callers see a uniform payload.
+        IReadOnlyList<string> frames = [body];
         if (!string.IsNullOrEmpty(contentType) &&
             contentType.Contains("text/event-stream", StringComparison.OrdinalIgnoreCase))
         {
-            body = ExtractJsonFromServerSentEvents(body);
+            var split = SplitServerSentEvents(body);
+            if (split.Count > 0)
+            {
+                frames = split;
+            }
         }
 
-        DetectAndThrowIfNotMcp(contentType, body, (int)response.StatusCode);
+        DetectAndThrowIfNotMcp(contentType, frames[0], (int)response.StatusCode);
 
         response.EnsureSuccessStatusCode();
 
-        return body;
+        return frames;
     }
 
     /// <summary>
@@ -290,19 +310,41 @@ public sealed class McpConnection : IAsyncDisposable
             return body;
         }
 
-        var lines = body.Split('\n');
-        var dataParts = new List<string>(lines.Length);
-        foreach (var rawLine in lines)
+        var frames = SplitServerSentEvents(body);
+        return frames.Count == 0 ? body : frames[0];
+    }
+
+    /// <summary>
+    /// Splits a Server-Sent Events body into the <c>data</c> payload of each event, in
+    /// order. Events with no <c>data:</c> line are dropped. Returns an empty list when
+    /// the body contains no SSE data at all.
+    /// </summary>
+    internal static IReadOnlyList<string> SplitServerSentEvents(string body)
+    {
+        if (string.IsNullOrEmpty(body))
+        {
+            return [];
+        }
+
+        var frames = new List<string>();
+        var dataParts = new List<string>();
+
+        void Flush()
+        {
+            if (dataParts.Count > 0)
+            {
+                frames.Add(string.Join("\n", dataParts));
+                dataParts.Clear();
+            }
+        }
+
+        foreach (var rawLine in body.Split('\n'))
         {
             var line = rawLine.TrimEnd('\r');
-            // Blank line terminates the current SSE event; once we've collected
-            // data for one event, stop so we return only the first frame.
+            // Blank line terminates the current SSE event.
             if (string.IsNullOrEmpty(line))
             {
-                if (dataParts.Count > 0)
-                {
-                    break;
-                }
+                Flush();
                 continue;
             }
             if (line.StartsWith("data:", StringComparison.Ordinal))
@@ -314,7 +356,8 @@ public sealed class McpConnection : IAsyncDisposable
             // Ignore event:, id:, retry:, comments, etc.
         }
 
-        return dataParts.Count == 0 ? body : string.Join("\n", dataParts);
+        Flush();
+        return frames;
     }
 
     /// <summary>
@@ -650,8 +693,21 @@ public sealed class McpConnection : IAsyncDisposable
                     var declineJson = RecordUnsolicited(root);
                     if (declineJson is not null)
                     {
-                        await _process.StandardInput.WriteLineAsync(declineJson.AsMemory(), cts.Token);
-                        await _process.StandardInput.FlushAsync(cts.Token);
+                        // Best effort: a server that closed stdin right after asking us
+                        // something should not abort enumeration of what we already have.
+                        try
+                        {
+                            await _process.StandardInput.WriteLineAsync(declineJson.AsMemory(), cts.Token);
+                            await _process.StandardInput.FlushAsync(cts.Token);
+                        }
+                        catch (IOException)
+                        {
+                            // Swallowed by design; see comment above.
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            // Swallowed by design; see comment above.
+                        }
                     }
                     continue;
                 }
@@ -843,20 +899,58 @@ public sealed class McpConnection : IAsyncDisposable
             }
         }
 
-        var responseJson = await ReadAndInspectHttpResponseAsync(response, MaxResponseSizeBytes, cancellationToken);
+        var frames = await ReadAndInspectHttpFramesAsync(response, MaxResponseSizeBytes, cancellationToken);
 
-        using var doc = JsonDocument.Parse(responseJson);
-        var root = doc.RootElement;
-
-        if (root.TryGetProperty("error", out var error))
+        // An SSE body may carry server-initiated messages (log notifications, sampling
+        // requests) ahead of the actual response. Record those and answer from the
+        // first frame that is a response. Over HTTP a decline would be a separate POST,
+        // which we deliberately do not send; the record is what the rules need.
+        JsonException? lastParseError = null;
+        var parsedAny = false;
+        foreach (var frame in frames)
         {
-            var errorMsg = RecordProtocolError(method, error);
-            throw new InvalidOperationException($"MCP error: {errorMsg}");
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(frame);
+            }
+            catch (JsonException ex)
+            {
+                lastParseError = ex;
+                continue;
+            }
+
+            parsedAny = true;
+            using (doc)
+            {
+                var root = doc.RootElement;
+                if (root.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                if (root.TryGetProperty("method", out _))
+                {
+                    RecordUnsolicited(root);
+                    continue;
+                }
+
+                if (root.TryGetProperty("error", out var error))
+                {
+                    var errorMsg = RecordProtocolError(method, error);
+                    throw new InvalidOperationException($"MCP error: {errorMsg}");
+                }
+
+                if (root.TryGetProperty("result", out var result))
+                {
+                    return JsonSerializer.Deserialize<TResult>(result.GetRawText(), JsonOptions);
+                }
+            }
         }
 
-        if (root.TryGetProperty("result", out var result))
+        if (!parsedAny && lastParseError is not null)
         {
-            return JsonSerializer.Deserialize<TResult>(result.GetRawText(), JsonOptions);
+            throw lastParseError;
         }
 
         return null;
@@ -920,8 +1014,21 @@ public sealed class McpConnection : IAsyncDisposable
                     var declineJson = RecordUnsolicited(root);
                     if (declineJson is not null)
                     {
-                        var declineBytes = Encoding.UTF8.GetBytes(declineJson);
-                        await _webSocket.SendAsync(declineBytes.AsMemory(), WebSocketMessageType.Text, true, cts.Token);
+                        // Best effort, as in the stdio path: a socket the server closed
+                        // immediately after its request must not abort enumeration.
+                        try
+                        {
+                            var declineBytes = Encoding.UTF8.GetBytes(declineJson);
+                            await _webSocket.SendAsync(declineBytes.AsMemory(), WebSocketMessageType.Text, true, cts.Token);
+                        }
+                        catch (WebSocketException)
+                        {
+                            // Swallowed by design; see comment above.
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            // Swallowed by design; see comment above.
+                        }
                     }
                     continue;
                 }

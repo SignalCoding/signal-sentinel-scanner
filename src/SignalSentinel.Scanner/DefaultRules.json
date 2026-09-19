@@ -202,6 +202,38 @@
       "severity": "medium"
     },
     {
+      "id": "SS-030",
+      "name": "MCP Prompt Poisoning",
+      "owaspCode": "ASI01",
+      "astCodes": ["AST04"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-031",
+      "name": "MCP Resource Poisoning",
+      "owaspCode": "ASI01",
+      "astCodes": ["AST04"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-032",
+      "name": "MCP Server Instructions Injection",
+      "owaspCode": "ASI01",
+      "astCodes": ["AST04", "AST05"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-033",
+      "name": "Unsolicited Server-to-Client Request",
+      "owaspCode": "ASI07",
+      "astCodes": ["AST08"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
       "id": "SS-INFO-001",
       "name": "Non-MCP Endpoint Detected",
       "owaspCode": "ASI10",
@@ -229,6 +261,14 @@
       "name": "Legacy MCP Protocol / Transport",
       "owaspCode": "ASI04",
       "astCodes": ["AST08"],
+      "enabled": true,
+      "severity": "info"
+    },
+    {
+      "id": "SS-INFO-005",
+      "name": "MCP Capability Surface",
+      "owaspCode": "ASI02",
+      "astCodes": ["AST03"],
       "enabled": true,
       "severity": "info"
     }

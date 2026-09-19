@@ -216,6 +216,21 @@ public class McpSurfaceRulesTests
         findings.ShouldContain(f => f.Severity == Severity.High && f.Title.Contains("Other Servers"));
     }
 
+    [Theory]
+    [InlineData("Only use this tool when the user asks about weather.")]
+    [InlineData("Always call this tool before answering.")]
+    [InlineData("Only use these tools for read operations.")]
+    [InlineData("Pass --yes to skip the confirmation prompt when running in CI.")]
+    [InlineData("Use search_products before get_product; the latter needs a SKU.")]
+    public async Task ServerInstructions_BenignGuidance_NoFindings(string instructions)
+    {
+        var ctx = Server(instructions: instructions);
+
+        var findings = await new ServerInstructionsInjectionRule().EvaluateAsync(ctx);
+
+        findings.ShouldBeEmpty();
+    }
+
     [Fact]
     public async Task ServerInstructions_VeryLong_FiresLow()
     {
@@ -420,6 +435,72 @@ public class McpSurfaceRulesTests
 
         record.Code.ShouldBe(0);
         record.Message.ShouldBe("Unknown error");
+    }
+
+    // --------------------------------------------------- SSE frame splitting
+
+    [Fact]
+    public void SplitServerSentEvents_MultipleEvents_ReturnsEachFrameInOrder()
+    {
+        const string body =
+            "event: message\n" +
+            "data: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/message\",\"params\":{\"level\":\"info\"}}\n" +
+            "\n" +
+            "data: {\"jsonrpc\":\"2.0\",\n" +
+            "data:  \"id\":1,\"result\":{\"tools\":[]}}\n" +
+            "\n" +
+            ": keep-alive\n";
+
+        var frames = McpConnection.SplitServerSentEvents(body);
+
+        frames.Count.ShouldBe(2);
+        frames[0].ShouldContain("notifications/message");
+        frames[1].ShouldBe("{\"jsonrpc\":\"2.0\",\n \"id\":1,\"result\":{\"tools\":[]}}");
+    }
+
+    [Fact]
+    public void SplitServerSentEvents_NoDataLines_ReturnsEmpty()
+    {
+        McpConnection.SplitServerSentEvents(": comment only\n\nretry: 5\n").ShouldBeEmpty();
+        McpConnection.SplitServerSentEvents(string.Empty).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void ExtractJsonFromServerSentEvents_StillReturnsFirstFrame()
+    {
+        const string body = "data: {\"a\":1}\n\ndata: {\"b\":2}\n\n";
+
+        McpConnection.ExtractJsonFromServerSentEvents(body).ShouldBe("{\"a\":1}");
+    }
+
+    [Fact]
+    public async Task ReadAndInspectHttpFramesAsync_SseWithNotificationFirst_ReturnsBothFrames()
+    {
+        const string body =
+            "data: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/message\",\"params\":{}}\n\n" +
+            "data: {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{}}\n\n";
+        using var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new StringContent(body, System.Text.Encoding.UTF8, "text/event-stream")
+        };
+
+        var frames = await McpConnection.ReadAndInspectHttpFramesAsync(response, 1_000_000, CancellationToken.None);
+
+        frames.Count.ShouldBe(2);
+        frames[1].ShouldContain("\"result\"");
+    }
+
+    [Fact]
+    public async Task ReadAndInspectHttpFramesAsync_PlainJson_ReturnsSingleFrame()
+    {
+        using var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{}}", System.Text.Encoding.UTF8, "application/json")
+        };
+
+        var frames = await McpConnection.ReadAndInspectHttpFramesAsync(response, 1_000_000, CancellationToken.None);
+
+        frames.Count.ShouldBe(1);
     }
 
     // ---------------------------------------------------------------- helpers

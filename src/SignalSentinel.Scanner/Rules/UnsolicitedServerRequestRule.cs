@@ -23,6 +23,10 @@ namespace SignalSentinel.Scanner.Rules;
 /// declared boundaries. Sampling is Critical because it is the agentjacking primitive:
 /// the server gets to author prompts the client's model will execute.
 /// Other unsolicited requests are Medium; notifications are Low.
+/// Unlike the other MCP rules this one deliberately does not skip servers whose
+/// connection failed: the enumerator harvests recorded messages in a <c>finally</c>
+/// block, so a server that sent <c>sampling/createMessage</c> and then broke the
+/// session is still flagged.
 /// </remarks>
 public sealed class UnsolicitedServerRequestRule : IRule
 {
