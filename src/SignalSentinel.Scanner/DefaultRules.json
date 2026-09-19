@@ -234,6 +234,22 @@
       "severity": "dynamic"
     },
     {
+      "id": "SS-034",
+      "name": "Skill Integrity Mismatch",
+      "owaspCode": "ASI04",
+      "astCodes": ["AST02", "AST07"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-035",
+      "name": "Skill Suspicious File Artefact",
+      "owaspCode": "ASI04",
+      "astCodes": ["AST01", "AST06"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
       "id": "SS-INFO-001",
       "name": "Non-MCP Endpoint Detected",
       "owaspCode": "ASI10",

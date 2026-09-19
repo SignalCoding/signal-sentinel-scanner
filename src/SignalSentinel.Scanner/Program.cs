@@ -665,6 +665,8 @@ public static class Program
                 SS-024  Skill Integrity Verification (ASI04, AST02/AST07)
                 SS-028  Skill Identity/Memory File Write Access (ASI02, AST03)
                 SS-029  Skill Unpinned Dependency Reference (ASI04, AST02/AST07)
+                SS-034  Skill Integrity Mismatch (ASI04, AST02/AST07)
+                SS-035  Skill Suspicious File Artefact (ASI04, AST01/AST06)
             
             INFORMATIONAL:
                 SS-INFO-001  Non-MCP Endpoint Detected (ASI10, AST08)
