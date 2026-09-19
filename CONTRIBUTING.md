@@ -55,6 +55,8 @@ Every rule needs all of the following or CI's rule-registry tests will fail:
    positive, one negative, and one edge case.
 7. If the rule depends on MCP protocol exchange, add it to
    `RuleConstants.Rules.McpProtocolRules` so SS-INFO-001 can suppress it correctly.
+8. An entry in `src/SignalSentinel.Scanner/DefaultRules.json` (the shipped rule
+   registry) with matching id, name, owaspCode and astCodes.
 
 Rule IDs are allocated sequentially (`SS-0NN`) or as `SS-INFO-0NN` for informational
 rules that do not affect the grade.

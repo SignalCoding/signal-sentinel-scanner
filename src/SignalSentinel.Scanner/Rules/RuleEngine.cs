@@ -73,6 +73,13 @@ public sealed class RuleEngine
             // v2.5.0 rules
             new LegacyMcpProtocolRule(),          // SS-INFO-004 (G13a)
             new SkillUnpinnedDependencyRule(),    // SS-029 (G14, SkillJacking)
+
+            // v3.0.0 MCP surface rules (WP2)
+            new PromptPoisoningRule(),            // SS-030
+            new ResourcePoisoningRule(),          // SS-031
+            new ServerInstructionsInjectionRule(), // SS-032
+            new UnsolicitedServerRequestRule(),   // SS-033
+            new CapabilitySurfaceRule(),          // SS-INFO-005
         };
 
         if (customRules is not null)

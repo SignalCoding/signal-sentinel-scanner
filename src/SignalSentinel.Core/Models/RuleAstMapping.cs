@@ -74,7 +74,17 @@ public static class RuleAstMapping
 
             // v2.5.0 rules (G13a/G14)
             ["SS-INFO-004"] = [OwaspAstCodes.AST08],
-            ["SS-029"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07]
+            ["SS-029"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07],
+
+            // v3.0.0 MCP surface rules (WP2). Prompts/resources/instructions are
+            // metadata channels (AST04); unsolicited server requests indicate a
+            // server probing client trust boundaries (AST08 Poor Scanning of the
+            // protocol surface); capability surface is an over-privilege signal (AST03).
+            ["SS-030"] = [OwaspAstCodes.AST04],
+            ["SS-031"] = [OwaspAstCodes.AST04],
+            ["SS-032"] = [OwaspAstCodes.AST04, OwaspAstCodes.AST05],
+            ["SS-033"] = [OwaspAstCodes.AST08],
+            ["SS-INFO-005"] = [OwaspAstCodes.AST03]
         };
 
     /// <summary>
