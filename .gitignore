@@ -139,3 +139,7 @@ test-mcp-server/
 test-skills/
 test-report.*
 scan-results/
+
+# Local scan artefacts from ad-hoc runs
+openclaw-*
+

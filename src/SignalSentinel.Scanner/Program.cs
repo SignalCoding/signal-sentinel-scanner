@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.Net;
 using System.Text.RegularExpressions;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Core.RuleFormats;
@@ -36,7 +35,6 @@ public static class Program
 
     // Security: Limits for input validation
     private const int MaxPathLength = 4096;
-    private const int MaxUrlLength = 2048;
     private const int MaxTimeoutSeconds = 300;
     private const int MinTimeoutSeconds = 1;
 
@@ -126,13 +124,19 @@ public static class Program
                     if (i + 1 < args.Length)
                     {
                         var url = args[++i];
-                        if (!ValidateUrl(url))
+                        // Network policy (private-range block) is applied after the loop so
+                        // that --allow-private is honoured regardless of argument order.
+                        if (!RemoteUrlPolicy.IsValidSyntax(url))
                         {
                             Console.Error.WriteLine("Error: Invalid URL");
                             return null;
                         }
                         config = config with { RemoteUrl = url };
                     }
+                    break;
+
+                case "--allow-private":
+                    config = config with { AllowPrivate = true };
                     break;
 
                 case "--discover" or "-d":
@@ -425,6 +429,18 @@ public static class Program
             config = config with { AutoDiscover = true };
         }
 
+        // Security: SSRF protection - block --remote targets on loopback/private/link-local
+        // ranges unless the operator explicitly opted in. SS-INFO-002 annotates the scan
+        // when the target is non-public either way.
+        if (config.RemoteUrl is not null && !config.AllowPrivate &&
+            RemoteUrlPolicy.TargetsPrivateNetwork(config.RemoteUrl))
+        {
+            Console.Error.WriteLine(
+                "Error: --remote target resolves to a loopback, private, or link-local address. " +
+                "Pass --allow-private to scan it anyway.");
+            return null;
+        }
+
         return config;
     }
 
@@ -487,81 +503,6 @@ public static class Program
         var allowedExtensions = new[] { ".json", ".md", ".html", ".txt", ".sarif" };
 
         return allowedExtensions.Contains(extension);
-    }
-
-    /// <summary>
-    /// Validates a URL for safety.
-    /// </summary>
-    private static bool ValidateUrl(string? url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            return false;
-        }
-
-        if (url.Length > MaxUrlLength)
-        {
-            return false;
-        }
-
-        // Security: Only allow http/https/ws/wss
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-        {
-            return false;
-        }
-
-        if (uri.Scheme != "http" && uri.Scheme != "https" &&
-            uri.Scheme != "ws" && uri.Scheme != "wss")
-        {
-            return false;
-        }
-
-        // Security: SSRF protection - block requests to internal/private networks
-        try
-        {
-            var host = uri.DnsSafeHost;
-            var addresses = Dns.GetHostAddresses(host);
-
-            foreach (var addr in addresses)
-            {
-                var bytes = addr.GetAddressBytes();
-
-                // Block loopback (127.0.0.0/8, ::1)
-                if (IPAddress.IsLoopback(addr))
-                    return false;
-
-                if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                {
-                    // Block 10.0.0.0/8
-                    if (bytes[0] == 10)
-                        return false;
-
-                    // Block 172.16.0.0/12
-                    if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
-                        return false;
-
-                    // Block 192.168.0.0/16
-                    if (bytes[0] == 192 && bytes[1] == 168)
-                        return false;
-
-                    // Block link-local 169.254.0.0/16 (includes cloud metadata 169.254.169.254)
-                    if (bytes[0] == 169 && bytes[1] == 254)
-                        return false;
-                }
-                else if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
-                {
-                    // Block fe80::/10 (link-local)
-                    if (bytes[0] == 0xfe && (bytes[1] & 0xc0) == 0x80)
-                        return false;
-                }
-            }
-        }
-        catch
-        {
-            // If DNS resolution fails, allow the URL (don't block on DNS failure)
-        }
-
-        return true;
     }
 
     /// <summary>
@@ -636,6 +577,7 @@ public static class Program
             SCAN TARGETS:
                 -c, --config <path>     Path to MCP configuration file
                 -r, --remote <url>      Remote MCP server URL (http/https/ws/wss)
+                    --allow-private     Permit --remote targets on loopback/RFC1918/link-local
                 -d, --discover          Auto-discover MCP configurations
                 -s, --skills [path]     Scan Agent Skills (auto-discover or specify path)
             
