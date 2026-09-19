@@ -56,7 +56,7 @@ public sealed partial class ServerInstructionsInjectionRule : IRule
         @"|(before|instead\s+of)\s+(using|calling)\s+(any\s+)?other\s+(server|tool)s?" +
         @"|ignore\s+(the\s+)?(description|instruction)s?\s+(of|from)\s+other\s+(server|tool)s?" +
         @"|(disable|bypass|skip)\s+(the\s+)?(user|human)\s+(confirmation|approval|permission)s?" +
-        @"|without\s+(asking|confirming\s+with|prompting)\s+(the\s+)?(user|human)" +
+        @"|(proceed|continue|execute|run|act|call\s+tools?)\s+without\s+(asking|confirming\s+with|prompting)\s+(the\s+)?(user|human)" +
         @")",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]

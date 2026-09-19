@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net.WebSockets;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.Json;
 using SignalSentinel.Core.McpProtocol;
@@ -950,7 +951,7 @@ public sealed class McpConnection : IAsyncDisposable
 
         if (!parsedAny && lastParseError is not null)
         {
-            throw lastParseError;
+            ExceptionDispatchInfo.Capture(lastParseError).Throw();
         }
 
         return null;
