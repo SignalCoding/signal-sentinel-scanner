@@ -18,6 +18,13 @@ public sealed record ScanConfig
     public string? RemoteUrl { get; init; }
 
     /// <summary>
+    /// v3.0.0: when true, <see cref="RemoteUrl"/> may resolve to a loopback, RFC1918, or
+    /// link-local address. Off by default (SSRF protection). SS-INFO-002 still annotates
+    /// the scan as a non-public target when this is used.
+    /// </summary>
+    public bool AllowPrivate { get; init; }
+
+    /// <summary>
     /// Auto-discover MCP configurations from known locations.
     /// </summary>
     public bool AutoDiscover { get; init; }
