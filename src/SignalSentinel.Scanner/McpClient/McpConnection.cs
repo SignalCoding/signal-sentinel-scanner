@@ -22,6 +22,15 @@ public sealed class McpConnection : IAsyncDisposable
     private int _requestId;
     private bool _disposed;
 
+    // v3.0.0: server-initiated messages and error bodies observed during the session.
+    // Bounded so a hostile server cannot grow these without limit.
+    private readonly List<McpUnsolicitedRequest> _unsolicited = [];
+    private readonly List<McpProtocolError> _protocolErrors = [];
+    private const int MaxRecordedUnsolicited = 50;
+    private const int MaxRecordedErrors = 50;
+    private const int MaxParamsSnippetLength = 200;
+    private const int MaxErrorMessageLength = 500;
+
     // Security: Limit response sizes to prevent memory exhaustion
     private const int MaxResponseSizeBytes = 10 * 1024 * 1024; // 10MB
     private const int WebSocketReceiveBufferSize = 8192;
@@ -51,6 +60,19 @@ public sealed class McpConnection : IAsyncDisposable
     /// Gets the server configuration.
     /// </summary>
     public McpServerConfig Config => _config;
+
+    /// <summary>
+    /// v3.0.0: server-to-client requests and notifications received while this
+    /// connection was awaiting its own responses. The scanner declares no client
+    /// capabilities during <c>initialize</c>, so any <c>sampling/*</c>,
+    /// <c>elicitation/*</c>, or <c>roots/*</c> request here is a protocol violation.
+    /// </summary>
+    public IReadOnlyList<McpUnsolicitedRequest> UnsolicitedRequests => _unsolicited;
+
+    /// <summary>
+    /// v3.0.0: JSON-RPC error objects the server returned for the scanner's requests.
+    /// </summary>
+    public IReadOnlyList<McpProtocolError> ProtocolErrors => _protocolErrors;
 
     /// <summary>
     /// Opens the connection to the MCP server.
@@ -536,15 +558,15 @@ public sealed class McpConnection : IAsyncDisposable
 
         if (_config.Transport == McpTransportType.Stdio)
         {
-            return await SendStdioRequestAsync<TResult>(requestJson, id, cancellationToken);
+            return await SendStdioRequestAsync<TResult>(method, requestJson, id, cancellationToken);
         }
         else if (_config.Transport == McpTransportType.WebSocket)
         {
-            return await SendWebSocketRequestAsync<TResult>(requestJson, id, cancellationToken);
+            return await SendWebSocketRequestAsync<TResult>(method, requestJson, id, cancellationToken);
         }
         else
         {
-            return await SendHttpRequestAsync<TResult>(requestJson, cancellationToken);
+            return await SendHttpRequestAsync<TResult>(method, requestJson, cancellationToken);
         }
     }
 
@@ -582,6 +604,7 @@ public sealed class McpConnection : IAsyncDisposable
     }
 
     private async Task<TResult?> SendStdioRequestAsync<TResult>(
+        string method,
         string requestJson,
         int expectedId,
         CancellationToken cancellationToken) where TResult : class
@@ -619,6 +642,20 @@ public sealed class McpConnection : IAsyncDisposable
                 using var doc = JsonDocument.Parse(line);
                 var root = doc.RootElement;
 
+                // v3.0.0: a message with "method" is server-initiated (request or
+                // notification), never a response to us. Record it and, if it expects a
+                // reply, decline so the session stays well-formed.
+                if (root.TryGetProperty("method", out _))
+                {
+                    var declineJson = RecordUnsolicited(root);
+                    if (declineJson is not null)
+                    {
+                        await _process.StandardInput.WriteLineAsync(declineJson.AsMemory(), cts.Token);
+                        await _process.StandardInput.FlushAsync(cts.Token);
+                    }
+                    continue;
+                }
+
                 // Check if this is a response (has id)
                 if (root.TryGetProperty("id", out var idElement))
                 {
@@ -633,14 +670,7 @@ public sealed class McpConnection : IAsyncDisposable
                     {
                         if (root.TryGetProperty("error", out var error))
                         {
-                            var errorMsg = error.TryGetProperty("message", out var msgEl)
-                                ? msgEl.GetString() ?? "Unknown error"
-                                : "Unknown error";
-                            // Security: Truncate error messages
-                            if (errorMsg.Length > 500)
-                            {
-                                errorMsg = errorMsg[..500] + "...";
-                            }
+                            var errorMsg = RecordProtocolError(method, error);
                             throw new InvalidOperationException($"MCP error: {errorMsg}");
                         }
 
@@ -662,7 +692,117 @@ public sealed class McpConnection : IAsyncDisposable
         throw new TimeoutException($"Timeout waiting for response from MCP server '{_config.Name}'");
     }
 
+    /// <summary>
+    /// Records a server-initiated message. Returns a JSON-RPC "method not found" error
+    /// response to send back when the message was a request (had an <c>id</c>), or null
+    /// for notifications.
+    /// </summary>
+    private string? RecordUnsolicited(JsonElement root)
+    {
+        var (record, declineJson) = ParseUnsolicited(root);
+        if (_unsolicited.Count < MaxRecordedUnsolicited)
+        {
+            _unsolicited.Add(record);
+        }
+        return declineJson;
+    }
+
+    /// <summary>
+    /// Pure parser for a server-initiated message: builds the evidence record and, for
+    /// requests (messages with an <c>id</c>), the JSON-RPC -32601 decline to send back.
+    /// </summary>
+    internal static (McpUnsolicitedRequest Record, string? DeclineJson) ParseUnsolicited(JsonElement root)
+    {
+        var methodName = root.TryGetProperty("method", out var m) && m.ValueKind == JsonValueKind.String
+            ? m.GetString() ?? "(unknown)"
+            : "(unknown)";
+        methodName = StripControl(methodName, 128);
+
+        var hasId = root.TryGetProperty("id", out var idEl) && idEl.ValueKind != JsonValueKind.Null;
+
+        string? snippet = null;
+        if (root.TryGetProperty("params", out var p))
+        {
+            snippet = StripControl(p.GetRawText(), MaxParamsSnippetLength);
+        }
+
+        var record = new McpUnsolicitedRequest
+        {
+            Method = methodName,
+            IsRequest = hasId,
+            ParamsSnippet = snippet
+        };
+
+        if (!hasId)
+        {
+            return (record, null);
+        }
+
+        // Echo the id back unchanged (number or string) so the server can correlate.
+        var decline = new
+        {
+            jsonrpc = "2.0",
+            id = idEl,
+            error = new { code = -32601, message = "Method not found" }
+        };
+        return (record, JsonSerializer.Serialize(decline, JsonOptions));
+    }
+
+    /// <summary>
+    /// Records a JSON-RPC error object for a request the scanner sent and returns the
+    /// sanitised message for the thrown exception.
+    /// </summary>
+    private string RecordProtocolError(string method, JsonElement error)
+    {
+        var record = ParseProtocolError(method, error);
+        if (_protocolErrors.Count < MaxRecordedErrors)
+        {
+            _protocolErrors.Add(record);
+        }
+        return record.Message;
+    }
+
+    /// <summary>
+    /// Pure parser for a JSON-RPC error object: sanitised, bounded message plus code.
+    /// </summary>
+    internal static McpProtocolError ParseProtocolError(string method, JsonElement error)
+    {
+        var errorMsg = error.TryGetProperty("message", out var msgEl) && msgEl.ValueKind == JsonValueKind.String
+            ? msgEl.GetString() ?? "Unknown error"
+            : "Unknown error";
+        errorMsg = StripControl(errorMsg, MaxErrorMessageLength);
+
+        var code = error.TryGetProperty("code", out var codeEl) && codeEl.ValueKind == JsonValueKind.Number
+            && codeEl.TryGetInt32(out var c) ? c : 0;
+
+        return new McpProtocolError { Method = method, Code = code, Message = errorMsg };
+    }
+
+    private static string StripControl(string input, int maxLength)
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            return string.Empty;
+        }
+
+        var sb = new StringBuilder(Math.Min(input.Length, maxLength));
+        foreach (var ch in input)
+        {
+            if (sb.Length >= maxLength)
+            {
+                sb.Append("...");
+                break;
+            }
+            if (!char.IsControl(ch) || ch == ' ')
+            {
+                sb.Append(ch);
+            }
+        }
+        return sb.ToString();
+    }
+
     private async Task<TResult?> SendHttpRequestAsync<TResult>(
+        string method,
         string requestJson,
         CancellationToken cancellationToken) where TResult : class
     {
@@ -710,9 +850,7 @@ public sealed class McpConnection : IAsyncDisposable
 
         if (root.TryGetProperty("error", out var error))
         {
-            var errorMsg = error.TryGetProperty("message", out var msgEl)
-                ? msgEl.GetString() ?? "Unknown error"
-                : "Unknown error";
+            var errorMsg = RecordProtocolError(method, error);
             throw new InvalidOperationException($"MCP error: {errorMsg}");
         }
 
@@ -725,6 +863,7 @@ public sealed class McpConnection : IAsyncDisposable
     }
 
     private async Task<TResult?> SendWebSocketRequestAsync<TResult>(
+        string method,
         string requestJson,
         int expectedId,
         CancellationToken cancellationToken) where TResult : class
@@ -775,6 +914,18 @@ public sealed class McpConnection : IAsyncDisposable
                 using var doc = JsonDocument.Parse(message);
                 var root = doc.RootElement;
 
+                // v3.0.0: server-initiated request/notification - record and decline.
+                if (root.TryGetProperty("method", out _))
+                {
+                    var declineJson = RecordUnsolicited(root);
+                    if (declineJson is not null)
+                    {
+                        var declineBytes = Encoding.UTF8.GetBytes(declineJson);
+                        await _webSocket.SendAsync(declineBytes.AsMemory(), WebSocketMessageType.Text, true, cts.Token);
+                    }
+                    continue;
+                }
+
                 // Check if this is a response (has id)
                 if (root.TryGetProperty("id", out var idElement))
                 {
@@ -789,13 +940,7 @@ public sealed class McpConnection : IAsyncDisposable
                     {
                         if (root.TryGetProperty("error", out var error))
                         {
-                            var errorMsg = error.TryGetProperty("message", out var msgEl)
-                                ? msgEl.GetString() ?? "Unknown error"
-                                : "Unknown error";
-                            if (errorMsg.Length > 500)
-                            {
-                                errorMsg = errorMsg[..500] + "...";
-                            }
+                            var errorMsg = RecordProtocolError(method, error);
                             throw new InvalidOperationException($"MCP error: {errorMsg}");
                         }
 

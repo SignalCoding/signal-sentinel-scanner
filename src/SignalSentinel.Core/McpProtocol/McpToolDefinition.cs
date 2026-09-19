@@ -82,6 +82,19 @@ public sealed record McpServerCapabilities
 
     [JsonPropertyName("logging")]
     public McpCapabilityInfo? Logging { get; init; }
+
+    /// <summary>
+    /// v3.0.0: <c>completions</c> capability (argument autocompletion for prompts/resources).
+    /// </summary>
+    [JsonPropertyName("completions")]
+    public McpCapabilityInfo? Completions { get; init; }
+
+    /// <summary>
+    /// v3.0.0: server-defined <c>experimental</c> capabilities. Kept as raw JSON because
+    /// the shape is vendor-specific; SS-INFO-005 reports the top-level keys.
+    /// </summary>
+    [JsonPropertyName("experimental")]
+    public JsonElement? Experimental { get; init; }
 }
 
 /// <summary>
@@ -91,6 +104,13 @@ public sealed record McpCapabilityInfo
 {
     [JsonPropertyName("listChanged")]
     public bool ListChanged { get; init; }
+
+    /// <summary>
+    /// v3.0.0: <c>subscribe</c> flag on the resources capability (server can push
+    /// <c>notifications/resources/updated</c> for subscribed URIs).
+    /// </summary>
+    [JsonPropertyName("subscribe")]
+    public bool Subscribe { get; init; }
 }
 
 /// <summary>
@@ -145,4 +165,46 @@ public sealed record McpInitializeResult
 
     [JsonPropertyName("serverInfo")]
     public required McpServerInfo ServerInfo { get; init; }
+
+    /// <summary>
+    /// v3.0.0: optional free-text <c>instructions</c> the server asks the client to place
+    /// in the model's system prompt. This is a direct prompt-injection channel and is
+    /// evaluated by SS-032.
+    /// </summary>
+    [JsonPropertyName("instructions")]
+    public string? Instructions { get; init; }
+}
+
+/// <summary>
+/// v3.0.0: a JSON-RPC request or notification the server sent to the client without
+/// the client having declared the corresponding capability. Captured by
+/// <c>McpConnection</c> while it waits for its own responses. Powers SS-033.
+/// </summary>
+public sealed record McpUnsolicitedRequest
+{
+    /// <summary>JSON-RPC method name (e.g. <c>sampling/createMessage</c>).</summary>
+    public required string Method { get; init; }
+
+    /// <summary>True when the message carried an <c>id</c> (a request expecting a reply).</summary>
+    public bool IsRequest { get; init; }
+
+    /// <summary>First 200 characters of the serialised <c>params</c>, control characters removed.</summary>
+    public string? ParamsSnippet { get; init; }
+}
+
+/// <summary>
+/// v3.0.0: a JSON-RPC error object the server returned for one of the scanner's
+/// requests. Error <c>message</c> bodies are an under-scrutinised injection channel
+/// (the client typically relays them verbatim to the model). Powers SS-040.
+/// </summary>
+public sealed record McpProtocolError
+{
+    /// <summary>The method the scanner had sent (e.g. <c>tools/list</c>).</summary>
+    public required string Method { get; init; }
+
+    /// <summary>JSON-RPC error code, or 0 when absent.</summary>
+    public int Code { get; init; }
+
+    /// <summary>Error message, truncated to 500 characters and control-character stripped.</summary>
+    public required string Message { get; init; }
 }

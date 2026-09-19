@@ -58,6 +58,11 @@ public static class OwaspMcpCodes
         "SS-019" => MCP07,  // Credential Hygiene → MCP Authentication Gaps
         "SS-020" => MCP07,  // OAuth Compliance → MCP Authentication Gaps
         "SS-021" => MCP03,  // Package Provenance → MCP Insecure Tool Discovery
+        "SS-030" => MCP01,  // Prompt Poisoning → MCP Tool Poisoning (same channel, different primitive)
+        "SS-031" => MCP06,  // Resource Poisoning → MCP Insecure Resource Exposure
+        "SS-032" => MCP01,  // Server Instructions Injection → MCP Tool Poisoning
+        "SS-033" => MCP03,  // Unsolicited Server Request → MCP Insecure Tool Discovery (trust boundary probing)
+        "SS-INFO-005" => MCP02,  // Capability Surface → MCP Excessive Permissions
         _ => null
     };
 }

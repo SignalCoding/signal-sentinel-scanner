@@ -648,6 +648,10 @@ public static class Program
                 SS-023  Shadow Tool Injection (ASI01)
                 SS-025  Excessive Tool Response Size (ASI06)
                 SS-026  Instructional Tool/Skill Description (ASI01, AST04)
+                SS-030  MCP Prompt Poisoning (ASI01, AST04)
+                SS-031  MCP Resource Poisoning (ASI01, AST04)
+                SS-032  MCP Server Instructions Injection (ASI01, AST04/AST05)
+                SS-033  Unsolicited Server-to-Client Request (ASI07, AST08)
             
             SKILL SECURITY RULES:
                 SS-011  Skill Prompt Injection (ASI01, AST01/AST04/AST05)
@@ -667,6 +671,7 @@ public static class Program
                 SS-INFO-002  Non-Public Scan Target (ASI03)
                 SS-INFO-003  Untrusted Server Certificate (ASI10, AST08)
                 SS-INFO-004  Legacy MCP Protocol / Transport (ASI04, AST08)
+                SS-INFO-005  MCP Capability Surface (ASI02, AST03)
             
             For more information: https://github.com/SignalCoding/signal-sentinel-scanner
             Report security issues: security@signalcoding.co.uk

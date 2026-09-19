@@ -81,6 +81,15 @@ public static class RuleConstants
         // v2.5.0 Informational rule (G13a - MCP 2026-07-28 protocol/transport currency)
         public const string LegacyMcpProtocol = "SS-INFO-004";
 
+        // SS-027 is intentionally unallocated.
+
+        // v3.0.0 MCP surface rules (WP2)
+        public const string PromptPoisoning = "SS-030";
+        public const string ResourcePoisoning = "SS-031";
+        public const string ServerInstructionsInjection = "SS-032";
+        public const string UnsolicitedServerRequest = "SS-033";
+        public const string CapabilitySurface = "SS-INFO-005";
+
         /// <summary>
         /// Rules that depend on successful MCP JSON-RPC protocol exchange with the
         /// target server. When SS-INFO-001 fires on a server, these rules cannot
@@ -97,7 +106,9 @@ public static class RuleConstants
                 ExcessiveDescription, CrossServerAttackPaths,
                 CredentialHygiene, OAuthCompliance, PackageProvenance,
                 RugPullDetection, ShadowToolInjection, SkillIntegrityVerification,
-                ExcessiveToolResponse
+                ExcessiveToolResponse,
+                PromptPoisoning, ResourcePoisoning, ServerInstructionsInjection,
+                UnsolicitedServerRequest, CapabilitySurface
             };
     }
 
