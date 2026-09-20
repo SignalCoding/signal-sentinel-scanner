@@ -37,6 +37,13 @@ public sealed class SkillPipelineTaintRule : IRule
     public bool EnabledByDefault => true;
     public IReadOnlyList<string> AstCodes => [OwaspAstCodes.AST01, OwaspAstCodes.AST06];
 
+    /// <summary>
+    /// v3.0.0 (WP10): taint flows inside the document are evaluated per fenced/indented
+    /// code block from the document segmenter (language hint included); prose cannot
+    /// execute, and bundled scripts are scanned separately below.
+    /// </summary>
+    public SegmentKind ApplicableSegments => SegmentKind.FencedCode;
+
     public Task<IEnumerable<Finding>> EvaluateAsync(ScanContext context, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -55,10 +62,15 @@ public sealed class SkillPipelineTaintRule : IRule
                 }
             }
 
-            foreach (var (language, taints) in PipelineTaint.AnalyseFencedCodeBlocks(skill.InstructionsBody))
+            // v3.0.0 (WP10): segments replace fence-regex extraction, so indented
+            // blocks and previously unlisted fence languages are covered too. The
+            // location string keeps the pre-WP10 convention ("unspecified" when the
+            // fence carries no info string).
+            foreach (var block in SegmentFilter.SegmentsFor(skill, SegmentKind.FencedCode))
             {
-                foreach (var taint in taints)
+                foreach (var taint in PipelineTaint.Analyse(block.Content))
                 {
+                    var language = block.Language ?? "unspecified";
                     findings.Add(Create(skill, taint, $"(fenced {language} code block)"));
                 }
             }

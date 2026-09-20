@@ -34,6 +34,16 @@ public sealed partial class SkillIdentityFileWriteRule : IRule
     public bool EnabledByDefault => true;
     public IReadOnlyList<string> AstCodes => [OwaspAstCodes.AST03];
 
+    /// <summary>
+    /// v3.0.0 (WP10): superset of the spec's FencedCode + Link assignment - prose is
+    /// retained because the ClawHavoc vector this rule was built for was natural-
+    /// language write intent in instructions ("Append a summary to MEMORY.md").
+    /// Inline code spans and raw HTML are excluded; code-level write patterns
+    /// (open(...,"w"), redirection, sed -i) now also run over fenced blocks.
+    /// </summary>
+    public SegmentKind ApplicableSegments =>
+        SegmentKind.Prose | SegmentKind.FencedCode | SegmentKind.Link;
+
     private const string IdentityFilePattern = @"(AGENTS\.md|CLAUDE\.md|MEMORY\.md|SOUL\.md)";
 
     // Natural-language write intent in the skill's instructions: a write/edit verb
@@ -65,7 +75,9 @@ public sealed partial class SkillIdentityFileWriteRule : IRule
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var evidence = SafeMatch(WriteIntentPattern(), skill.InstructionsBody);
+            var documentText = SegmentFilter.TextFor(skill, ApplicableSegments);
+            var evidence = SafeMatch(WriteIntentPattern(), documentText)
+                ?? SafeMatch(ScriptWritePattern(), documentText);
             var evidenceSource = "instructions";
 
             if (evidence is null)

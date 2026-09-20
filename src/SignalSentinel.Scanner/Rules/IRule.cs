@@ -46,6 +46,17 @@ public interface IRule
     IReadOnlyList<string> AstCodes => [];
 
     /// <summary>
+    /// v3.0.0 (WP10): the document segment kinds a skill rule evaluates, declared as a
+    /// combination of <see cref="SegmentKind"/> flags. Rules that scan skills should run
+    /// their document-text patterns over
+    /// <c>SegmentFilter.TextFor(skill, ApplicableSegments)</c> instead of the raw
+    /// instructions body so fenced code, inline code and links do not trigger prose
+    /// heuristics (and vice versa). The default <see cref="SegmentKind.All"/> keeps MCP
+    /// rules, Sigma rules and raw-content skill rules untouched.
+    /// </summary>
+    SegmentKind ApplicableSegments => SegmentKind.All;
+
+    /// <summary>
     /// Evaluates the rule against enumerated server data.
     /// </summary>
     /// <param name="context">Scan context containing all enumerated servers.</param>

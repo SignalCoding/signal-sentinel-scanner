@@ -41,6 +41,11 @@ public sealed partial class SkillExcessivePermRule : IRule
 
     public string Id => RuleConstants.Rules.SkillExcessivePermissions;
     public string Name => "Skill Excessive Permissions Detection";
+
+    /// <summary>
+    /// v3.0.0 (WP10): permission-seeking directives live in prose and frontmatter.
+    /// </summary>
+    public SegmentKind ApplicableSegments => SegmentKind.Frontmatter | SegmentKind.Prose;
     public string OwaspCode => OwaspAsiCodes.ASI02;
     public string Description =>
         "Detects skills requesting excessive filesystem, network, or shell access, " +
@@ -273,9 +278,12 @@ public sealed partial class SkillExcessivePermRule : IRule
         string verb,
         string remediation)
     {
-        if (!SafeIsMatch(pattern, skill.InstructionsBody)) return false;
+        // v3.0.0 (WP10): permission-seeking instructions live in prose/frontmatter;
+        // code examples in fenced blocks are not directives to the agent.
+        var documentText = SegmentFilter.TextFor(skill, ApplicableSegments);
+        if (!SafeIsMatch(pattern, documentText)) return false;
 
-        var match = SafeMatches(pattern, skill.InstructionsBody).FirstOrDefault();
+        var match = SafeMatches(pattern, documentText).FirstOrDefault();
 
         findings.Add(new Finding
         {
