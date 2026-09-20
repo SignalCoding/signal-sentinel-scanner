@@ -669,6 +669,7 @@ public static class Program
                 SS-034  Skill Integrity Mismatch (ASI04, AST02/AST07)
                 SS-035  Skill Suspicious File Artefact (ASI04, AST01/AST06)
                 SS-037  Cross-Skill Description Overlap (ASI01, AST04)
+                SS-038  Skill Script Pipeline Taint (ASI05, AST01/AST06)
             
             INFORMATIONAL:
                 SS-INFO-001  Non-MCP Endpoint Detected (ASI10, AST08)

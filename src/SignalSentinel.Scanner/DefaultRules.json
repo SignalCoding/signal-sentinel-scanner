@@ -266,6 +266,14 @@
       "severity": "medium"
     },
     {
+      "id": "SS-038",
+      "name": "Skill Script Pipeline Taint",
+      "owaspCode": "ASI05",
+      "astCodes": ["AST01", "AST06"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
       "id": "SS-INFO-001",
       "name": "Non-MCP Endpoint Detected",
       "owaspCode": "ASI10",

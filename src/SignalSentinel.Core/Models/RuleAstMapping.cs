@@ -96,7 +96,11 @@ public static class RuleAstMapping
             // agent is steered to the wrong tool or skill by a lookalike name or a
             // copied description.
             ["SS-036"] = [OwaspAstCodes.AST04],
-            ["SS-037"] = [OwaspAstCodes.AST04]
+            ["SS-037"] = [OwaspAstCodes.AST04],
+
+            // v3.0.0 script pipeline taint (WP5). A fetch-to-exec flow is both malicious
+            // code introduction and an unrestricted dangerous capability.
+            ["SS-038"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST06]
         };
 
     /// <summary>
