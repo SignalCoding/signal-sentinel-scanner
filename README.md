@@ -3,12 +3,12 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![OWASP](https://img.shields.io/badge/OWASP-ASI%20Top%2010-green.svg)](https://owasp.org/www-project-agentic-ai-top-10/)
-[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/SignalCoding/signal-sentinel-scanner/releases)
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/SignalCoding/signal-sentinel-scanner/releases)
 [![SARIF](https://img.shields.io/badge/SARIF-v2.1.0-orange.svg)](https://docs.oasis-open.org/sarif/sarif/v2.1.0/)
 
 **Signal Sentinel** is a security-first MCP (Model Context Protocol) and Agent Skill security product family, designed to address the critical security gap in the agentic AI ecosystem.
 
-> **Positioning:** Signal Sentinel Scanner is a fast, deterministic, offline-capable **first-pass authoring aid** for MCP operators and skill authors. It is not a substitute for a full runtime defence stack — pair it with Bandit, Gitleaks, Semgrep, and (for runtime) Sentinel Gateway / Enkrypt Skill Sentinel for defence in depth. Every report declares its scope explicitly in an "Scanner Scope" section.
+> **Positioning:** Signal Sentinel is the fast, deterministic, offline-capable **first-pass authoring aid** for skill authors and MCP operators — one deterministic layer in a defensible defence-in-depth chain. We are not, and do not aim to be, a standalone audit tool: for audit-grade verification, run Signal Sentinel alongside at least one semantic scanner (Enkrypt Skill Sentinel, Snyk agent-scan, Anthropic Claude-based semantic scan) and at least one code-level scanner (Bandit, Semgrep), plus Gitleaks for credentials and a runtime control (Sentinel Gateway). Every report declares its scope explicitly in a "Scanner Scope" section.
 
 ## Products
 
@@ -22,7 +22,17 @@
 
 The Scanner is a command-line tool that audits MCP server configurations and Agent Skill packages for security vulnerabilities. It produces a scored report with OWASP ASI01-ASI10 + AST01-AST10 + MCP01-MCP10 triple mapping and remediation guidance.
 
-### What's new in v2.5.0
+### What's new in v3.0.0
+
+- **22 new rules** (47 total): prompt/resource/server-instructions injection (`SS-030`..`SS-032`), unsolicited server-initiated requests (`SS-033`), skill forensics (`SS-034` SHA256SUMS verification, `SS-035` file-artefact magic-byte analysis), homoglyph/confusable identifiers (`SS-036`), cross-skill description overlap (`SS-037`), fetch-to-exec pipeline taint (`SS-038`), OSV dependency vulnerabilities (`SS-039` + `--osv`), error-channel injection (`SS-040`), server-source dangerous sinks (`SS-041` + `--server-source`), and A2A Agent Card evaluation (`SS-042` + `--agent-card`).
+- **Markdown-aware segmentation**: skill rules now evaluate only the document segments where their signal is meaningful (frontmatter vs prose vs fenced code vs links), eliminating the v2.x false positives on code examples and inline code. See [docs/MIGRATION_V3.md](docs/MIGRATION_V3.md).
+- **Versioned scoring rubric** (`--rubric <path>`): deductions and grade thresholds live in an auditable embedded rubric (`v2.0.0`, emitted as `RubricVersion` in every report); weights unchanged, monotonicity proven by property tests.
+- **Policy presets** (`--policy default|strict|defence|file.json`): severity overrides, rule disabling, and gate thresholds as version-controlled JSON.
+- **Keyword pruning**: `when the user asks ...` no longer triggers SS-015; prose `fetch(` no longer fires SS-014 (js/ts fenced code and bundled scripts still do). Rationale in [docs/keyword-rules.md](docs/keyword-rules.md).
+- **Discovery breadth**: Claude Code, Gemini CLI, OpenCode, VS Code/Copilot (incl. JetBrains), Amazon Q and `.cursor` config shapes; skills under `.gemini`, `.opencode`, `.github`, `.factory`, `.agents` and the Claude plugin cache. `enabled: false` entries are now skipped everywhere.
+- Full details in [CHANGELOG.md](CHANGELOG.md); upgrade guidance in [docs/MIGRATION_V3.md](docs/MIGRATION_V3.md).
+
+### v2.5.0 highlights
 
 - **MCP 2026-07-28 spec currency**: `SS-INFO-004` flags servers still negotiating an older `protocolVersion` or reachable only over the deprecated legacy HTTP+SSE transport. `SS-020` gained an advisory finding disclosing that the scanner cannot yet verify RFC 9207 issuer validation or the DCR→CIMD migration.
 - **`SS-029` Skill Unpinned Dependency Reference** — detects skills that reference a GitHub dependency by a floating branch (`main`/`master`/...) or an unpinned `git+https://` install URL instead of a pinned tag/release/commit SHA, the documented "SkillJacking" account/repo hijacking vector.
@@ -58,8 +68,8 @@ The Scanner is a command-line tool that audits MCP server configurations and Age
 dotnet tool install -g SignalSentinel.Scanner
 
 # Or run via Docker
-docker pull ghcr.io/signalcoding/signal-sentinel-scanner:latest
-docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:latest --help
+docker pull ghcr.io/signalcoding/signal-sentinel-scanner:3.0.0
+docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:3.0.0 --help
 ```
 
 ### Quick Start

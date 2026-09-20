@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <PackageId>SignalSentinel.Scanner</PackageId>
-    <Version>2.5.0</Version>
-    <Description>Fast, deterministic, offline-capable first-pass security aid for MCP servers and Agent Skill authors. 32 security rules aligned with OWASP Agentic AI Top 10 (ASI) and OWASP Agentic Skills Top 10 (AST). v2.5 tracks the MCP 2026-07-28 specification (stateless core, legacy transport/protocol currency notice), adds a skill supply-chain rule for unpinned GitHub dependency references (SkillJacking), recognises Universal Skill Format risk_tier and permissions.deny_write fields, and consolidates the full v2.4.x backlog: orchestrator-agnostic scope filtering, phrase-based detection for MCP and skill rule families, corrected OWASP AST10 taxonomy alignment, canonical skill identity for suppression/scope matching, and behavioural auth/TLS/non-MCP-endpoint probing.</Description>
+    <!-- Version comes from Directory.Build.props (single source of truth). -->
+    <Description>Fast, deterministic, offline-capable first-pass security aid for MCP servers and Agent Skill authors. 47 security rules aligned with OWASP Agentic AI Top 10 (ASI) and OWASP Agentic Skills Top 10 (AST). v3.0 adds prompt/resource/instructions injection coverage, skill forensics (SHA256SUMS, file artefacts), homoglyph and description-overlap detection, fetch-to-exec pipeline taint, opt-in OSV dependency lookups, error-channel injection, server-source sink analysis, A2A agent card evaluation, policy presets, a versioned scoring rubric (--rubric), markdown-aware segmentation for skill rules, and discovery across Claude Code, Gemini CLI, OpenCode, VS Code/Copilot and Amazon Q configurations.</Description>
     <PackageTags>mcp;security;scanner;ai-agents;owasp;agentic-ai;cli;dotnet-tool;websocket;agent-skills;skill-scanning;sarif;sigma;suppressions;ast;triage;pre-commit</PackageTags>
     
     <!-- Enable as global dotnet tool -->
@@ -19,6 +19,15 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- <PackageIcon>icon.png</PackageIcon> -->
     <PackageReleaseNotes>
+v3.0.0 - Research-Report Buildout, Theme 1 Accuracy, Versioned Rubric
+- NEW RULES (22): SS-030 prompt description injection, SS-031 resource injection + URI heuristics, SS-032 server instructions injection/shadowing, SS-033 unsolicited server-initiated requests, SS-INFO-005 capability summary, SS-034 SHA256SUMS checksum verification, SS-035 file-artefact forensics (magic-byte/extension mismatch, hidden binaries, archives), SS-036 homoglyph/confusable identifiers (UTS #39-style), SS-037 cross-skill description overlap, SS-038 fetch-to-exec pipeline taint, SS-039 OSV dependency vulnerabilities (--osv), SS-INFO-006 unchecked dependency surface, SS-040 error-channel injection, SS-041 server-source dangerous sinks (--server-source), SS-042 A2A agent card findings (--agent-card).
+- NEW FLAGS: --policy (default|strict|defence|path), --rubric &lt;path&gt; (custom scoring rubric; invalid fails closed), --osv, --server-source &lt;dir&gt;, --agent-card &lt;url|path&gt;, --allow-private (SSRF override for loopback/RFC1918 targets).
+- CHANGED: skill rules are markdown-segment aware (frontmatter/prose/fenced code/inline code/links) - large false-positive reduction; SS-026 skill-side now evaluates frontmatter only; SS-015 no longer triggers on "when the user asks"; SS-014 fetch( fires only in js/ts fenced code and bundled scripts (EXFIL-005); enabled:false config entries are skipped in every discovery shape.
+- SCORING: weights unchanged; rubric now versioned/auditable (rubric v2.0.0, emitted in every report) with FsCheck-proven monotonicity.
+- DISCOVERY: Claude Code, Gemini CLI, OpenCode, VS Code/Copilot (incl. JetBrains), Amazon Q, .cursor; skill discovery across .gemini/.opencode/.github/.factory/.agents and the Claude plugin cache.
+- QUALITY: 47 total rules (was 32); 1101 tests (was 422); 0 warnings, 0 errors.
+- See CHANGELOG.md and docs/MIGRATION_V3.md for the full list and migration guidance.
+
 v2.5.0 - MCP 2026-07-28 Currency, SkillJacking Detection, Universal Skill Format Fields
 - NOTE: first public release since v2.3.0 - v2.4.0 and v2.4.1 were completed but never pushed/tagged; this changelog folds all three releases' changes together so there is no public gap.
 - NEW: SS-INFO-004 Legacy MCP Protocol / Transport - flags servers negotiating a protocolVersion older than the current MCP specification (2026-07-28), or reached over the deprecated legacy HTTP+SSE transport. Informational currency notice, not a vulnerability, ahead of the spec's 12-month deprecation window.
