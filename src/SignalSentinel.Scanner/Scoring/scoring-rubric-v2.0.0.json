@@ -1,0 +1,23 @@
+{
+  "$schema": "https://signalcoding.co.uk/schemas/scoring-rubric-v2.json",
+  "version": "2.0.0",
+  "description": "Signal Sentinel scoring rubric v2. Weights are identical to the hard-coded v2.x algorithm; this file makes them auditable, versioned, and overridable via --rubric.",
+  "deductions": {
+    "criticalFinding": 25,
+    "highFinding": 10,
+    "mediumFinding": 3,
+    "lowFinding": 1,
+    "criticalAttackPath": 20,
+    "highAttackPath": 10
+  },
+  "gradeRules": {
+    "f": { "criticalFindingsAtLeast": 2, "criticalAttackPathsAtLeast": 2 },
+    "d": { "criticalFindingsAtLeast": 1, "criticalAttackPathsAtLeast": 1 },
+    "c": { "highFindingsAtLeast": 1, "highAttackPathsAtLeast": 1 }
+  },
+  "gradeThresholds": {
+    "a": 90,
+    "b": 70,
+    "c": 50
+  }
+}

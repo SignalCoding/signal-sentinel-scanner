@@ -31,7 +31,6 @@ public static class Program
     // .csproj moved to 2.5.0).
     private static readonly string Version =
         typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
-    private const string RubricVersion = "1.0";
 
     // Security: Limits for input validation
     private const int MaxPathLength = 4096;
@@ -97,6 +96,20 @@ public static class Program
                 return 2;
             }
 
+            // v3.0.0 (WP11): resolve --rubric before the scan; an invalid custom
+            // rubric fails closed (exit 2) rather than scoring with partial weights.
+            var rubric = ScoringRubric.Default;
+            if (config.RubricPath is not null)
+            {
+                if (!ScoringRubric.TryLoadFromFile(config.RubricPath, out var customRubric, out var rubricError))
+                {
+                    Console.Error.WriteLine($"Error: {SanitizeErrorMessage(rubricError ?? "invalid rubric")}");
+                    return 2;
+                }
+
+                rubric = customRubric!;
+            }
+
             // Security: Use a cancellation token with overall timeout
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(30));
 
@@ -108,7 +121,7 @@ public static class Program
                 Console.Error.WriteLine("\nScan cancelled by user.");
             };
 
-            return await RunScanAsync(config, policy, cts.Token);
+            return await RunScanAsync(config, policy, rubric, cts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -305,6 +318,21 @@ public static class Program
                         return null;
                     }
                     config = config with { PolicyArg = args[++i] };
+                    break;
+
+                case "--rubric":
+                    if (i + 1 >= args.Length || args[i + 1].StartsWith('-'))
+                    {
+                        Console.Error.WriteLine("Error: --rubric requires a path to a scoring rubric JSON file.");
+                        return null;
+                    }
+                    var rubricPath = args[++i];
+                    if (!ValidatePath(rubricPath) || !File.Exists(rubricPath))
+                    {
+                        Console.Error.WriteLine("Error: --rubric file not found or invalid.");
+                        return null;
+                    }
+                    config = config with { RubricPath = rubricPath };
                     break;
 
                 case "--osv":
@@ -669,7 +697,7 @@ public static class Program
     private static void PrintUsage()
     {
         Console.WriteLine($"""
-            Signal Sentinel Scanner v{Version} (rubric v{RubricVersion})
+            Signal Sentinel Scanner v{Version} (rubric v{ScoringRubric.Default.Version})
             Fast, deterministic, offline-capable first-pass security aid for
             MCP servers and Agent Skill authors. OWASP ASI/AST Top 10 aligned.
             
@@ -700,6 +728,7 @@ public static class Program
                                 defence: everything one band up, fail-on low, implies --offline.
                                 Explicit --fail-on/--min-confidence/--remote flags override the preset.
                     --min-confidence <f> Drop findings below confidence [0..1]
+                    --rubric <path>     Custom scoring rubric JSON (default: embedded rubric v2.0.0)
                     --osv               Check pinned skill dependencies against osv.dev (network; refused under --offline)
                     --triage            Demote low-confidence findings to 'low' (keeps them visible)
                     --fail-on <sev>     Exit 1 at/above severity: critical|high|medium|low|info
@@ -802,6 +831,7 @@ public static class Program
     private static async Task<int> RunScanAsync(
         ScanConfig config,
         Policy.ResolvedPolicy? policy,
+        ScoringRubric rubric,
         CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -1191,7 +1221,7 @@ public static class Program
                 + (agentCard is null ? 0 : 1);
             var (grade, score) = SeverityScorer.CalculateGrade(
                 ruleResult.Findings, ruleResult.AttackPaths,
-                evaluableServers, allSkills.Count);
+                evaluableServers, allSkills.Count, rubric);
 
             // v2.3.0 fix (Section 0.4): compute the counter-factual grade with
             // every suppression removed so reports can show technical-debt
@@ -1206,7 +1236,7 @@ public static class Program
                 combined.AddRange(suppressedFindings);
                 var (g, s) = SeverityScorer.CalculateGrade(
                     combined, ruleResult.AttackPaths,
-                    evaluableServers, allSkills.Count);
+                    evaluableServers, allSkills.Count, rubric);
                 gradeWithoutSupp = g;
                 scoreWithoutSupp = s;
                 // v2.4.1 (G9): explicit numeric delta so consumers don't have to
@@ -1308,7 +1338,7 @@ public static class Program
                     ServersProbed = serverEnumerations.Count > 0
                 },
                 Environment = config.Environment,
-                RubricVersion = RubricVersion,
+                RubricVersion = rubric.Version,
                 SuppressedFindings = suppressedFindings,
                 GradeWithoutSuppressions = gradeWithoutSupp,
                 ScoreWithoutSuppressions = scoreWithoutSupp,
