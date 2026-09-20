@@ -11,7 +11,8 @@ using SignalSentinel.Core.Models;
 namespace SignalSentinel.Scanner.SkillParser;
 
 /// <summary>
-/// Inventories bundled scripts (.py, .sh, .ps1, .js, .ts) within a skill package directory.
+/// Inventories bundled scripts (.py, .sh, .ps1, .js, .ts, .rb, .pl, .php, .lua, .bat,
+/// .cmd, .vbs and variants) within a skill package directory.
 /// Security hardened with file size limits and safe path validation.
 /// </summary>
 public static class ScriptInventory
@@ -30,7 +31,21 @@ public static class ScriptInventory
         [".mjs"] = ScriptLanguage.JavaScript,
         [".ts"] = ScriptLanguage.TypeScript,
         [".mts"] = ScriptLanguage.TypeScript,
+        [".zsh"] = ScriptLanguage.Bash,
+        [".rb"] = ScriptLanguage.Ruby,
+        [".pl"] = ScriptLanguage.Perl,
+        [".php"] = ScriptLanguage.Php,
+        [".lua"] = ScriptLanguage.Lua,
+        [".bat"] = ScriptLanguage.Batch,
+        [".cmd"] = ScriptLanguage.Batch,
+        [".vbs"] = ScriptLanguage.VbScript,
     };
+
+    /// <summary>
+    /// Directory names skipped during any walk of a skill package.
+    /// </summary>
+    internal static bool IsExcludedDirectoryName(string name) =>
+        name is "node_modules" or "__pycache__" or ".git" or ".venv" or "venv" or "dist" or "build";
 
     /// <summary>
     /// Discovers and loads bundled scripts from a skill package directory.
@@ -153,7 +168,7 @@ public static class ScriptInventory
         var parts = relativePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         foreach (var part in parts)
         {
-            if (part is "node_modules" or "__pycache__" or ".git" or ".venv" or "venv" or "dist" or "build")
+            if (IsExcludedDirectoryName(part))
             {
                 return true;
             }

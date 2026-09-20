@@ -90,6 +90,10 @@ public static class RuleConstants
         public const string UnsolicitedServerRequest = "SS-033";
         public const string CapabilitySurface = "SS-INFO-005";
 
+        // v3.0.0 skill forensics rules (WP3)
+        public const string SkillIntegrityMismatch = "SS-034";
+        public const string SkillSuspiciousArtefact = "SS-035";
+
         /// <summary>
         /// Rules that depend on successful MCP JSON-RPC protocol exchange with the
         /// target server. When SS-INFO-001 fires on a server, these rules cannot

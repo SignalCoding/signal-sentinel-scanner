@@ -84,7 +84,13 @@ public static class RuleAstMapping
             ["SS-031"] = [OwaspAstCodes.AST04],
             ["SS-032"] = [OwaspAstCodes.AST04, OwaspAstCodes.AST05],
             ["SS-033"] = [OwaspAstCodes.AST08],
-            ["SS-INFO-005"] = [OwaspAstCodes.AST03]
+            ["SS-INFO-005"] = [OwaspAstCodes.AST03],
+
+            // v3.0.0 skill forensics (WP3). A checksum mismatch is supply-chain
+            // tampering or update drift; a mis-typed or hidden binary is a malicious
+            // skill signature and an isolation concern.
+            ["SS-034"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07],
+            ["SS-035"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST06]
         };
 
     /// <summary>

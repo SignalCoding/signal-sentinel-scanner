@@ -80,6 +80,10 @@ public sealed class RuleEngine
             new ServerInstructionsInjectionRule(), // SS-032
             new UnsolicitedServerRequestRule(),   // SS-033
             new CapabilitySurfaceRule(),          // SS-INFO-005
+
+            // v3.0.0 skill forensics (WP3)
+            new SkillIntegrityMismatchRule(),     // SS-034
+            new SkillSuspiciousArtefactRule(),    // SS-035
         };
 
         if (customRules is not null)
