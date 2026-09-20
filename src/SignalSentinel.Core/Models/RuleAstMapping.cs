@@ -105,7 +105,13 @@ public static class RuleAstMapping
             // v3.0.0 OSV dependency lookup (WP6). Known-vulnerable pins are supply-chain
             // compromise / untrusted artefact risks; the surface note is visibility.
             ["SS-039"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07],
-            ["SS-INFO-006"] = [OwaspAstCodes.AST02]
+            ["SS-INFO-006"] = [OwaspAstCodes.AST02],
+
+            // v3.0.0 tier-3 surfaces (WP9). Error/result-channel and Agent Card text are
+            // description-level injection; source sinks are unsafe execution.
+            ["SS-040"] = [OwaspAstCodes.AST04],
+            ["SS-041"] = [OwaspAstCodes.AST06],
+            ["SS-042"] = [OwaspAstCodes.AST04]
         };
 
     /// <summary>

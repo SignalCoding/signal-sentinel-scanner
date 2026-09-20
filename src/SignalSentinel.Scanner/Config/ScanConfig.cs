@@ -152,6 +152,18 @@ public sealed record ScanConfig
     public bool Osv { get; init; }
 
     /// <summary>
+    /// v3.0.0 (WP9): directory of MCP server source (JS/TS/Python) for the static
+    /// dangerous-sink pass (SS-041). Local only; works offline.
+    /// </summary>
+    public string? ServerSourcePath { get; init; }
+
+    /// <summary>
+    /// v3.0.0 (WP9): A2A Agent Card URL or local JSON path for SS-042. A URL is refused
+    /// under <see cref="Offline"/>; a file path is not.
+    /// </summary>
+    public string? AgentCard { get; init; }
+
+    /// <summary>
     /// v3.0.0 (WP7): raw <c>--policy</c> argument — a preset name (default, strict,
     /// defence) or a path to a policy JSON file. Resolved by <c>PolicyLoader</c> after
     /// argument parsing; explicit CLI flags override anything the policy sets.

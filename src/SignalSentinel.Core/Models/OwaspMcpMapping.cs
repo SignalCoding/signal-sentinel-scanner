@@ -64,6 +64,7 @@ public static class OwaspMcpCodes
         "SS-033" => MCP03,  // Unsolicited Server Request → MCP Insecure Tool Discovery (trust boundary probing)
         "SS-INFO-005" => MCP02,  // Capability Surface → MCP Excessive Permissions
         "SS-036" => MCP03,  // Confusable Identifier → MCP Insecure Tool Discovery (lookalike shadowing)
+        "SS-040" => MCP01,  // Error/Result-Channel Injection → MCP Tool Poisoning (same payload, different channel)
         _ => null
     };
 }

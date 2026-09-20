@@ -290,6 +290,30 @@
       "severity": "info"
     },
     {
+      "id": "SS-040",
+      "name": "Error-Channel / Result-Channel Injection",
+      "owaspCode": "ASI01",
+      "astCodes": ["AST04"],
+      "enabled": true,
+      "severity": "high"
+    },
+    {
+      "id": "SS-041",
+      "name": "Server Source Dangerous Sink",
+      "owaspCode": "ASI05",
+      "astCodes": ["AST06"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-042",
+      "name": "A2A Agent Card Findings",
+      "owaspCode": "ASI01",
+      "astCodes": ["AST04"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
       "id": "SS-INFO-001",
       "name": "Non-MCP Endpoint Detected",
       "owaspCode": "ASI10",

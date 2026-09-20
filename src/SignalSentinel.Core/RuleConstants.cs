@@ -105,6 +105,11 @@ public static class RuleConstants
         public const string SkillOsvVulnerability = "SS-039";
         public const string SkillDependencySurface = "SS-INFO-006";
 
+        // v3.0.0 tier-3 surfaces (WP9)
+        public const string ErrorChannelInjection = "SS-040";
+        public const string ServerSourceSink = "SS-041";
+        public const string AgentCard = "SS-042";
+
         /// <summary>
         /// Rules that depend on successful MCP JSON-RPC protocol exchange with the
         /// target server. When SS-INFO-001 fires on a server, these rules cannot
@@ -123,7 +128,7 @@ public static class RuleConstants
                 RugPullDetection, ShadowToolInjection, SkillIntegrityVerification,
                 ExcessiveToolResponse,
                 PromptPoisoning, ResourcePoisoning, ServerInstructionsInjection,
-                UnsolicitedServerRequest, CapabilitySurface
+                UnsolicitedServerRequest, CapabilitySurface, ErrorChannelInjection
             };
     }
 

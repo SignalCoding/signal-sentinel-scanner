@@ -89,6 +89,14 @@ public static class Program
                 return 2;
             }
 
+            // v3.0.0 (WP9): an Agent Card URL is a network fetch; a local card file is fine offline.
+            if (config.AgentCard is not null && config.Offline && !config.ListRules
+                && AgentCard.AgentCardReader.IsUrl(config.AgentCard))
+            {
+                Console.Error.WriteLine("Error: --agent-card <url> is incompatible with --offline (pass a local file instead).");
+                return 2;
+            }
+
             // Security: Use a cancellation token with overall timeout
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(30));
 
@@ -303,6 +311,46 @@ public static class Program
                     config = config with { Osv = true };
                     break;
 
+                case "--server-source":
+                    if (i + 1 >= args.Length || args[i + 1].StartsWith('-'))
+                    {
+                        Console.Error.WriteLine("Error: --server-source requires a directory path.");
+                        return null;
+                    }
+                    var sourceDir = args[++i];
+                    if (!ValidatePath(sourceDir) || !Directory.Exists(sourceDir))
+                    {
+                        Console.Error.WriteLine("Error: --server-source directory not found or invalid.");
+                        return null;
+                    }
+                    config = config with { ServerSourcePath = sourceDir };
+                    break;
+
+                case "--agent-card":
+                    if (i + 1 >= args.Length || args[i + 1].StartsWith('-'))
+                    {
+                        Console.Error.WriteLine("Error: --agent-card requires a URL or file path.");
+                        return null;
+                    }
+                    var cardTarget = args[++i];
+                    if (AgentCard.AgentCardReader.IsUrl(cardTarget))
+                    {
+                        // Private-range policy is applied after the loop so --allow-private
+                        // is honoured regardless of argument order.
+                        if (!RemoteUrlPolicy.IsValidSyntax(cardTarget))
+                        {
+                            Console.Error.WriteLine("Error: Invalid --agent-card URL");
+                            return null;
+                        }
+                    }
+                    else if (!ValidatePath(cardTarget, ".json"))
+                    {
+                        Console.Error.WriteLine("Error: --agent-card must be an http(s) URL or a .json file path.");
+                        return null;
+                    }
+                    config = config with { AgentCard = cardTarget };
+                    break;
+
                 case "--triage":
                     config = config with { Triage = true };
                     break;
@@ -486,6 +534,17 @@ public static class Program
             return null;
         }
 
+        // v3.0.0 (WP9): the same SSRF policy applies to an Agent Card URL.
+        if (config.AgentCard is not null && !config.AllowPrivate
+            && AgentCard.AgentCardReader.IsUrl(config.AgentCard)
+            && RemoteUrlPolicy.TargetsPrivateNetwork(config.AgentCard))
+        {
+            Console.Error.WriteLine(
+                "Error: --agent-card target resolves to a loopback, private, or link-local address. " +
+                "Pass --allow-private to fetch it anyway.");
+            return null;
+        }
+
         return config;
     }
 
@@ -625,6 +684,8 @@ public static class Program
                     --allow-private     Permit --remote targets on loopback/RFC1918/link-local
                 -d, --discover          Auto-discover MCP configurations
                 -s, --skills [path]     Scan Agent Skills (auto-discover or specify path)
+                    --server-source <dir>  Static pass over MCP server source (JS/TS/Python) for dangerous sinks
+                    --agent-card <url|path> Evaluate an A2A Agent Card (bare origin gets /.well-known/agent.json)
             
             OUTPUT:
                 -f, --format <format>   Output format: json, markdown, html, sarif (default: markdown)
@@ -703,6 +764,9 @@ public static class Program
                 SS-032  MCP Server Instructions Injection (ASI01, AST04/AST05)
                 SS-033  Unsolicited Server-to-Client Request (ASI07, AST08)
                 SS-036  Unicode Confusable Identifier (ASI01, AST04) - also covers skills
+                SS-040  Error-Channel / Result-Channel Injection (ASI01, AST04)
+                SS-041  Server Source Dangerous Sink (ASI05, AST06) - needs --server-source
+                SS-042  A2A Agent Card Findings (ASI01/ASI03, AST04) - needs --agent-card
             
             SKILL SECURITY RULES:
                 SS-011  Skill Prompt Injection (ASI01, AST01/AST04/AST05)
@@ -802,9 +866,10 @@ public static class Program
                 }
             }
 
-            if (configFiles.Count == 0 && config.RemoteUrl is null && !config.ScanSkills)
+            if (configFiles.Count == 0 && config.RemoteUrl is null && !config.ScanSkills
+                && config.ServerSourcePath is null && config.AgentCard is null)
             {
-                Console.Error.WriteLine("Error: No MCP configurations found. Use --discover, --config, --remote, or --skills.");
+                Console.Error.WriteLine("Error: No MCP configurations found. Use --discover, --config, --remote, --skills, --server-source, or --agent-card.");
                 return 2;
             }
 
@@ -933,6 +998,25 @@ public static class Program
                 Log("OSV: no skills scanned, nothing to check");
             }
 
+            // v3.0.0 (WP9): optional static pass over MCP server source (local, offline-safe).
+            ServerSource.ServerSourceAnalysis? serverSource = null;
+            if (config.ServerSourcePath is not null)
+            {
+                serverSource = await ServerSource.ServerSourceAnalyzer.AnalyseAsync(config.ServerSourcePath, cancellationToken);
+                Log($"Server source: {serverSource.FilesScanned} file(s) read, {serverSource.ToolFiles} register tools, " +
+                    $"{serverSource.Sinks.Count} dangerous sink(s)" + (serverSource.Truncated ? " (walk truncated)" : string.Empty));
+            }
+
+            // v3.0.0 (WP9): optional A2A Agent Card (URL refused under --offline; file is fine).
+            AgentCard.AgentCardAnalysis? agentCard = null;
+            if (config.AgentCard is not null)
+            {
+                agentCard = await AgentCard.AgentCardReader.LoadAsync(config.AgentCard, cancellationToken);
+                Log(agentCard.Status == AgentCard.AgentCardStatus.Loaded
+                    ? $"Agent Card: loaded '{agentCard.DisplayName}' ({agentCard.Skills.Count} skill(s))"
+                    : $"Agent Card: could not be loaded ({agentCard.FailureReason})");
+            }
+
             // Run rules
             Log("Executing security rules...");
             var ruleEngine = new RuleEngine(customRules: customRules, verbose: config.Verbose, logger: Log);
@@ -941,6 +1025,8 @@ public static class Program
                 Servers = serverEnumerations,
                 Skills = allSkills,
                 DependencySurface = dependencySurface,
+                ServerSource = serverSource,
+                AgentCard = agentCard,
                 Policy = policy is null
                     ? null
                     : new PolicyConfiguration { SeverityOverrides = policy.SeverityOverrides }
@@ -1098,10 +1184,14 @@ public static class Program
             // Calculate grade
             // v2.4.1 (G1): pass total server/skill counts so a scan that evaluated no
             // scannable surface at all reports Inconclusive instead of a misleading
-            // Grade A.
+            // Grade A. v3.0.0 (WP9): a server-source tree or an Agent Card is an
+            // evaluable surface too, so each counts as one server-equivalent here.
+            var evaluableServers = serverEnumerations.Count
+                + (serverSource is null ? 0 : 1)
+                + (agentCard is null ? 0 : 1);
             var (grade, score) = SeverityScorer.CalculateGrade(
                 ruleResult.Findings, ruleResult.AttackPaths,
-                serverEnumerations.Count, allSkills.Count);
+                evaluableServers, allSkills.Count);
 
             // v2.3.0 fix (Section 0.4): compute the counter-factual grade with
             // every suppression removed so reports can show technical-debt
@@ -1116,7 +1206,7 @@ public static class Program
                 combined.AddRange(suppressedFindings);
                 var (g, s) = SeverityScorer.CalculateGrade(
                     combined, ruleResult.AttackPaths,
-                    serverEnumerations.Count, allSkills.Count);
+                    evaluableServers, allSkills.Count);
                 gradeWithoutSupp = g;
                 scoreWithoutSupp = s;
                 // v2.4.1 (G9): explicit numeric delta so consumers don't have to
@@ -1332,6 +1422,15 @@ public static class Program
             scanned.Add("Skill signature artefacts (.sentinel-sig, SHA256SUMS)");
         }
 
+        if (config.ServerSourcePath is not null)
+        {
+            scanned.Add("MCP server source (JS/TS/Python) - regex-level dangerous-sink pass");
+        }
+        if (config.AgentCard is not null)
+        {
+            scanned.Add("A2A Agent Card (descriptions, securitySchemes, endpoint scheme)");
+        }
+
         notScanned.Add("Transitive third-party dependencies (use Bandit / Gitleaks / Trivy)");
         notScanned.Add("Runtime behaviour of skills or MCP tools (static scan only)");
         notScanned.Add("Content referenced by external URLs (not fetched)");
@@ -1342,6 +1441,14 @@ public static class Program
         if (!hasSkills)
         {
             notScanned.Add("Agent skills (no --skills supplied)");
+        }
+        if (config.ServerSourcePath is null)
+        {
+            notScanned.Add("MCP server source code (no --server-source supplied)");
+        }
+        if (config.AgentCard is null)
+        {
+            notScanned.Add("A2A Agent Card (no --agent-card supplied)");
         }
 
         return new ScanScope
