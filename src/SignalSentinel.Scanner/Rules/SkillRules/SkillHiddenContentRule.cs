@@ -40,10 +40,22 @@ public sealed partial class SkillHiddenContentRule : IRule
     private static partial Regex SuspiciousCodeBlock();
 
     [GeneratedRegex(
-        @"<\s*(script|iframe|object|embed|form|input|link|meta|style)\b[^>]*>",
+        @"<\s*(script|iframe|object|embed|form|input|link|style)\b[^>]*>",
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]
     private static partial Regex DangerousHtmlTag();
+
+    // v2.5.1: bare "meta" was in the dangerous-tag alternation above, flagging every
+    // ordinary <meta charset="UTF-8"> or <meta name="viewport" ...> as Critical - a
+    // real-world review found this on markdown that had simply pasted an HTML head
+    // snippet as documentation. A <meta> tag is only a genuine hidden-redirect vector
+    // when it carries http-equiv (e.g. http-equiv="refresh"), so that is now checked
+    // separately and requires the attribute.
+    [GeneratedRegex(
+        @"<\s*meta\b[^>]*\bhttp-equiv\s*=",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        matchTimeoutMilliseconds: 500)]
+    private static partial Regex DangerousMetaRefresh();
 
     [GeneratedRegex(
         @"data:(?:text|application)/[^;]+;base64,[A-Za-z0-9+/=]{50,}",
@@ -80,6 +92,12 @@ public sealed partial class SkillHiddenContentRule : IRule
                 "Dangerous HTML Tag", Severity.Critical,
                 "Detected dangerous HTML tag (script, iframe, object, embed, form) in skill markdown.",
                 "Remove dangerous HTML tags from skill markdown.");
+
+            // <meta http-equiv> (redirect/refresh vectors) - see DangerousMetaRefresh().
+            CheckPattern(findings, skill, DangerousMetaRefresh(), content,
+                "Meta Refresh/Redirect Tag", Severity.Critical,
+                "Detected a <meta http-equiv> tag, commonly used for hidden page redirects (meta refresh).",
+                "Remove meta http-equiv redirect tags from skill markdown.");
 
             // Data URIs with base64 payloads
             CheckPattern(findings, skill, DataUri(), content,

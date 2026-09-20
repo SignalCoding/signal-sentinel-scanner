@@ -100,8 +100,11 @@ public class ToolPoisoningRuleTests
     [Fact]
     public async Task Evaluate_WithHiddenContent_ReturnsFinding()
     {
-        // Arrange - Description with zero-width characters
-        var description = "Normal description\u200Bhidden\u200Bcontent";
+        // Arrange - Description with a cluster of zero-width characters. v2.5.1:
+        // HiddenContent() now requires 2+ consecutive zero-width characters (a single
+        // one is indistinguishable from a legitimate emoji ZWJ sequence), so the
+        // cluster must be adjacent rather than scattered.
+        var description = "Normal description\u200B\u200Bhidden\u200B\u200Bcontent";
         var context = CreateContext(
             new McpToolDefinition
             {
@@ -115,6 +118,25 @@ public class ToolPoisoningRuleTests
         // Assert
         findings.Count.ShouldBe(1);
         findings[0].Title.ShouldContain("Hidden Content");
+    }
+
+    [Fact]
+    public async Task Evaluate_WithSingleZeroWidthChar_DoesNotFire()
+    {
+        // v2.5.1 regression: a lone zero-width joiner is common in legitimate emoji
+        // ZWJ sequences (e.g. a "family" emoji built from several codepoints) and must
+        // not be flagged on its own.
+        var description = "Normal description with an emoji \ud83d\udc68\u200d\ud83d\udcbb here.";
+        var context = CreateContext(
+            new McpToolDefinition
+            {
+                Name = "emoji_tool",
+                Description = description
+            });
+
+        var findings = (await _rule.EvaluateAsync(context)).ToList();
+
+        findings.ShouldNotContain(f => f.Title.Contains("Hidden Content"));
     }
 
     [Fact]

@@ -25,8 +25,11 @@ v3.0.0 - Research-Report Buildout, Theme 1 Accuracy, Versioned Rubric
 - CHANGED: skill rules are markdown-segment aware (frontmatter/prose/fenced code/inline code/links) - large false-positive reduction; SS-026 skill-side now evaluates frontmatter only; SS-015 no longer triggers on "when the user asks"; SS-014 fetch( fires only in js/ts fenced code and bundled scripts (EXFIL-005); enabled:false config entries are skipped in every discovery shape.
 - SCORING: weights unchanged; rubric now versioned/auditable (rubric v2.0.0, emitted in every report) with FsCheck-proven monotonicity.
 - DISCOVERY: Claude Code, Gemini CLI, OpenCode, VS Code/Copilot (incl. JetBrains), Amazon Q, .cursor; skill discovery across .gemini/.opencode/.github/.factory/.agents and the Claude plugin cache.
-- QUALITY: 47 total rules (was 32); 1101 tests (was 422); 0 warnings, 0 errors.
+- QUALITY: 47 total rules (was 32); 1131 tests (was 422); 0 warnings, 0 errors. Includes the v2.5.1 false-positive fixes.
 - See CHANGELOG.md and docs/MIGRATION_V3.md for the full list and migration guidance.
+
+v2.5.1 - Skill Scanner False-Positive Remediation
+- FIX: regex/logic tightenings informed by a real-world 65-skill review: bare .env mentions, shebang lines vs traversal check, bare &lt;meta&gt; tags, defensive "exfiltrate"/"siphon"/"smuggle" prose, .profile inside property access, Function( inside identifiers, single zero-width joiner in emoji sequences. Each fix ships with a false-positive regression test and a genuine-intent counterpart. See RELEASE_NOTES_v2.5.1.md.
 
 v2.5.0 - MCP 2026-07-28 Currency, SkillJacking Detection, Universal Skill Format Fields
 - NOTE: first public release since v2.3.0 - v2.4.0 and v2.4.1 were completed but never pushed/tagged; this changelog folds all three releases' changes together so there is no public gap.

@@ -34,14 +34,27 @@ public class CredentialPatternsTests
     }
 
     [Theory]
-    [InlineData(".env")]
-    [InlineData(".env.local")]
+    [InlineData("cat .env")]
+    [InlineData("source .env.local")]
+    [InlineData("load_dotenv(")]
     [InlineData(".aws/credentials")]
     [InlineData(".kube/config")]
     [InlineData("service_account_key.json")]
     public void SecretFileAccess_DetectsSecretFiles(string input)
     {
         CredentialPatterns.SecretFileAccess().IsMatch(input).ShouldBeTrue();
+    }
+
+    // v2.5.1 regression: bare ".env" mentions in prose (no access verb/call) must not
+    // fire - this was the single largest false-positive source in a real-world review
+    // (52 of 56 credential-access hits were plain filename mentions in documentation).
+    [Theory]
+    [InlineData("Store your API key in a .env file.")]
+    [InlineData("Create a .env with your secrets before running the skill.")]
+    [InlineData("See the .env.example file for configuration options.")]
+    public void SecretFileAccess_BareEnvMention_DoesNotMatch(string input)
+    {
+        CredentialPatterns.SecretFileAccess().IsMatch(input).ShouldBeFalse();
     }
 
     [Theory]

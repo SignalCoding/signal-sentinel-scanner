@@ -32,6 +32,10 @@ The Scanner is a command-line tool that audits MCP server configurations and Age
 - **Discovery breadth**: Claude Code, Gemini CLI, OpenCode, VS Code/Copilot (incl. JetBrains), Amazon Q and `.cursor` config shapes; skills under `.gemini`, `.opencode`, `.github`, `.factory`, `.agents` and the Claude plugin cache. `enabled: false` entries are now skipped everywhere.
 - Full details in [CHANGELOG.md](CHANGELOG.md); upgrade guidance in [docs/MIGRATION_V3.md](docs/MIGRATION_V3.md).
 
+### v2.5.1 highlights
+
+False-positive remediation patch for the skill-scanning rules, informed by a real-world review of 65 production Claude skills: bare `.env` mentions, shebang lines, ordinary `<meta>` tags, defensive "exfiltrate" prose, `.profile` inside property access, `Function(` inside identifiers, and single zero-width joiners in emoji sequences no longer fire. All fixes carry regression tests and are included in v3.0.0. See [RELEASE_NOTES_v2.5.1.md](RELEASE_NOTES_v2.5.1.md).
+
 ### v2.5.0 highlights
 
 - **MCP 2026-07-28 spec currency**: `SS-INFO-004` flags servers still negotiating an older `protocolVersion` or reachable only over the deprecated legacy HTTP+SSE transport. `SS-020` gained an advisory finding disclosing that the scanner cannot yet verify RFC 9207 issuer validation or the DCR→CIMD migration.
