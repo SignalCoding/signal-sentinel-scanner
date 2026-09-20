@@ -51,7 +51,22 @@ public class SkillDescriptionOverlapRuleTests
         f.Evidence.ShouldNotBeNull();
         f.Evidence.ShouldContain("jaccard=1.00");
         f.Confidence.ShouldBe(0.9);
-        f.SkillFilePath.ShouldNotBeNull();
+        f.ServerName.ShouldBe("github-pr");
+        f.SkillFilePath.ShouldBe("/skills/github-pr/SKILL.md");
+        f.Description.ShouldContain("/skills/github-pr/SKILL.md");
+        f.Description.ShouldContain("/skills/gh-helper/SKILL.md");
+    }
+
+    [Fact]
+    public async Task TemplatedBoilerplate_DifferentSubjects_NoFinding()
+    {
+        var ctx = Context(
+            Skill("docx", "Use this skill whenever the user asks to create, edit or convert Word documents (docx). Trigger proactively when the user mentions a report, letter or proposal and wants a formatted document."),
+            Skill("pdf", "Use this skill whenever the user asks to create, edit or convert PDF documents (pdf). Trigger proactively when the user mentions a report, letter or proposal and wants a formatted document."));
+
+        var findings = await _rule.EvaluateAsync(ctx);
+
+        findings.ShouldBeEmpty();
     }
 
     [Fact]

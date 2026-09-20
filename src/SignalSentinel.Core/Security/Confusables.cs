@@ -43,11 +43,30 @@ public sealed record ConfusableAnalysis
     public required bool HasLookalikes { get; init; }
 
     /// <summary>
+    /// True when the original contains fullwidth, mathematical, enclosed, letterlike or
+    /// Roman-numeral clones of ASCII letters. These have no legitimate use in an
+    /// identifier, unlike diacritics or symbols such as ™ and ².
+    /// </summary>
+    public required bool HasStylisticLookalikes { get; init; }
+
+    /// <summary>
     /// True when the identifier is not ASCII but its skeleton is entirely ASCII: every
     /// non-ASCII character was a Latin lookalike. This is the classic whole-script
-    /// homoglyph, e.g. Cyrillic "аррӏе" for "apple".
+    /// homoglyph, e.g. Cyrillic "аррӏе" for "apple". Latin-only identifiers that merely
+    /// carry diacritics or symbols (Turkish "sıralama", "acme™") are excluded; they fold
+    /// to ASCII but are not impersonating anything.
     /// </summary>
-    public bool IsWholeScriptConfusable => !IsAscii && HasLookalikes && Skeleton.All(c => c < 0x80);
+    public bool IsWholeScriptConfusable =>
+        !IsAscii && HasLookalikes && Skeleton.All(c => c < 0x80)
+        && (HasStylisticLookalikes || Scripts.Any(s => s != "Latin"));
+
+    /// <summary>
+    /// True when the whole-script homoglyph is a real word in a single non-Latin script
+    /// rather than a stylistic clone. Legitimate localised names ("ресурс") land here, so
+    /// callers should treat this case as low confidence in the absence of a collision.
+    /// </summary>
+    public bool IsSingleForeignScriptWord =>
+        IsWholeScriptConfusable && !HasStylisticLookalikes && Scripts.Count == 1 && Scripts[0] != "Latin";
 
     /// <summary>True when anything about the identifier warrants a look.</summary>
     public bool IsSuspicious => Invisibles.Count > 0 || IsMixedScript || IsWholeScriptConfusable;
@@ -93,7 +112,8 @@ public static class Confusables
 
     /// <summary>
     /// Script combinations UTS #39 "Highly Restrictive" treats as legitimate in one
-    /// identifier. Anything else with two or more scripts is mixed-script.
+    /// identifier. Beyond these, "Moderately Restrictive" also allows Latin plus any one
+    /// other script that is not itself a source of Latin lookalikes.
     /// </summary>
     private static readonly string[][] AllowedScriptCombinations =
     [
@@ -101,6 +121,14 @@ public static class Confusables
         ["Latin", "Han", "Hangul"],
         ["Latin", "Han", "Bopomofo"]
     ];
+
+    /// <summary>
+    /// Scripts that contain Latin lookalikes and therefore may never be mixed with Latin.
+    /// </summary>
+    private static readonly HashSet<string> LookalikeScripts = new(StringComparer.Ordinal)
+    {
+        "Cyrillic", "Greek", "Cherokee", "Armenian"
+    };
 
     /// <summary>
     /// Analyses an identifier.
@@ -118,25 +146,60 @@ public static class Confusables
         // lookalike behaviour this analysis must not hide.
         var nonAsciiOriginal = CountNonAscii(identifier);
         var isAscii = nonAsciiOriginal == 0;
+        var hasStylisticLookalikes = ContainsStylisticLookalike(identifier);
+
+        // A few code points must be folded before NFKC, which would otherwise map them to
+        // something the lookalike map cannot see: the micro sign (common in Latin
+        // identifiers such as µservice) becomes Greek mu, and the lunate sigmas Ϲ/ϲ,
+        // which look like "C"/"c", become Σ/σ.
+        var source = PreFold(identifier, scripts);
 
         string normalised;
         try
         {
-            normalised = identifier.Normalize(NormalizationForm.FormKC);
+            normalised = source.Normalize(NormalizationForm.FormKC);
         }
         catch (ArgumentException)
         {
             // Invalid surrogate pairs; analyse the raw string instead.
-            normalised = identifier;
+            normalised = source;
         }
 
         var hasLookalikes = CountNonAscii(normalised) < nonAsciiOriginal;
 
-        foreach (var rune in normalised.EnumerateRunes())
+        var runes = normalised.EnumerateRunes().ToArray();
+        for (var i = 0; i < runes.Length; i++)
         {
+            var rune = runes[i];
             var cp = rune.Value;
+            var category = Rune.GetUnicodeCategory(rune);
 
-            if (InvisibleCodePoints.Contains(cp) || Rune.GetUnicodeCategory(rune) == UnicodeCategory.Format)
+            if (IsVariationSelector(cp))
+            {
+                // Legitimate after an emoji or symbol (e.g. "✔️deploy"); a hiding trick after a letter.
+                if (!(i > 0 && IsSymbol(runes[i - 1])))
+                {
+                    invisibles.Add($"U+{cp:X4}");
+                }
+
+                continue;
+            }
+
+            if (cp is 0x200C or 0x200D)
+            {
+                // ZWNJ/ZWJ are orthographic in Persian, Indic conjuncts and emoji sequences.
+                // Between two non-Latin letters, or next to a symbol, they are legitimate.
+                if (!IsJoinerContextLegitimate(runes, i))
+                {
+                    invisibles.Add($"U+{cp:X4}");
+                }
+
+                continue;
+            }
+
+            if (InvisibleCodePoints.Contains(cp)
+                || category is UnicodeCategory.Format or UnicodeCategory.Control
+                    or UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator)
             {
                 invisibles.Add($"U+{cp:X4}");
                 continue;
@@ -178,7 +241,8 @@ public static class Confusables
             Invisibles = invisibles,
             Scripts = scriptList,
             IsMixedScript = scriptList.Count > 1 && !IsAllowedCombination(scriptList),
-            HasLookalikes = hasLookalikes
+            HasLookalikes = hasLookalikes,
+            HasStylisticLookalikes = hasStylisticLookalikes
         };
     }
 
@@ -186,6 +250,66 @@ public static class Confusables
     /// Convenience: the skeleton alone.
     /// </summary>
     public static string Skeleton(string identifier) => Analyse(identifier).Skeleton;
+
+    /// <summary>
+    /// Case- and canonical-normalisation-insensitive key for deciding whether two names
+    /// are "the same name spelt the same way" rather than two colliding identifiers.
+    /// Uses NFC (not NFKC) so fullwidth and mathematical variants stay distinct.
+    /// </summary>
+    public static string CaseFoldKey(string identifier)
+    {
+        ArgumentNullException.ThrowIfNull(identifier);
+
+        string nfc;
+        try
+        {
+            nfc = identifier.Normalize(NormalizationForm.FormC);
+        }
+        catch (ArgumentException)
+        {
+            nfc = identifier;
+        }
+
+        var sb = new StringBuilder(nfc.Length);
+        foreach (var rune in nfc.EnumerateRunes())
+        {
+            sb.Append(Rune.ToLowerInvariant(rune).ToString());
+        }
+
+        return sb.ToString();
+    }
+
+    private static string PreFold(string value, HashSet<string> scripts)
+    {
+        if (value.IndexOfAny(['\u00B5', '\u03F9', '\u03F2']) < 0)
+        {
+            return value;
+        }
+
+        var sb = new StringBuilder(value.Length);
+        foreach (var ch in value)
+        {
+            switch (ch)
+            {
+                case '\u00B5':
+                    sb.Append('u');
+                    break;
+                case '\u03F9':
+                    scripts.Add("Greek");
+                    sb.Append('c');
+                    break;
+                case '\u03F2':
+                    scripts.Add("Greek");
+                    sb.Append('c');
+                    break;
+                default:
+                    sb.Append(ch);
+                    break;
+            }
+        }
+
+        return sb.ToString();
+    }
 
     private static int CountNonAscii(string value)
     {
@@ -201,7 +325,82 @@ public static class Confusables
         return count;
     }
 
-    private static bool IsAllowedCombination(IReadOnlyList<string> scripts)
+    /// <summary>
+    /// Fullwidth, mathematical, enclosed, letterlike and Roman-numeral forms are
+    /// stylistic clones of ASCII letters with no legitimate use in an identifier.
+    /// Diacritics and symbols like ™ or ² are not in this set.
+    /// </summary>
+    private static bool ContainsStylisticLookalike(string value)
+    {
+        foreach (var rune in value.EnumerateRunes())
+        {
+            var cp = rune.Value;
+            if (cp is >= 0xFF01 and <= 0xFF5E
+                or >= 0x1D400 and <= 0x1D7FF
+                or >= 0x2460 and <= 0x24FF
+                or >= 0x1F100 and <= 0x1F1FF
+                or >= 0x2160 and <= 0x217F)
+            {
+                return true;
+            }
+
+            // Letterlike symbols mix single-letter clones (ℂ, ℓ, ℊ) with genuine symbols
+            // (™, №, ℃). Only the ones that are one ASCII letter in disguise count.
+            if (cp is >= 0x2100 and <= 0x214F)
+            {
+                var folded = rune.ToString().Normalize(NormalizationForm.FormKC);
+                if (folded.Length == 1 && char.IsAsciiLetter(folded[0]))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsVariationSelector(int cp) =>
+        cp is >= 0xFE00 and <= 0xFE0F or >= 0xE0100 and <= 0xE01EF or >= 0x180B and <= 0x180D;
+
+    private static bool IsSymbol(Rune rune)
+    {
+        var cat = Rune.GetUnicodeCategory(rune);
+        return cat is UnicodeCategory.OtherSymbol or UnicodeCategory.ModifierSymbol
+            or UnicodeCategory.MathSymbol or UnicodeCategory.CurrencySymbol;
+    }
+
+    private static bool IsJoinerContextLegitimate(Rune[] runes, int index)
+    {
+        if (index == 0 || index == runes.Length - 1)
+        {
+            return false;
+        }
+
+        var prev = runes[index - 1];
+        var next = runes[index + 1];
+
+        // Emoji ZWJ sequence: symbol on either side (the other side may be another joiner
+        // or a variation selector, which is why only one side is required).
+        if (IsSymbol(prev) || IsSymbol(next))
+        {
+            return true;
+        }
+
+        return IsNonLatinLetter(prev) && IsNonLatinLetter(next);
+    }
+
+    private static bool IsNonLatinLetter(Rune rune)
+    {
+        if (!Rune.IsLetter(rune) && Rune.GetUnicodeCategory(rune) != UnicodeCategory.NonSpacingMark)
+        {
+            return false;
+        }
+
+        var script = ScriptOf(rune.Value);
+        return script is not null && script != "Latin";
+    }
+
+    private static bool IsAllowedCombination(List<string> scripts)
     {
         foreach (var combo in AllowedScriptCombinations)
         {
@@ -209,6 +408,14 @@ public static class Confusables
             {
                 return true;
             }
+        }
+
+        // Moderately Restrictive: Latin plus exactly one other script that has no Latin
+        // lookalikes (Arabic, Hebrew, Thai, Devanagari, ...).
+        if (scripts.Count == 2 && scripts.Contains("Latin"))
+        {
+            var other = scripts[0] == "Latin" ? scripts[1] : scripts[0];
+            return !LookalikeScripts.Contains(other);
         }
 
         return false;
@@ -233,9 +440,13 @@ public static class Confusables
         return cp switch
         {
             >= 0x00C0 and <= 0x024F => cp is 0x00D7 or 0x00F7 ? null : "Latin",
+            >= 0x0250 and <= 0x02AF => "Latin", // IPA extensions
+            >= 0x02B0 and <= 0x02FF => null,    // spacing modifier letters (okina, apostrophes): Common
             >= 0x1E00 and <= 0x1EFF => "Latin",
             >= 0x2C60 and <= 0x2C7F => "Latin",
             >= 0xA720 and <= 0xA7FF => "Latin",
+            >= 0xAB30 and <= 0xAB6F => "Latin", // Latin Extended-E
+            0x3005 or 0x3006 or 0x303B => "Han", // iteration/closing marks used with kanji
             >= 0xFF21 and <= 0xFF3A => "Latin",
             >= 0xFF41 and <= 0xFF5A => "Latin",
             >= 0x1D400 and <= 0x1D7CB => "Latin", // mathematical alphanumerics (letters)
@@ -321,9 +532,15 @@ public static class Confusables
         Add("Ӏ", 'l'); Add("Ј", 'j'); Add("Ѕ", 's'); Add("І", 'i'); Add("Ԍ", 'g'); Add("Ԛ", 'q');
         Add("Ԝ", 'w'); Add("Ү", 'y'); Add("Ғ", 'f');
 
+        // Cyrillic case-pairs of the above and other singletons.
+        Add("ѵ", 'v'); Add("ү", 'y'); Add("Һ", 'h'); Add("ԍ", 'g'); Add("Ԁ", 'd'); Add("ѡ", 'w');
+        Add("Ԛ", 'q'); Add("ԛ", 'q'); Add("Ҭ", 't'); Add("ҭ", 't');
+
         // Greek.
         Add("α", 'a'); Add("ο", 'o'); Add("ν", 'v'); Add("ρ", 'p'); Add("ι", 'i'); Add("κ", 'k');
-        Add("τ", 't'); Add("υ", 'u'); Add("ϲ", 'c'); Add("ϳ", 'j'); Add("ϱ", 'p'); Add("ⲟ", 'o');
+        Add("τ", 't'); Add("υ", 'u'); Add("ϳ", 'j'); Add("ϱ", 'p'); Add("ⲟ", 'o');
+        Add("Ϳ", 'j'); Add("γ", 'y'); Add("χ", 'x');
+        // Lunate sigmas Ϲ/ϲ are handled in PreFold because NFKC turns them into Σ/σ.
         Add("Α", 'a'); Add("Β", 'b'); Add("Ε", 'e'); Add("Ζ", 'z'); Add("Η", 'h'); Add("Ι", 'i');
         Add("Κ", 'k'); Add("Μ", 'm'); Add("Ν", 'n'); Add("Ο", 'o'); Add("Ρ", 'p'); Add("Τ", 't');
         Add("Υ", 'y'); Add("Χ", 'x');
@@ -338,10 +555,11 @@ public static class Confusables
         Add("ℕ", 'n'); Add("ℙ", 'p'); Add("ℚ", 'q'); Add("ℝ", 'r'); Add("ℤ", 'z'); Add("ℬ", 'b');
         Add("ℰ", 'e'); Add("ℱ", 'f'); Add("ℳ", 'm'); Add("ℛ", 'r'); Add("ℒ", 'l'); Add("ℐ", 'i');
         Add("ℯ", 'e'); Add("ℊ", 'g'); Add("ℴ", 'o');
+        Add("ǀ", 'l'); Add("ȷ", 'j'); Add("ǃ", '!');
 
-        // Digit lookalikes.
-        Add("Ο", '0'); Add("О", '0'); Add("о", '0'); Add("૦", '0'); Add("०", '0'); Add("೦", '0');
-        Add("１", '1'); Add("Ⅰ", '1'); Add("ⅼ", '1'); Add("Ӏ", '1');
+        // Digit lookalikes. Letter mappings take precedence where both apply (see the
+        // override block at the end); these cover code points with no letter reading.
+        Add("૦", '0'); Add("०", '0'); Add("೦", '0');
         Add("Ƨ", '2'); Add("Ꝛ", '2'); Add("Ʒ", '3'); Add("Ȣ", '8');
 
         // Fullwidth ASCII (U+FF01..U+FF5E) folds to ASCII by offset.
@@ -368,18 +586,16 @@ public static class Confusables
             map[cp] = (char)('0' + (cp - 0x1D7CE) % 10);
         }
 
-        // A handful of ASCII-range and Latin-1 lookalikes that fold visually.
-        map['|'] = 'l';
-        map['\u00A0'] = ' ';
+        // Punctuation lookalikes that fold visually.
         map['\u2010'] = '-'; map['\u2011'] = '-'; map['\u2012'] = '-'; map['\u2013'] = '-'; map['\u2014'] = '-';
         map['\u2212'] = '-'; map['\u02D7'] = '-';
         map['\u2024'] = '.'; map['\u3002'] = '.';
         map['\uFF3F'] = '_'; map['\u2017'] = '_';
 
-        // The digit lookalikes above must not override letter mappings for the same
-        // codepoint when both apply; prefer letters (a homoglyph "o" is more common than "0").
+        // Letter readings win over digit readings for the same code point (a homoglyph
+        // "o" is more common than "0"; palochka in either case is an "l").
         map[0x039F] = 'o'; map[0x041E] = 'o'; map[0x043E] = 'o';
-        map[0x04CF] = 'l'; map[0x217C] = 'l';
+        map[0x04C0] = 'l'; map[0x04CF] = 'l'; map[0x217C] = 'l';
 
         return map;
     }

@@ -23,7 +23,9 @@ namespace SignalSentinel.Scanner.Rules;
 /// identifiers in the scan share a skeleton but differ as strings, every non-ASCII
 /// member of the collision is High (it is shadowing the ASCII one). An identifier that
 /// is suspicious on its own (invisible characters, disallowed script mixing, or a
-/// whole-script homoglyph with no collision yet) is Medium.
+/// fullwidth/mathematical clone with no collision yet) is Medium. A single-script
+/// non-Latin word whose letters all happen to have Latin lookalikes is Low, because
+/// that is what legitimate localised names look like too.
 /// </remarks>
 public sealed class ConfusableIdentifierRule : IRule
 {
@@ -48,7 +50,10 @@ public sealed class ConfusableIdentifierRule : IRule
     /// <inheritdoc />
     public IReadOnlyList<string> AstCodes => [OwaspAstCodes.AST04];
 
-    private sealed record Identifier(string Kind, string Name, string Owner, string? SkillPath, ConfusableAnalysis Analysis);
+    private sealed record Identifier(string Kind, string Name, string Owner, string? SkillPath, ConfusableAnalysis Analysis)
+    {
+        public string FoldKey { get; } = Confusables.CaseFoldKey(Name);
+    }
 
     /// <inheritdoc />
     public Task<IEnumerable<Finding>> EvaluateAsync(ScanContext context, CancellationToken cancellationToken = default)
@@ -64,7 +69,8 @@ public sealed class ConfusableIdentifierRule : IRule
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var distinctNames = group.Select(i => i.Name).Distinct(StringComparer.Ordinal).ToList();
+            // "Ресурс" vs "ресурс" or NFC vs NFD "café" are the same name, not a collision.
+            var distinctNames = group.Select(i => i.FoldKey).Distinct(StringComparer.Ordinal).ToList();
             if (distinctNames.Count < 2)
             {
                 continue;
@@ -79,7 +85,7 @@ public sealed class ConfusableIdentifierRule : IRule
                 }
 
                 var others = group
-                    .Where(o => !string.Equals(o.Name, member.Name, StringComparison.Ordinal))
+                    .Where(o => !string.Equals(o.FoldKey, member.FoldKey, StringComparison.Ordinal))
                     .Select(o => $"{o.Kind} '{o.Name}' ({o.Owner})")
                     .Distinct(StringComparer.Ordinal)
                     .Take(3)
@@ -112,11 +118,13 @@ public sealed class ConfusableIdentifierRule : IRule
             string title;
             string description;
             string evidence;
+            var severity = Severity.Medium;
+            var confidence = 0.85;
 
             if (a.Invisibles.Count > 0)
             {
                 title = $"{identifier.Kind} Name Contains Invisible Characters";
-                description = $"{identifier.Kind} '{identifier.Name}' on '{identifier.Owner}' contains {a.Invisibles.Count} zero-width or bidi-control character(s). They render as nothing, so the displayed name differs from the string an agent matches on.";
+                description = $"{identifier.Kind} '{identifier.Name}' on '{identifier.Owner}' contains {a.Invisibles.Count} zero-width, control or bidi character(s). They render as nothing, so the displayed name differs from the string an agent matches on.";
                 evidence = $"{identifier.Name}: {string.Join(" ", a.Invisibles.Distinct().Take(5))}";
             }
             else if (a.IsMixedScript)
@@ -125,17 +133,28 @@ public sealed class ConfusableIdentifierRule : IRule
                 description = $"{identifier.Kind} '{identifier.Name}' on '{identifier.Owner}' mixes {string.Join(" and ", a.Scripts)} letters. Legitimate identifiers almost never do; homoglyph attacks almost always do.";
                 evidence = $"{identifier.Name} => skeleton '{a.Skeleton}'; scripts: {string.Join("+", a.Scripts)}";
             }
+            else if (a.IsSingleForeignScriptWord)
+            {
+                // A real word in one non-Latin script that happens to be all lookalikes
+                // ("ресурс"). Usually legitimate localisation; occasionally the payload of
+                // a whole-script attack whose ASCII target is not in this scan.
+                severity = Severity.Low;
+                confidence = 0.5;
+                title = $"{identifier.Kind} Name Reads As ASCII '{a.Skeleton}'";
+                description = $"{identifier.Kind} '{identifier.Name}' on '{identifier.Owner}' is a {a.Scripts[0]} name whose every letter has a Latin lookalike, so it reads as '{a.Skeleton}'. No matching ASCII identifier is present in this scan. This is normal for a localised server; it is also how a whole-script homoglyph attack looks before the target is installed.";
+                evidence = $"{identifier.Name} => skeleton '{a.Skeleton}'; script: {a.Scripts[0]}";
+            }
             else
             {
                 title = $"{identifier.Kind} Name Is A Whole-Script Homoglyph";
-                description = $"{identifier.Kind} '{identifier.Name}' on '{identifier.Owner}' is written entirely in non-ASCII characters that look like the ASCII name '{a.Skeleton}'. No matching ASCII identifier is present in this scan, but one may be in the agent's other servers.";
+                description = $"{identifier.Kind} '{identifier.Name}' on '{identifier.Owner}' is written in fullwidth, mathematical or other stylistic clones of ASCII letters and reads as '{a.Skeleton}'. No matching ASCII identifier is present in this scan, but one may be in the agent's other servers.";
                 evidence = $"{identifier.Name} => skeleton '{a.Skeleton}'; scripts: {string.Join("+", a.Scripts)}";
             }
 
             reported.Add((identifier.Kind, identifier.Name, identifier.Owner));
-            findings.Add(Create(identifier, Severity.Medium, title, description,
+            findings.Add(Create(identifier, severity, title, description,
                 "Use plain ASCII identifiers. Remove invisible characters and do not mix scripts within one name.",
-                evidence, 0.85));
+                evidence, confidence));
         }
 
         return Task.FromResult<IEnumerable<Finding>>(findings);
@@ -184,7 +203,9 @@ public sealed class ConfusableIdentifierRule : IRule
         foreach (var skill in context.Skills)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Add("Skill", skill.CanonicalSkillName, skill.SourcePlatform ?? "skills", skill.FilePath);
+            // Owner is the skill's own name: RuleEngine resolves CanonicalSkillName, scope
+            // filters and suppressions by matching Finding.ServerName against skill.Name.
+            Add("Skill", skill.CanonicalSkillName, skill.Name, skill.FilePath);
         }
 
         return list;
@@ -201,7 +222,7 @@ public sealed class ConfusableIdentifierRule : IRule
             Description = description,
             Remediation = remediation,
             ServerName = identifier.Owner,
-            ToolName = identifier.Kind == "Skill" ? null : identifier.Name,
+            ToolName = identifier.Kind is "Skill" or "Server" ? null : identifier.Name,
             Evidence = DescriptionScan.Truncate(evidence),
             Confidence = confidence,
             Source = identifier.Kind == "Skill" ? FindingSource.Skill : FindingSource.Mcp,

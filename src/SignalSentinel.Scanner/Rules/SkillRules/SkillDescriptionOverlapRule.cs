@@ -35,7 +35,11 @@ public sealed class SkillDescriptionOverlapRule : IRule
         "use", "using", "used", "when", "then", "than", "them", "they", "will", "which", "what",
         "how", "any", "all", "not", "but", "its", "has", "have", "was", "were", "been", "being",
         "skill", "agent", "tool", "tools", "helps", "help", "allows", "allow", "lets", "let",
-        "provides", "provide", "about", "also", "each", "one", "two", "via", "per", "should"
+        "provides", "provide", "about", "also", "each", "one", "two", "via", "per", "should",
+        // Marketplace trigger boilerplate ("Use this skill whenever the user asks to ...").
+        "user", "users", "asks", "asked", "asking", "wants", "want", "needs", "need", "whenever",
+        "mentions", "mention", "trigger", "triggers", "triggered", "proactively", "shares",
+        "changes", "invoke", "invoked", "request", "working"
     };
 
     /// <inheritdoc />
@@ -82,8 +86,8 @@ public sealed class SkillDescriptionOverlapRule : IRule
                 if (string.Equals(a.CanonicalSkillName, b.CanonicalSkillName, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(a.FilePath, b.FilePath, StringComparison.OrdinalIgnoreCase))
                 {
-                    // Same skill installed twice (e.g. personal + project copy) is SS-010
-                    // territory, not description hijacking.
+                    // Same skill installed twice (e.g. personal + project copy) is a
+                    // duplicate-install concern, not description hijacking.
                     continue;
                 }
 
@@ -101,11 +105,11 @@ public sealed class SkillDescriptionOverlapRule : IRule
                     Severity = Severity.Medium,
                     Title = $"Skill Descriptions Nearly Identical: '{a.CanonicalSkillName}' and '{b.CanonicalSkillName}'",
                     Description =
-                        $"Skills '{a.CanonicalSkillName}' and '{b.CanonicalSkillName}' have different names but descriptions with Jaccard similarity {scoreText}. " +
+                        $"Skills '{a.CanonicalSkillName}' ({a.FilePath}) and '{b.CanonicalSkillName}' ({b.FilePath}) have different names but descriptions with Jaccard similarity {scoreText}. " +
                         "Agents route requests by description, so these two compete for the same requests. One may be impersonating the other.",
                     Remediation =
                         "Confirm both skills are yours and intentionally overlapping. Otherwise remove the one you did not install deliberately and check where it came from.",
-                    ServerName = a.CanonicalSkillName,
+                    ServerName = a.Name,
                     Evidence = DescriptionScan.Truncate($"{a.CanonicalSkillName} ~ {b.CanonicalSkillName} (jaccard={scoreText})"),
                     Confidence = score >= 0.95 ? 0.9 : 0.75,
                     Source = FindingSource.Skill,
