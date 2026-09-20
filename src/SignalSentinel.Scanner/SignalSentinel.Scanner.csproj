@@ -185,6 +185,7 @@ v1.0.0 - Initial Release
   <!-- Package content -->
   <ItemGroup>
     <Content Include="DefaultRules.json" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="Policy\Presets\*.json" />
   </ItemGroup>
   
   <!-- NuGet package assets -->

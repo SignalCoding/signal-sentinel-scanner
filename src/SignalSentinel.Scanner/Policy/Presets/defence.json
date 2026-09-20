@@ -1,0 +1,5 @@
+{
+  "bumpAllOneBand": true,
+  "failOn": "low",
+  "offline": true
+}

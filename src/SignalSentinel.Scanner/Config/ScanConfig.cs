@@ -146,6 +146,13 @@ public sealed record ScanConfig
     public bool ListRules { get; init; }
 
     /// <summary>
+    /// v3.0.0 (WP7): raw <c>--policy</c> argument — a preset name (default, strict,
+    /// defence) or a path to a policy JSON file. Resolved by <c>PolicyLoader</c> after
+    /// argument parsing; explicit CLI flags override anything the policy sets.
+    /// </summary>
+    public string? PolicyArg { get; init; }
+
+    /// <summary>
     /// When set, run in diff mode comparing the supplied baseline JSON scan report against the
     /// current scan. Renders only resolved/new/unchanged buckets plus grade-delta attribution.
     /// </summary>
