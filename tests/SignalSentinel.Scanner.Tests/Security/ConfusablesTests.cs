@@ -284,6 +284,53 @@ public class ConfusablesTests
     }
 
     [Theory]
+    [InlineData("read_fil\U00010304")] // Old Italic 𐌄
+    [InlineData("\uA4E3ead_file")]     // Lisu ꓣ
+    [InlineData("\u16B1ead")]          // Runic ᚱ
+    [InlineData("\U00010400pple")]     // Deseret 𐐀
+    [InlineData("\u13A0pple")]         // Cherokee Ꭺ
+    [InlineData("\u0578ame")]          // Armenian ո
+    public void Analyse_LatinPlusExcludedOrLookalikeScript_IsMixedScript(string identifier)
+    {
+        var a = Confusables.Analyse(identifier);
+
+        a.IsMixedScript.ShouldBeTrue();
+        a.IsSuspicious.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Analyse_PureGreekWithLunateSigma_NotMixedScript()
+    {
+        var a = Confusables.Analyse("\u03F2\u03BF\u03C6\u03B9\u03B1"); // ϲοφια
+
+        a.Scripts.ShouldBe(["Greek"]);
+        a.IsMixedScript.ShouldBeFalse();
+        a.Skeleton.ShouldBe("co\u03C6ia");
+    }
+
+    [Fact]
+    public void Analyse_LunateSigmaInLatinName_MixedScriptAndFolds()
+    {
+        var a = Confusables.Analyse("\u03F9onfig"); // Ϲonfig
+
+        a.Skeleton.ShouldBe("config");
+        a.Scripts.ShouldBe(["Greek", "Latin"]);
+        a.IsMixedScript.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData("read_file\u2800", "U+2800")]
+    [InlineData("read_file\u2800\uFE0F", "U+2800")]
+    public void Analyse_BrailleBlank_InvisibleAndDoesNotLegitimiseSelector(string identifier, string first)
+    {
+        var a = Confusables.Analyse(identifier);
+
+        a.Invisibles.ShouldNotBeEmpty();
+        a.Invisibles[0].ShouldBe(first);
+        a.Skeleton.ShouldBe("read_file");
+    }
+
+    [Theory]
     [InlineData("hawai\u02BBi")]      // okina
     [InlineData("\u043E\u0431\u02BC\u0454\u043A\u0442")] // обʼєкт
     [InlineData("\u4EBA\u3005")]      // 人々

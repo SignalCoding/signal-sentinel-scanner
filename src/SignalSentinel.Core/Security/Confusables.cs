@@ -103,6 +103,7 @@ public static class Confusables
         0x2060, 0x2061, 0x2062, 0x2063, 0x2064, // WJ, function application, invisible times/separator/plus
         0x2066, 0x2067, 0x2068, 0x2069, // LRI, RLI, FSI, PDI
         0x206A, 0x206B, 0x206C, 0x206D, 0x206E, 0x206F, // deprecated format chars
+        0x2800, // Braille pattern blank
         0x3164, // Hangul filler
         0xFEFF, // BOM / ZWNBSP
         0xFFA0, // halfwidth Hangul filler
@@ -123,12 +124,22 @@ public static class Confusables
     ];
 
     /// <summary>
-    /// Scripts that contain Latin lookalikes and therefore may never be mixed with Latin.
+    /// UTS #39 "Recommended" scripts with no Latin lookalikes, allowed alongside Latin
+    /// under the Moderately Restrictive profile. Cyrillic, Greek, Cherokee and Armenian
+    /// are Recommended but excluded because they are the main lookalike sources.
+    /// Limited-Use and Excluded scripts (Old Italic, Runic, Lisu, Deseret, ...) and the
+    /// catch-all "Other" are never allowed with Latin: several contain capital-Latin
+    /// clones the skeleton cannot fold.
     /// </summary>
-    private static readonly HashSet<string> LookalikeScripts = new(StringComparer.Ordinal)
+    private static readonly HashSet<string> LatinCompatibleScripts = new(StringComparer.Ordinal)
     {
-        "Cyrillic", "Greek", "Cherokee", "Armenian"
+        "Arabic", "Hebrew", "Thai", "Devanagari", "Han", "Hangul", "Hiragana", "Katakana", "Bopomofo"
     };
+
+    // Private-use sentinels substituted by PreFold for code points NFKC would otherwise
+    // fold into something the lookalike map cannot see.
+    private const int LunateSigmaSentinel = 0xE000; // Ϲ/ϲ -> "c", script Greek
+    private const int MicroSignSentinel = 0xE001;   // µ -> "u", script Common
 
     /// <summary>
     /// Analyses an identifier.
@@ -148,11 +159,11 @@ public static class Confusables
         var isAscii = nonAsciiOriginal == 0;
         var hasStylisticLookalikes = ContainsStylisticLookalike(identifier);
 
-        // A few code points must be folded before NFKC, which would otherwise map them to
-        // something the lookalike map cannot see: the micro sign (common in Latin
-        // identifiers such as µservice) becomes Greek mu, and the lunate sigmas Ϲ/ϲ,
-        // which look like "C"/"c", become Σ/σ.
-        var source = PreFold(identifier, scripts);
+        // A few code points must be swapped for sentinels before NFKC, which would
+        // otherwise map them to something the lookalike map cannot see: the micro sign
+        // (common in Latin identifiers such as µservice) becomes Greek mu, and the lunate
+        // sigmas Ϲ/ϲ, which look like "C"/"c", become Σ/σ.
+        var source = PreFold(identifier);
 
         string normalised;
         try
@@ -279,7 +290,7 @@ public static class Confusables
         return sb.ToString();
     }
 
-    private static string PreFold(string value, HashSet<string> scripts)
+    private static string PreFold(string value)
     {
         if (value.IndexOfAny(['\u00B5', '\u03F9', '\u03F2']) < 0)
         {
@@ -289,23 +300,12 @@ public static class Confusables
         var sb = new StringBuilder(value.Length);
         foreach (var ch in value)
         {
-            switch (ch)
+            sb.Append(ch switch
             {
-                case '\u00B5':
-                    sb.Append('u');
-                    break;
-                case '\u03F9':
-                    scripts.Add("Greek");
-                    sb.Append('c');
-                    break;
-                case '\u03F2':
-                    scripts.Add("Greek");
-                    sb.Append('c');
-                    break;
-                default:
-                    sb.Append(ch);
-                    break;
-            }
+                '\u00B5' => (char)MicroSignSentinel,
+                '\u03F9' or '\u03F2' => (char)LunateSigmaSentinel,
+                _ => ch
+            });
         }
 
         return sb.ToString();
@@ -364,6 +364,13 @@ public static class Confusables
 
     private static bool IsSymbol(Rune rune)
     {
+        if (InvisibleCodePoints.Contains(rune.Value))
+        {
+            // Braille blank is category So but renders as nothing; it must not
+            // legitimise a following variation selector or joiner.
+            return false;
+        }
+
         var cat = Rune.GetUnicodeCategory(rune);
         return cat is UnicodeCategory.OtherSymbol or UnicodeCategory.ModifierSymbol
             or UnicodeCategory.MathSymbol or UnicodeCategory.CurrencySymbol;
@@ -410,12 +417,12 @@ public static class Confusables
             }
         }
 
-        // Moderately Restrictive: Latin plus exactly one other script that has no Latin
-        // lookalikes (Arabic, Hebrew, Thai, Devanagari, ...).
+        // Moderately Restrictive: Latin plus exactly one Recommended script that has no
+        // Latin lookalikes (Arabic, Hebrew, Thai, Devanagari, ...).
         if (scripts.Count == 2 && scripts.Contains("Latin"))
         {
             var other = scripts[0] == "Latin" ? scripts[1] : scripts[0];
-            return !LookalikeScripts.Contains(other);
+            return LatinCompatibleScripts.Contains(other);
         }
 
         return false;
@@ -439,6 +446,8 @@ public static class Confusables
 
         return cp switch
         {
+            LunateSigmaSentinel => "Greek",
+            MicroSignSentinel => null,
             >= 0x00C0 and <= 0x024F => cp is 0x00D7 or 0x00F7 ? null : "Latin",
             >= 0x0250 and <= 0x02AF => "Latin", // IPA extensions
             >= 0x02B0 and <= 0x02FF => null,    // spacing modifier letters (okina, apostrophes): Common
@@ -540,7 +549,11 @@ public static class Confusables
         Add("α", 'a'); Add("ο", 'o'); Add("ν", 'v'); Add("ρ", 'p'); Add("ι", 'i'); Add("κ", 'k');
         Add("τ", 't'); Add("υ", 'u'); Add("ϳ", 'j'); Add("ϱ", 'p'); Add("ⲟ", 'o');
         Add("Ϳ", 'j'); Add("γ", 'y'); Add("χ", 'x');
-        // Lunate sigmas Ϲ/ϲ are handled in PreFold because NFKC turns them into Σ/σ.
+
+        // Sentinels substituted by PreFold (see there). µ -> u is a marginal visual match
+        // but keeps "µservice" out of the mixed-script bucket.
+        map[LunateSigmaSentinel] = 'c';
+        map[MicroSignSentinel] = 'u';
         Add("Α", 'a'); Add("Β", 'b'); Add("Ε", 'e'); Add("Ζ", 'z'); Add("Η", 'h'); Add("Ι", 'i');
         Add("Κ", 'k'); Add("Μ", 'm'); Add("Ν", 'n'); Add("Ο", 'o'); Add("Ρ", 'p'); Add("Τ", 't');
         Add("Υ", 'y'); Add("Χ", 'x');
