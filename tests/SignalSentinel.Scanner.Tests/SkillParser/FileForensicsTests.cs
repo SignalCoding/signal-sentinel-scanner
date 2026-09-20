@@ -21,13 +21,18 @@ public class FileForensicsTests
     [InlineData(new byte[] { 0xCF, 0xFA, 0xED, 0xFE }, FileArtefactKind.MachO)]
     [InlineData(new byte[] { 0xCA, 0xFE, 0xBA, 0xBE, 0x00, 0x00, 0x00, 0x02 }, FileArtefactKind.MachO)]
     [InlineData(new byte[] { 0xCA, 0xFE, 0xBA, 0xBE, 0x00, 0x00, 0x00, 0x41 }, FileArtefactKind.JavaClass)]
+    [InlineData(new byte[] { 0xCA, 0xFE, 0xBA, 0xBE, 0x00, 0x00, 0x00, 0x34 }, FileArtefactKind.JavaClass)]
+    [InlineData(new byte[] { 0xCA, 0xFE, 0xBA, 0xBE, 0x00, 0x00, 0x00, 0x2D }, FileArtefactKind.JavaClass)]
+    [InlineData(new byte[] { 0xCB, 0x0D, 0x0D, 0x0A, 0x00, 0x00, 0x00, 0x00 }, FileArtefactKind.PythonBytecode)]
+    [InlineData(new byte[] { 0x58, 0x0D, 0x0D, 0x0A, 0x54, 0x68, 0x69, 0x73 }, FileArtefactKind.Unknown)]
+    [InlineData(new byte[] { 0x58, 0x0D, 0x0D, 0x0A }, FileArtefactKind.Unknown)]
     [InlineData(new byte[] { 0x50, 0x4B, 0x03, 0x04 }, FileArtefactKind.Zip)]
     [InlineData(new byte[] { 0x1F, 0x8B, 0x08 }, FileArtefactKind.Gzip)]
     [InlineData(new byte[] { 0x42, 0x5A, 0x68, 0x39 }, FileArtefactKind.Bzip2)]
     [InlineData(new byte[] { 0xFD, 0x37, 0x7A, 0x58, 0x5A, 0x00 }, FileArtefactKind.Xz)]
     [InlineData(new byte[] { 0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C }, FileArtefactKind.SevenZip)]
     [InlineData(new byte[] { 0x52, 0x61, 0x72, 0x21, 0x1A, 0x07 }, FileArtefactKind.Rar)]
-    [InlineData(new byte[] { 0xCB, 0x0D, 0x0D, 0x0A, 0x00 }, FileArtefactKind.PythonBytecode)]
+    [InlineData(new byte[] { 0xCB, 0x0D, 0x0D, 0x0A, 0x00 }, FileArtefactKind.Unknown)]
     [InlineData(new byte[] { 0x23, 0x21, 0x2F, 0x62, 0x69, 0x6E }, FileArtefactKind.Shebang)]
     [InlineData(new byte[] { 0x23, 0x20, 0x48, 0x65 }, FileArtefactKind.Unknown)]
     [InlineData(new byte[] { 0x7B }, FileArtefactKind.Unknown)]
@@ -35,6 +40,26 @@ public class FileForensicsTests
     public void Classify_KnownMagic_ReturnsKind(byte[] header, FileArtefactKind expected)
     {
         FileForensics.Classify(header).ShouldBe(expected);
+    }
+
+    [Fact]
+    public void Classify_MzWithPlausibleLfanew_IsPortableExecutable()
+    {
+        var header = new byte[64];
+        header[0] = (byte)'M';
+        header[1] = (byte)'Z';
+        header[0x3C] = 0x80; // e_lfanew = 0x80
+
+        FileForensics.Classify(header).ShouldBe(FileArtefactKind.PortableExecutable);
+    }
+
+    [Fact]
+    public void Classify_TextStartingWithMz_IsUnknown()
+    {
+        var header = System.Text.Encoding.ASCII.GetBytes("MZ is a prefix that appears in ordinary prose sometimes, honestly.");
+        header.Length.ShouldBeGreaterThanOrEqualTo(64);
+
+        FileForensics.Classify(header.AsSpan(0, 64)).ShouldBe(FileArtefactKind.Unknown);
     }
 
     [Fact]

@@ -38,7 +38,13 @@ public sealed class SkillSuspiciousArtefactRule : IRule
 
     private static readonly HashSet<string> ExecutableExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".exe", ".dll", ".com", ".scr", ".msi", ".so", ".dylib", ".bin", ".app", ".pif"
+        ".exe", ".dll", ".com", ".scr", ".msi", ".so", ".dylib", ".app", ".pif"
+    };
+
+    // Conventionally opaque data; not executable on its own but unreviewable.
+    private static readonly HashSet<string> OpaqueDataExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".bin", ".dat", ".blob"
     };
 
     private static readonly HashSet<string> ArchiveExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -48,14 +54,16 @@ public sealed class SkillSuspiciousArtefactRule : IRule
 
     private static readonly HashSet<string> HiddenAllowlist = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".gitignore", ".gitattributes", ".editorconfig", ".sentinel-sig", ".sigstore", ".env.example",
-        ".prettierrc", ".eslintrc", ".eslintrc.json", ".npmrc", ".nvmrc", ".python-version", ".tool-versions",
-        ".markdownlint.json", ".markdownlintrc", ".yamllint", ".dockerignore", ".keep", ".gitkeep"
+        ".gitignore", ".gitattributes", ".gitmodules", ".editorconfig", ".sentinel-sig", ".sigstore", ".env.example",
+        ".prettierrc", ".prettierignore", ".eslintrc", ".eslintrc.json", ".eslintignore", ".npmrc", ".npmignore", ".nvmrc",
+        ".python-version", ".tool-versions", ".flake8", ".pylintrc", ".ruff.toml", ".pre-commit-config.yaml",
+        ".markdownlint.json", ".markdownlintrc", ".yamllint", ".dockerignore", ".gitlab-ci.yml", ".envrc",
+        ".mcp.json", ".keep", ".gitkeep", ".sentinel-suppressions.json", ".sentinel-scope.json"
     };
 
     private static readonly HashSet<string> HiddenAllowlistDirectories = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".github", ".vscode", ".claude", ".cursor", ".codex", ".factory", ".agent-skills", ".agents"
+        ".github", ".vscode", ".claude", ".cursor", ".codex", ".factory", ".agent-skills", ".agents", ".gemini", ".opencode"
     };
 
     /// <inheritdoc />
@@ -94,7 +102,9 @@ public sealed class SkillSuspiciousArtefactRule : IRule
             }
 
             var pythonSources = new HashSet<string>(
-                skill.Artefacts.Where(a => a.Extension == ".py").Select(a => StripExtension(a.RelativePath)),
+                skill.Artefacts
+                    .Where(a => string.Equals(a.Extension, ".py", StringComparison.OrdinalIgnoreCase))
+                    .Select(a => StripExtension(a.RelativePath)),
                 StringComparer.OrdinalIgnoreCase);
 
             foreach (var artefact in skill.Artefacts)
@@ -158,8 +168,27 @@ public sealed class SkillSuspiciousArtefactRule : IRule
                 0.85);
         }
 
+        // 4b. Opaque data blobs and executable-permission files with no recognisable type.
+        if (OpaqueDataExtensions.Contains(artefact.Extension))
+        {
+            return Create(skill, artefact, Severity.Medium,
+                "Opaque Data File In Skill Package",
+                $"'{artefact.RelativePath}' is a binary data file with no recognised signature. It cannot be reviewed and its purpose is not evident from the skill.",
+                "Document what the file is and why the skill needs it, or replace it with a readable format.",
+                0.7);
+        }
+
+        if (artefact.IsExecutable && artefact.Extension.Length == 0 && artefact.Kind == FileArtefactKind.Unknown)
+        {
+            return Create(skill, artefact, Severity.Medium,
+                "Executable Permission On Unrecognised File",
+                $"'{artefact.RelativePath}' is marked executable but has no extension, no shebang, and no recognised binary signature.",
+                "Give the file a shebang and extension so its interpreter is explicit, or remove the executable bit.",
+                0.7);
+        }
+
         // 5. Orphan bytecode.
-        if (artefact.Kind == FileArtefactKind.PythonBytecode || artefact.Extension == ".pyc")
+        if (artefact.Kind == FileArtefactKind.PythonBytecode || string.Equals(artefact.Extension, ".pyc", StringComparison.OrdinalIgnoreCase))
         {
             var stem = StripExtension(artefact.RelativePath);
             // CPython writes pkg/__pycache__/module.cpython-312.pyc for pkg/module.py;
@@ -197,8 +226,9 @@ public sealed class SkillSuspiciousArtefactRule : IRule
                 0.85);
         }
 
-        // 6. Hidden files outside the allowlist.
-        if (artefact.IsHidden && !IsAllowlistedHidden(artefact.RelativePath, name))
+        // 6. Hidden files outside the allowlist. A file under a dot-directory counts as
+        // hidden too, since the directory hides it just as effectively.
+        if ((artefact.IsHidden || HasHiddenSegment(artefact.RelativePath)) && !IsAllowlistedHidden(artefact.RelativePath, name))
         {
             return Create(skill, artefact, Severity.Low,
                 "Hidden File In Skill Package",
@@ -210,6 +240,21 @@ public sealed class SkillSuspiciousArtefactRule : IRule
         return null;
     }
 
+    private static bool HasHiddenSegment(string relativePath)
+    {
+        var parts = relativePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        // Exclude the file name itself; that is covered by IsHidden.
+        for (var i = 0; i < parts.Length - 1; i++)
+        {
+            if (parts[i].StartsWith('.') && parts[i].Length > 1)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool IsAllowlistedHidden(string relativePath, string name)
     {
         if (HiddenAllowlist.Contains(name))
@@ -218,11 +263,25 @@ public sealed class SkillSuspiciousArtefactRule : IRule
         }
 
         // A visible file inside an allowlisted hidden directory (.github/workflows/x.yml)
-        // is fine; the directory is the convention, not the file.
+        // is fine; the directory is the convention, not the file. Every dot-segment on
+        // the path must be an allowlisted directory.
         var parts = relativePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        if (parts.Length > 1 && HiddenAllowlistDirectories.Contains(parts[0]) && !name.StartsWith('.'))
+        if (parts.Length > 1 && !name.StartsWith('.'))
         {
-            return true;
+            var allDirsAllowlisted = true;
+            for (var i = 0; i < parts.Length - 1; i++)
+            {
+                if (parts[i].StartsWith('.') && !HiddenAllowlistDirectories.Contains(parts[i]))
+                {
+                    allDirsAllowlisted = false;
+                    break;
+                }
+            }
+
+            if (allDirsAllowlisted)
+            {
+                return true;
+            }
         }
 
         return false;

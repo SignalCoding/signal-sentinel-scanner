@@ -112,6 +112,112 @@ public class IntegrityVerifierChecksumTests
     }
 
     [Fact]
+    public void Verify_AbsoluteAndRootedPaths_ReportedInvalid()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), $"integrity-abs-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "SKILL.md"), "# skill");
+            var manifest =
+                $"{new string('a', 64)}  /etc/passwd\n" +
+                $"{new string('b', 64)}  C:/Windows/System32/config/SAM\n" +
+                $"{new string('c', 64)}  \\\\server\\share\\file\n";
+            File.WriteAllText(Path.Combine(dir, "SHA256SUMS"), manifest);
+
+            var report = IntegrityVerifier.Verify(new SkillDefinition
+            {
+                Name = "t",
+                InstructionsBody = string.Empty,
+                RawContent = "# skill",
+                FilePath = Path.Combine(dir, "SKILL.md")
+            });
+
+            report.ChecksumResults.Count.ShouldBe(3);
+            report.ChecksumResults.ShouldNotContain(r => r.Status == ChecksumStatus.Match || r.Status == ChecksumStatus.Mismatch);
+            report.ChecksumResults[0].Status.ShouldBe(ChecksumStatus.Invalid); // /etc/passwd is rooted everywhere
+            report.ChecksumResults[2].Status.ShouldBe(ChecksumStatus.Invalid); // UNC / double-slash is rooted everywhere
+            if (OperatingSystem.IsWindows())
+            {
+                report.ChecksumResults[1].Status.ShouldBe(ChecksumStatus.Invalid); // drive letter only rooted on Windows
+            }
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public void Verify_DuplicateEntries_HashedOnceAndBothReported()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), $"integrity-dup-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "SKILL.md"), "# skill");
+            var good = Sha256Hex("# skill");
+            File.WriteAllText(Path.Combine(dir, "SHA256SUMS"), $"{good}  SKILL.md\n{new string('0', 64)}  ./SKILL.md\n");
+
+            var report = IntegrityVerifier.Verify(new SkillDefinition
+            {
+                Name = "t",
+                InstructionsBody = string.Empty,
+                RawContent = "# skill",
+                FilePath = Path.Combine(dir, "SKILL.md")
+            });
+
+            report.ChecksumResults.Count.ShouldBe(2);
+            report.ChecksumResults[0].Status.ShouldBe(ChecksumStatus.Match);
+            report.ChecksumResults[1].Status.ShouldBe(ChecksumStatus.Mismatch);
+            report.ChecksumResults[1].Actual.ShouldBe(good);
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public void Verify_PresenceOnly_SkipsHashing()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), $"integrity-presence-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "SKILL.md"), "# skill");
+            File.WriteAllText(Path.Combine(dir, "checksums.sha256"), $"{new string('0', 64)}  SKILL.md\n");
+
+            var report = IntegrityVerifier.Verify(new SkillDefinition
+            {
+                Name = "t",
+                InstructionsBody = string.Empty,
+                RawContent = "# skill",
+                FilePath = Path.Combine(dir, "SKILL.md")
+            }, verifyChecksums: false);
+
+            report.SignaturePresent.ShouldBeTrue();
+            report.SignatureFileName.ShouldBe("checksums.sha256");
+            report.ChecksumResults.ShouldBeEmpty();
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public void ParseChecksumLine_GnuEscapedPrefix_Stripped()
+    {
+        var hex = new string('d', 64);
+
+        var parsed = IntegrityVerifier.ParseChecksumLine($"\\{hex}  weird name.txt");
+
+        parsed.ShouldNotBeNull();
+        parsed.Value.Path.ShouldBe("weird name.txt");
+    }
+
+    [Fact]
     public void Verify_OmsSignature_CountsAsSignaturePresent()
     {
         var dir = Path.Combine(Path.GetTempPath(), $"integrity-oms-{Guid.NewGuid():N}");

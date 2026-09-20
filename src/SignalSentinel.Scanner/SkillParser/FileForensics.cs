@@ -13,18 +13,21 @@ namespace SignalSentinel.Scanner.SkillParser;
 /// <summary>
 /// Walks a skill package and classifies every file by its leading bytes so rules can
 /// reason about what a file <em>is</em> rather than what its name says. Bounded in file
-/// count and total bytes, skips the same directories as <see cref="ScriptInventory"/>,
-/// and refuses to follow symlinks that leave the package.
+/// and directory count, reads only the first <see cref="HeaderLength"/> bytes of each
+/// file, skips the same directories as <see cref="ScriptInventory"/>, and refuses to
+/// follow symlinks that leave the package.
 /// </summary>
 public static class FileForensics
 {
     /// <summary>Maximum number of files classified per package.</summary>
     public const int MaxFiles = 500;
 
-    /// <summary>Maximum total bytes on disk across classified files.</summary>
-    public const long MaxTotalBytes = 50L * 1024 * 1024;
+    /// <summary>Maximum number of directories visited per package.</summary>
+    public const int MaxDirectories = 2_000;
 
-    private const int HeaderLength = 16;
+    /// <summary>Bytes read from the head of each file. 64 covers every magic number
+    /// used here plus the PE <c>e_lfanew</c> field at offset 0x3C.</summary>
+    public const int HeaderLength = 64;
 
     private static readonly HashSet<string> WindowsExecutableExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -47,15 +50,16 @@ public static class FileForensics
 
         var baseDir = Path.GetFullPath(skillDirectory);
         var artefacts = new List<FileArtefact>();
-        long totalBytes = 0;
+        var directoriesVisited = 0;
 
         var pending = new Stack<string>();
         pending.Push(baseDir);
 
-        while (pending.Count > 0 && artefacts.Count < MaxFiles)
+        while (pending.Count > 0 && artefacts.Count < MaxFiles && directoriesVisited < MaxDirectories)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var dir = pending.Pop();
+            directoriesVisited++;
 
             IEnumerable<string> entries;
             try
@@ -137,15 +141,6 @@ public static class FileForensics
                     continue;
                 }
 
-                if (totalBytes + size > MaxTotalBytes)
-                {
-                    // Record it with an unknown kind so the count is honest, but stop
-                    // reading bytes once the budget is spent.
-                    artefacts.Add(Describe(file, relative, FileArtefactKind.Unknown, size));
-                    continue;
-                }
-
-                totalBytes += size;
                 var kind = await ClassifyAsync(file.FullName, cancellationToken);
                 artefacts.Add(Describe(file, relative, kind, size));
             }
@@ -194,6 +189,16 @@ public static class FileForensics
 
         if (header[0] == (byte)'M' && header[1] == (byte)'Z')
         {
+            // "MZ" alone also starts ordinary text. When we have the DOS header, require
+            // a plausible e_lfanew (offset of the PE header) before calling it a binary.
+            if (header.Length >= 0x40)
+            {
+                var lfanew = header[0x3C] | (header[0x3D] << 8) | (header[0x3E] << 16) | (header[0x3F] << 24);
+                return lfanew is >= 0x40 and <= 0x1000
+                    ? FileArtefactKind.PortableExecutable
+                    : FileArtefactKind.Unknown;
+            }
+
             return FileArtefactKind.PortableExecutable;
         }
 
@@ -213,13 +218,13 @@ public static class FileForensics
 
             if (header[0] == 0xCA && header[1] == 0xFE && header[2] == 0xBA && header[3] == 0xBE)
             {
-                // Shares the fat Mach-O magic. Java class files carry a minor/major version
-                // next; fat Mach-O carries a small architecture count. Treat a big-endian
-                // count <= 0x40 as Mach-O, anything else as a class file.
+                // Shares the fat Mach-O magic. Java class files carry minor/major version
+                // next (major >= 45 = 0x2D since Java 1.1); fat Mach-O carries an
+                // architecture count, which is a handful at most.
                 if (header.Length >= 8)
                 {
                     var next = (header[4] << 24) | (header[5] << 16) | (header[6] << 8) | header[7];
-                    return next is > 0 and <= 0x40 ? FileArtefactKind.MachO : FileArtefactKind.JavaClass;
+                    return next is > 0 and < 0x2D ? FileArtefactKind.MachO : FileArtefactKind.JavaClass;
                 }
                 return FileArtefactKind.JavaClass;
             }
@@ -235,10 +240,13 @@ public static class FileForensics
                 return FileArtefactKind.Rar;
             }
 
-            // CPython 3.x pyc: 2-byte version-specific magic, then 0x0D 0x0A.
-            if (header[2] == 0x0D && header[3] == 0x0A && header[1] == 0x0D)
+            // CPython pyc: 2-byte version magic (high byte 0x0A..0x0F for 2.x-3.x),
+            // then 0x0D 0x0A, then (3.7+) a flags word that is 0..3. The flags check
+            // keeps "X\r\r\n" text files from being mistaken for bytecode.
+            if (header.Length >= 8 && header[2] == 0x0D && header[3] == 0x0A && header[1] is >= 0x0A and <= 0x0F)
             {
-                return FileArtefactKind.PythonBytecode;
+                var flags = header[4] | (header[5] << 8) | (header[6] << 16) | (header[7] << 24);
+                return flags is >= 0 and <= 3 ? FileArtefactKind.PythonBytecode : FileArtefactKind.Unknown;
             }
         }
 

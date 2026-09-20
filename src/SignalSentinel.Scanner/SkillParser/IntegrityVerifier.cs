@@ -26,6 +26,9 @@ public static class IntegrityVerifier
     [
         ".sentinel-sig",
         "SHA256SUMS",
+        "SHA256SUMS.txt",
+        "sha256sums.txt",
+        "checksums.sha256",
         ".sigstore",
         "cosign.sig",
         "SKILL.sig",
@@ -38,7 +41,14 @@ public static class IntegrityVerifier
     private static readonly string[] ChecksumManifestNames = ["SHA256SUMS", "SHA256SUMS.txt", "sha256sums.txt", "checksums.sha256"];
 
     private const int MaxChecksumLines = 1_000;
+    private const long MaxManifestSize = 1L * 1024 * 1024;
     private const long MaxHashedFileSize = 50L * 1024 * 1024;
+
+    /// <summary>
+    /// Aggregate cap on bytes hashed per manifest so a hostile manifest cannot turn
+    /// the scanner into a disk-reading loop.
+    /// </summary>
+    private const long MaxTotalHashedBytes = 200L * 1024 * 1024;
 
     /// <summary>
     /// v2.4.1 (G12d): frontmatter keys from the OWASP Agentic Skills Top 10
@@ -52,8 +62,13 @@ public static class IntegrityVerifier
     /// Verifies a skill's integrity artefacts.
     /// </summary>
     /// <param name="skill">Skill definition.</param>
+    /// <param name="verifyChecksums">
+    /// When true (default) and a checksum manifest is present, every listed file is
+    /// hashed and compared. Pass false when only presence detection is needed, to
+    /// avoid hashing the package twice in one scan.
+    /// </param>
     /// <returns>Integrity report for the skill.</returns>
-    public static IntegrityReport Verify(SkillDefinition skill)
+    public static IntegrityReport Verify(SkillDefinition skill, bool verifyChecksums = true)
     {
         ArgumentNullException.ThrowIfNull(skill);
 
@@ -87,13 +102,16 @@ public static class IntegrityVerifier
                 }
             }
 
-            foreach (var manifestName in ChecksumManifestNames)
+            if (verifyChecksums)
             {
-                var manifestPath = Path.Combine(directory, manifestName);
-                if (File.Exists(manifestPath))
+                foreach (var manifestName in ChecksumManifestNames)
                 {
-                    checksumResults.AddRange(VerifyChecksumManifest(directory, manifestPath));
-                    break;
+                    var manifestPath = Path.Combine(directory, manifestName);
+                    if (File.Exists(manifestPath))
+                    {
+                        checksumResults.AddRange(VerifyChecksumManifest(directory, manifestPath));
+                        break;
+                    }
                 }
             }
         }
@@ -150,10 +168,15 @@ public static class IntegrityVerifier
     /// </summary>
     internal static IReadOnlyList<ChecksumResult> VerifyChecksumManifest(string directory, string manifestPath)
     {
-        string[] lines;
+        List<string> lines;
         try
         {
-            lines = File.ReadAllLines(manifestPath);
+            if (new FileInfo(manifestPath).Length > MaxManifestSize)
+            {
+                return [];
+            }
+
+            lines = File.ReadLines(manifestPath).Take(MaxChecksumLines).ToList();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -162,8 +185,10 @@ public static class IntegrityVerifier
 
         var results = new List<ChecksumResult>();
         var baseDir = Path.GetFullPath(directory);
+        var hashCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        long hashedBytes = 0;
 
-        foreach (var raw in lines.Take(MaxChecksumLines))
+        foreach (var raw in lines)
         {
             var parsed = ParseChecksumLine(raw);
             if (parsed is null)
@@ -180,13 +205,13 @@ public static class IntegrityVerifier
             }
             catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException)
             {
-                results.Add(new ChecksumResult { RelativePath = relativePath, Expected = expectedHex, Status = ChecksumStatus.Invalid });
+                results.Add(Invalid(relativePath, expectedHex));
                 continue;
             }
 
             if (!IsInside(baseDir, fullPath))
             {
-                results.Add(new ChecksumResult { RelativePath = relativePath, Expected = expectedHex, Status = ChecksumStatus.Invalid });
+                results.Add(Invalid(relativePath, expectedHex));
                 continue;
             }
 
@@ -200,18 +225,40 @@ public static class IntegrityVerifier
             try
             {
                 var info = new FileInfo(fullPath);
-                if (info.Length > MaxHashedFileSize)
+
+                // A manifest entry that is a symlink must resolve inside the package too;
+                // otherwise the manifest becomes a hash oracle for arbitrary host files.
+                if ((info.Attributes & FileAttributes.ReparsePoint) != 0)
                 {
-                    results.Add(new ChecksumResult { RelativePath = relativePath, Expected = expectedHex, Status = ChecksumStatus.Invalid });
-                    continue;
+                    var target = info.ResolveLinkTarget(returnFinalTarget: true)?.FullName;
+                    if (target is null || !IsInside(baseDir, target))
+                    {
+                        results.Add(Invalid(relativePath, expectedHex));
+                        continue;
+                    }
+                    fullPath = target;
+                    info = new FileInfo(fullPath);
                 }
 
-                using var stream = File.OpenRead(fullPath);
-                actualHex = Convert.ToHexStringLower(SHA256.HashData(stream));
+                if (!hashCache.TryGetValue(fullPath, out var cached))
+                {
+                    if (info.Length > MaxHashedFileSize || hashedBytes + info.Length > MaxTotalHashedBytes)
+                    {
+                        results.Add(Invalid(relativePath, expectedHex));
+                        continue;
+                    }
+
+                    hashedBytes += info.Length;
+                    using var stream = File.OpenRead(fullPath);
+                    cached = Convert.ToHexStringLower(SHA256.HashData(stream));
+                    hashCache[fullPath] = cached;
+                }
+
+                actualHex = cached;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                results.Add(new ChecksumResult { RelativePath = relativePath, Expected = expectedHex, Status = ChecksumStatus.Invalid });
+                results.Add(Invalid(relativePath, expectedHex));
                 continue;
             }
 
@@ -228,6 +275,9 @@ public static class IntegrityVerifier
 
         return results;
     }
+
+    private static ChecksumResult Invalid(string relativePath, string expectedHex) =>
+        new() { RelativePath = relativePath, Expected = expectedHex, Status = ChecksumStatus.Invalid };
 
     /// <summary>
     /// Parses one sha256sum line: 64 hex chars, whitespace, optional binary marker
@@ -246,15 +296,21 @@ public static class IntegrityVerifier
             return null;
         }
 
+        // GNU sha256sum prefixes a line with '\' when the filename needed escaping.
+        if (trimmed.StartsWith('\\'))
+        {
+            trimmed = trimmed[1..];
+        }
+
         // Some tools emit "SHA256 (file) = hex" (BSD style). Support it too.
         if (trimmed.StartsWith("SHA256 (", StringComparison.OrdinalIgnoreCase))
         {
             var close = trimmed.IndexOf(") = ", StringComparison.Ordinal);
             if (close > 8)
             {
-                var bsdPath = trimmed[8..close];
+                var bsdPath = NormalisePath(trimmed[8..close]);
                 var bsdHex = trimmed[(close + 4)..].Trim();
-                return IsSha256Hex(bsdHex) ? (bsdHex.ToLowerInvariant(), bsdPath) : null;
+                return IsSha256Hex(bsdHex) && bsdPath.Length > 0 ? (bsdHex.ToLowerInvariant(), bsdPath) : null;
             }
             return null;
         }
@@ -277,20 +333,28 @@ public static class IntegrityVerifier
             rest = rest[1..];
         }
 
-        rest = rest.Trim();
+        rest = NormalisePath(rest);
         if (rest.Length == 0)
         {
             return null;
         }
 
-        // Manifests written on Unix use '/'; normalise to the local separator.
-        rest = rest.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
-        if (rest.StartsWith("." + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+        return (hex.ToLowerInvariant(), rest);
+    }
+
+    /// <summary>
+    /// Manifests written on Unix use '/'; normalise to the local separator and drop a
+    /// leading <c>./</c>.
+    /// </summary>
+    private static string NormalisePath(string path)
+    {
+        var p = path.Trim().Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+        if (p.StartsWith("." + Path.DirectorySeparatorChar, StringComparison.Ordinal))
         {
-            rest = rest[2..];
+            p = p[2..];
         }
 
-        return (hex.ToLowerInvariant(), rest);
+        return p;
     }
 
     private static bool IsSha256Hex(string s)

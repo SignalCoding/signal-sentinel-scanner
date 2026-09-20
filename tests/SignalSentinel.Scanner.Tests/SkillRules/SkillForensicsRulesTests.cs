@@ -146,7 +146,7 @@ public class SkillForensicsRulesTests
     [InlineData("tool.exe", ".exe", FileArtefactKind.PortableExecutable)]
     [InlineData("bin/helper", "", FileArtefactKind.Elf)]
     [InlineData("lib/native.dylib", ".dylib", FileArtefactKind.MachO)]
-    [InlineData("payload.bin", ".bin", FileArtefactKind.Unknown)]
+    [InlineData("payload.bin", ".bin", FileArtefactKind.Elf)]
     public async Task SuspiciousArtefact_ExecutableBinary_FiresHigh(string path, string ext, FileArtefactKind kind)
     {
         var ctx = Context(SkillWith(A(path, ext, kind)));
@@ -237,6 +237,54 @@ public class SkillForensicsRulesTests
     public async Task SuspiciousArtefact_HiddenUnlisted_FiresLow()
     {
         var ctx = Context(SkillWith(A(".stage2", ".stage2", FileArtefactKind.Unknown, hidden: true)));
+
+        var findings = (await new SkillSuspiciousArtefactRule().EvaluateAsync(ctx)).ToList();
+
+        findings.Count.ShouldBe(1);
+        findings[0].Severity.ShouldBe(Severity.Low);
+        findings[0].Title.ShouldContain("Hidden");
+    }
+
+    [Fact]
+    public async Task SuspiciousArtefact_OpaqueBinWithUnknownMagic_FiresMedium()
+    {
+        var ctx = Context(SkillWith(A("model.bin", ".bin", FileArtefactKind.Unknown)));
+
+        var findings = (await new SkillSuspiciousArtefactRule().EvaluateAsync(ctx)).ToList();
+
+        findings.Count.ShouldBe(1);
+        findings[0].Severity.ShouldBe(Severity.Medium);
+        findings[0].Title.ShouldContain("Opaque");
+    }
+
+    [Fact]
+    public async Task SuspiciousArtefact_ExecutableBitNoTypeNoExtension_FiresMedium()
+    {
+        var artefact = A("bin/run", "", FileArtefactKind.Unknown) with { IsExecutable = true };
+        var ctx = Context(SkillWith(artefact));
+
+        var findings = (await new SkillSuspiciousArtefactRule().EvaluateAsync(ctx)).ToList();
+
+        findings.Count.ShouldBe(1);
+        findings[0].Severity.ShouldBe(Severity.Medium);
+        findings[0].Title.ShouldContain("Executable Permission");
+    }
+
+    [Fact]
+    public async Task SuspiciousArtefact_ShebangScriptWithExecutableBit_NoFinding()
+    {
+        var artefact = A("bin/run", "", FileArtefactKind.Shebang) with { IsExecutable = true };
+        var ctx = Context(SkillWith(artefact));
+
+        var findings = await new SkillSuspiciousArtefactRule().EvaluateAsync(ctx);
+
+        findings.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task SuspiciousArtefact_FileUnderHiddenDirectory_FiresLow()
+    {
+        var ctx = Context(SkillWith(A(".cache/run.sh", ".sh", FileArtefactKind.Unknown)));
 
         var findings = (await new SkillSuspiciousArtefactRule().EvaluateAsync(ctx)).ToList();
 
