@@ -36,6 +36,10 @@ namespace SignalSentinel.Scanner.Rules;
 /// describing the capability" signature; both may legitimately fire on the same
 /// skill.
 /// </para>
+/// <para>
+/// v3.0.0 (WP10): the skill side is restricted to frontmatter segments; body text
+/// is SS-011's surface now that the document is segmented.
+/// </para>
 /// </remarks>
 public sealed partial class InstructionalDescriptionRule : IRule
 {
@@ -49,6 +53,13 @@ public sealed partial class InstructionalDescriptionRule : IRule
         "are both tool-poisoning signatures and skill-authoring anti-patterns.";
     public bool EnabledByDefault => true;
     public IReadOnlyList<string> AstCodes => [OwaspAstCodes.AST04];
+
+    /// <summary>
+    /// v3.0.0 (WP10): for skills this rule judges the frontmatter only - the
+    /// description field is the tool-poisoning-style surface; imperative prose in the
+    /// body is SS-011's surface. MCP tool descriptions are evaluated as before.
+    /// </summary>
+    public SegmentKind ApplicableSegments => SegmentKind.Frontmatter;
 
     // Imperatives aimed at the agent: "you must", "always call", "before using any"...
     [GeneratedRegex(
@@ -145,10 +156,9 @@ public sealed partial class InstructionalDescriptionRule : IRule
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var description = skill.Description ?? string.Empty;
-            var body = skill.InstructionsBody ?? string.Empty;
+            var frontmatter = SkillRules.SegmentFilter.TextFor(skill, ApplicableSegments);
 
-            string? evidence = MatchEvidence(description) ?? MatchEvidence(body);
+            string? evidence = MatchEvidence(frontmatter);
             if (evidence is null)
             {
                 continue;

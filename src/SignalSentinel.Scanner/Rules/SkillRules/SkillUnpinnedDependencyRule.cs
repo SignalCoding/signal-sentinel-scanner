@@ -36,6 +36,15 @@ public sealed partial class SkillUnpinnedDependencyRule : IRule
     public bool EnabledByDefault => true;
     public IReadOnlyList<string> AstCodes => [OwaspAstCodes.AST02, OwaspAstCodes.AST07];
 
+    /// <summary>
+    /// v3.0.0 (WP10): superset of the spec's FencedCode + Link assignment - prose is
+    /// retained because install instructions are commonly written as bare URLs in
+    /// prose, which the pattern-accuracy suite locks as must-fire. Inline code spans
+    /// and raw HTML are excluded.
+    /// </summary>
+    public SegmentKind ApplicableSegments =>
+        SegmentKind.Prose | SegmentKind.FencedCode | SegmentKind.Link;
+
     // A github.com blob/raw/tree URL pointing at a floating branch name rather than
     // a version tag or commit SHA. Branch names here are the common defaults; a tag
     // like "v2.1.0" or a 7-40 char hex SHA will not match this list.
@@ -68,8 +77,9 @@ public sealed partial class SkillUnpinnedDependencyRule : IRule
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var evidence = SafeMatch(UnpinnedGitHubRef(), skill.InstructionsBody)
-                ?? SafeMatch(UnpinnedGitInstall(), skill.InstructionsBody);
+            var documentText = SegmentFilter.TextFor(skill, ApplicableSegments);
+            var evidence = SafeMatch(UnpinnedGitHubRef(), documentText)
+                ?? SafeMatch(UnpinnedGitInstall(), documentText);
             var evidenceSource = "instructions";
 
             if (evidence is null)

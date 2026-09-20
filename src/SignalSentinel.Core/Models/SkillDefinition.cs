@@ -82,6 +82,14 @@ public sealed record SkillDefinition
     public IReadOnlyList<FileArtefact> Artefacts { get; init; } = [];
 
     /// <summary>
+    /// v3.0.0 (WP10): the document segmented by kind (frontmatter, prose, fenced code,
+    /// inline code, links, HTML). Populated by the scanner's DocumentSegmenter at read
+    /// time. Empty when the definition was constructed by hand (e.g. in tests) - skill
+    /// rules segment lazily through SegmentFilter in that case.
+    /// </summary>
+    public IReadOnlyList<DocumentSegment> Segments { get; init; } = [];
+
+    /// <summary>
     /// All additional frontmatter keys not explicitly modelled.
     /// </summary>
     public IReadOnlyDictionary<string, string> ExtraFrontmatter { get; init; } =

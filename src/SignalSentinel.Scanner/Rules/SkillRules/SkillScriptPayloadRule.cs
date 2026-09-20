@@ -27,6 +27,13 @@ public sealed partial class SkillScriptPayloadRule : IRule
         "persistence mechanisms, and file system traversal.";
     public bool EnabledByDefault => true;
 
+    /// <summary>
+    /// v3.0.0 (WP10): the document side of this rule evaluates fenced/indented code
+    /// blocks and link destinations only; prose is documentation. Bundled scripts are
+    /// scanned separately below.
+    /// </summary>
+    public SegmentKind ApplicableSegments => SegmentKind.FencedCode | SegmentKind.Link;
+
     [GeneratedRegex(
         @"(curl\s+.*\|\s*(ba)?sh|wget\s+.*\|\s*(ba)?sh|Invoke-WebRequest.*\|\s*Invoke-Expression|iwr.*\|\s*iex|curl\s+.*-o\s+\S+.*chmod\s+\+x)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
@@ -66,12 +73,6 @@ public sealed partial class SkillScriptPayloadRule : IRule
             "Detected process/command execution that could run arbitrary system commands",
             "Avoid direct process execution. Use safe, sandboxed alternatives where possible."),
     ];
-
-    [GeneratedRegex(
-        @"```(?:bash|sh|shell|powershell|ps1|python|python3|js|javascript|ts|typescript)\s*\n(.*?)```",
-        RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 1000)]
-    private static partial Regex MarkdownCodeBlock();
 
     [GeneratedRegex(
         @"(/root/|/home/\w+/|C:\\Users\\|~/)[\w./-]+",
@@ -147,14 +148,19 @@ public sealed partial class SkillScriptPayloadRule : IRule
         return Task.FromResult<IEnumerable<Finding>>(findings);
     }
 
+    // v3.0.0 (WP10): code blocks come from the document segmenter rather than a
+    // fence-matching regex, so every fenced/indented block is covered (not only the
+    // previously whitelisted info strings) and fences never interfere with patterns.
     private void ScanMarkdownCodeBlocks(List<Finding> findings, SkillDefinition skill)
     {
-        var codeBlocks = SafeMatches(MarkdownCodeBlock(), skill.InstructionsBody).ToList();
+        ScanLinkSegments(findings, skill);
+
+        var codeBlocks = SegmentFilter.SegmentsFor(skill, SegmentKind.FencedCode);
         if (codeBlocks.Count == 0) return;
 
         foreach (var block in codeBlocks)
         {
-            var code = block.Groups[1].Value;
+            var code = block.Content;
 
             foreach (var (pattern, name, severity, description, remediation) in ScriptPatterns)
             {
@@ -168,7 +174,7 @@ public sealed partial class SkillScriptPayloadRule : IRule
                         OwaspCode = OwaspCode,
                         Severity = severity,
                         Title = $"Skill Inline Code: {name}",
-                        Description = $"{description}. Found in markdown code block of skill '{skill.Name}'.",
+                        Description = $"{description}. Found in markdown code block of skill '{skill.Name}' (line {block.StartLine}).",
                         Remediation = remediation,
                         ServerName = skill.Name,
                         ToolName = "(inline code block)",
@@ -202,6 +208,38 @@ public sealed partial class SkillScriptPayloadRule : IRule
                     Source = FindingSource.Skill,
                     SkillFilePath = skill.FilePath
                 });
+            }
+        }
+    }
+
+    // Link destinations are executable surface too: a markdown link can point at a
+    // payload URL embedded in a curl-pipe chain described across the destination.
+    private void ScanLinkSegments(List<Finding> findings, SkillDefinition skill)
+    {
+        foreach (var link in SegmentFilter.SegmentsFor(skill, SegmentKind.Link))
+        {
+            foreach (var (pattern, name, severity, description, remediation) in ScriptPatterns)
+            {
+                if (SafeIsMatch(pattern, link.Content))
+                {
+                    var match = SafeMatches(pattern, link.Content).FirstOrDefault();
+
+                    findings.Add(new Finding
+                    {
+                        RuleId = Id,
+                        OwaspCode = OwaspCode,
+                        Severity = severity,
+                        Title = $"Skill Link Payload: {name}",
+                        Description = $"{description}. Found in a link destination of skill '{skill.Name}' (line {link.StartLine}).",
+                        Remediation = remediation,
+                        ServerName = skill.Name,
+                        ToolName = "(link destination)",
+                        Evidence = TruncateEvidence(match?.Value ?? "(matched)"),
+                        Confidence = 0.85,
+                        Source = FindingSource.Skill,
+                        SkillFilePath = skill.FilePath
+                    });
+                }
             }
         }
     }

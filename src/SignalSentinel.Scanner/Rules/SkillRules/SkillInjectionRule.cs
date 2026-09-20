@@ -26,6 +26,14 @@ public sealed class SkillInjectionRule : IRule
         "that could hijack agent behaviour beyond the skill's stated purpose.";
     public bool EnabledByDefault => true;
 
+    /// <summary>
+    /// v3.0.0 (WP10): injection directives live in prose, frontmatter and raw HTML.
+    /// Fenced/inline code is excluded - examples of injection text inside code blocks
+    /// are documentation, not directives (SS-016/SS-038 own the code surface).
+    /// </summary>
+    public SegmentKind ApplicableSegments =>
+        SegmentKind.Frontmatter | SegmentKind.Prose | SegmentKind.HtmlBlock;
+
     public Task<IEnumerable<Finding>> EvaluateAsync(
         ScanContext context,
         CancellationToken cancellationToken = default)
@@ -36,11 +44,13 @@ public sealed class SkillInjectionRule : IRule
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            var text = SegmentFilter.TextFor(skill, ApplicableSegments);
+
             foreach (var pattern in InjectionPatterns.AllPatterns)
             {
-                if (InjectionPatterns.SafeIsMatch(pattern.Pattern, skill.InstructionsBody))
+                if (InjectionPatterns.SafeIsMatch(pattern.Pattern, text))
                 {
-                    var match = InjectionPatterns.SafeMatches(pattern.Pattern, skill.InstructionsBody)
+                    var match = InjectionPatterns.SafeMatches(pattern.Pattern, text)
                         .FirstOrDefault();
 
                     findings.Add(new Finding
