@@ -1,6 +1,6 @@
 {
-  "version": "2.5.0",
-  "rubricVersion": "1.0",
+  "version": "3.0.0",
+  "rubricVersion": "2.0.0",
   "rules": [
     {
       "id": "SS-001",

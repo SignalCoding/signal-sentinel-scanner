@@ -68,10 +68,21 @@ Signal Sentinel is built to comply with:
 - Package integrity verification
 - Official registries only (NuGet, npm)
 
+Signal Sentinel Scanner is a fast, deterministic, offline-capable first-pass
+authoring aid - one layer in a defence-in-depth chain, not a standalone audit.
+Pair it with a semantic scanner and a code-level scanner for audit-grade
+verification. See [CHANGELOG.md](CHANGELOG.md) for release history and
+[docs/MIGRATION_V3.md](docs/MIGRATION_V3.md) for v3.0 upgrade guidance.
+
 ## Security Features
 
 ### Scanner
-- 26 security rules across MCP server and Agent Skill scanning (25 detection + 1 informational)
+- 47 security rules across MCP server and Agent Skill scanning (41 detection + 6 informational)
+- **v3.0.0** accuracy and coverage reset:
+  - Markdown-aware segmentation: skill rules evaluate frontmatter, prose, fenced code, inline code and link segments separately, eliminating whole classes of v2.x false positives; see [docs/MIGRATION_V3.md](docs/MIGRATION_V3.md).
+  - Keyword-level triggers pruned and documented in [docs/keyword-rules.md](docs/keyword-rules.md); `fetch(` exfiltration detection is scoped to js/ts fenced code and bundled scripts.
+  - New surfaces: prompt/resource/server-instructions injection (SS-030..SS-032), unsolicited requests (SS-033), skill forensics (SS-034/SS-035), homoglyph and description-overlap detection (SS-036/SS-037), fetch-to-exec taint (SS-038), OSV dependency lookups (SS-039, `--osv`), error-channel injection (SS-040), server-source sinks (SS-041, `--server-source`), A2A agent cards (SS-042, `--agent-card`).
+  - Policy presets (`--policy default|strict|defence`) and a versioned, auditable scoring rubric (`--rubric`, v2.0.0) with property-tested monotonicity.
 - **v2.3.0** credibility hardening:
   - `.sentinel-suppressions.json` schema v1.0 for accepted-risk management, with justification, approver, expiry, and per-environment scoping. Suppressed findings are retained in every report format for audit.
   - Confidence-aware triage: `--min-confidence` hard filter and `--triage` demotion mode (see [confidence-rubric.md](docs/confidence-rubric.md)).
@@ -82,8 +93,9 @@ Signal Sentinel is built to comply with:
   - Suppressed scans surface a technical-debt exposure banner showing the counter-factual grade ("would be F instead of A") so suppressions cannot be used to hide risk.
   - Every report declares explicit scope (scanned, not scanned, complementary tools) in line with the "first-pass authoring aid" positioning.
   - Pre-commit hook integrations for pre-commit.com, lefthook, and husky.
-- 16 MCP rules (SS-001..SS-010, SS-019..SS-023, SS-025): tool poisoning, overbroad permissions, missing auth, supply chain, code execution, memory write, inter-agent comms, sensitive data, credential hygiene, OAuth 2.1 compliance, package provenance, rug pull detection, shadow tool injection, excessive response size
-- 9 Skill rules (SS-011..SS-018, SS-024): prompt injection, scope violation, credential access, data exfiltration, obfuscation, script payloads, excessive permissions, hidden content, skill integrity verification
+- MCP rules (SS-001..SS-010, SS-019..SS-023, SS-025, SS-030..SS-033, SS-040): tool poisoning, overbroad permissions, missing auth, supply chain, code execution, memory write, inter-agent comms, sensitive data, credential hygiene, OAuth 2.1 compliance, package provenance, rug pull detection, shadow tool injection, excessive response size, prompt/resource/instructions injection, unsolicited server requests, error-channel injection
+- Skill rules (SS-011..SS-018, SS-024, SS-026, SS-028, SS-029, SS-034..SS-039): prompt injection, scope violation, credential access, data exfiltration, obfuscation, script payloads, excessive permissions, hidden content, skill integrity verification, instructional descriptions, identity-file writes, unpinned dependencies, checksum verification, file forensics, confusables, description overlap, pipeline taint, dependency vulnerabilities
+- Static surfaces beyond live MCP: server-source sink analysis (SS-041) and A2A agent card evaluation (SS-042). Full current list: `sentinel-scan --list-rules`
 - Cross-server attack path analysis
 - Supply chain integrity checks (hash pinning, typosquat detection, Levenshtein distance)
 - Baseline comparison with SHA-256 schema hashing for rug-pull detection
