@@ -274,6 +274,22 @@
       "severity": "dynamic"
     },
     {
+      "id": "SS-039",
+      "name": "Skill Dependency Known Vulnerability",
+      "owaspCode": "ASI04",
+      "astCodes": ["AST02", "AST07"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-INFO-006",
+      "name": "Skill Dependency Surface (Unchecked)",
+      "owaspCode": "ASI04",
+      "astCodes": ["AST02"],
+      "enabled": true,
+      "severity": "info"
+    },
+    {
       "id": "SS-INFO-001",
       "name": "Non-MCP Endpoint Detected",
       "owaspCode": "ASI10",

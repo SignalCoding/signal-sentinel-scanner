@@ -91,6 +91,10 @@ public sealed class RuleEngine
 
             // v3.0.0 script pipeline taint (WP5)
             new SkillPipelineTaintRule(),          // SS-038
+
+            // v3.0.0 OSV dependency lookup (WP6)
+            new SkillOsvVulnerabilityRule(),       // SS-039
+            new SkillDependencySurfaceRule(),      // SS-INFO-006
         };
 
         if (customRules is not null)

@@ -101,6 +101,10 @@ public static class RuleConstants
         // v3.0.0 script pipeline taint (WP5)
         public const string SkillPipelineTaint = "SS-038";
 
+        // v3.0.0 OSV dependency lookup (WP6)
+        public const string SkillOsvVulnerability = "SS-039";
+        public const string SkillDependencySurface = "SS-INFO-006";
+
         /// <summary>
         /// Rules that depend on successful MCP JSON-RPC protocol exchange with the
         /// target server. When SS-INFO-001 fires on a server, these rules cannot
