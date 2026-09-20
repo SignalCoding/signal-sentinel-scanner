@@ -72,13 +72,14 @@ public sealed class SkillDependencySurfaceRule : IRule
                     listed += ", ...";
                 }
 
+                var count = g.Count();
                 return new Finding
                 {
                     RuleId = Id,
                     OwaspCode = OwaspCode,
                     Severity = Severity.Info,
                     Title = $"Skill Dependencies Not Checked Against OSV: {g.Key}",
-                    Description = $"Skill '{g.Key}' references {g.Count()} package dependenc{(g.Count() == 1 ? "y" : "ies")} " +
+                    Description = $"Skill '{g.Key}' references {count} package dependenc{(count == 1 ? "y" : "ies")} " +
                         $"({listed}) and {reason}, so known-vulnerability status is unverified.",
                     Remediation = "Re-run with --osv (network access required) to check these packages against osv.dev.",
                     ServerName = g.Key,

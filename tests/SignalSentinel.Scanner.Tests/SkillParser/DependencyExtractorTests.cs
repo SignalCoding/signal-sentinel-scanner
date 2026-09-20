@@ -77,6 +77,88 @@ public class DependencyExtractorTests
         DependencyExtractor.ExtractFromText("skill", null).ShouldBeEmpty();
     }
 
+    [Theory]
+    [InlineData("pip install ==")]
+    [InlineData("pip install >=")]
+    [InlineData("pip install [")]
+    [InlineData("npm install @")]
+    [InlineData("npm install @1.2.3")]
+    [InlineData("pip install 2.31.0")]
+    public void Text_OperatorOnlyOrNamelessTokens_NeverThrowAndRecordNothing(string text)
+    {
+        var deps = Should.NotThrow(() => DependencyExtractor.ExtractFromText("skill", text));
+
+        deps.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Text_SpacedPep508Operator_ParsesAsOnePin()
+    {
+        var deps = DependencyExtractor.ExtractFromText("skill", "pip install requests == 2.31.0");
+
+        deps.Count.ShouldBe(1);
+        deps[0].Name.ShouldBe("requests");
+        deps[0].Version.ShouldBe("2.31.0");
+    }
+
+    [Theory]
+    [InlineData("pip install -r requirements.txt")]
+    [InlineData("pip install --requirement requirements.txt")]
+    [InlineData("pip install -e .")]
+    [InlineData("pip install -i https://pypi.example/simple")]
+    [InlineData("npm install ./local-path")]
+    [InlineData("npm install ../sibling")]
+    [InlineData("npm install git+https://github.com/x/y.git")]
+    [InlineData("npm install file:../local")]
+    [InlineData("npm install https://example.com/pkg.tgz")]
+    public void Text_FlagValuesPathsAndUrls_NotRecordedAsPackages(string text)
+    {
+        DependencyExtractor.ExtractFromText("skill", text).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Text_FlagValueSkipped_FollowingPackageStillRecorded()
+    {
+        var deps = DependencyExtractor.ExtractFromText("skill", "pip install -r requirements.txt requests==1.0");
+
+        deps.Count.ShouldBe(1);
+        deps[0].Name.ShouldBe("requests");
+        deps[0].Version.ShouldBe("1.0");
+    }
+
+    [Fact]
+    public void Text_InlineCodeBackticks_StrippedFromVersion()
+    {
+        var deps = DependencyExtractor.ExtractFromText("skill", "Run `pip install requests==2.0.0` first.");
+
+        deps.Count.ShouldBe(1);
+        deps[0].Version.ShouldBe("2.0.0");
+    }
+
+    [Theory]
+    [InlineData("pip install pkg===1.0", "pkg")]
+    [InlineData("npm install pkg@1.x", "pkg")]
+    [InlineData("npm install pkg@1.2.x", "pkg")]
+    [InlineData("pip install pkg==1.*", "pkg")]
+    public void Text_NonExactVersions_RecordedUnpinned(string text, string name)
+    {
+        var deps = DependencyExtractor.ExtractFromText("skill", text);
+
+        deps.Count.ShouldBe(1);
+        deps[0].Name.ShouldBe(name);
+        deps[0].Version.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Text_PythonModulePipAndNpmAdd_Recognised()
+    {
+        var deps = DependencyExtractor.ExtractFromText(
+            "skill", "python -m pip install requests==2.31.0\nnpm add lodash@4.17.21");
+
+        deps.ShouldContain(d => d.Name == "requests" && d.Version == "2.31.0");
+        deps.ShouldContain(d => d.Name == "lodash" && d.Version == "4.17.21");
+    }
+
     [Fact]
     public void RequirementsTxt_PinsCommentsMarkersExtras()
     {
@@ -119,9 +201,67 @@ public class DependencyExtractorTests
     }
 
     [Fact]
-    public void PackageJson_Malformed_ReturnsEmpty()
+    public void RequirementsTxt_HashOptionsAndOperatorOnlyLines()
     {
-        DependencyExtractor.ParsePackageJson("skill", "package.json", "{ not json").ShouldBeEmpty();
+        const string content = """
+            requests==2.0 --hash=sha256:abc
+            ==
+            flask == 3.0.0
+            >=1.0
+            """;
+
+        var deps = Should.NotThrow(() => DependencyExtractor.ParseRequirementsTxt("skill", "requirements.txt", content));
+
+        deps.Count.ShouldBe(2);
+        deps.ShouldContain(d => d.Name == "requests" && d.Version == "2.0");
+        deps.ShouldContain(d => d.Name == "flask" && d.Version == "3.0.0");
+    }
+
+    [Theory]
+    [InlineData("{ not json")]
+    [InlineData("[1, 2]")]
+    [InlineData("null")]
+    [InlineData("\"text\"")]
+    [InlineData("""{ "dependencies": [ "lodash" ] }""")]
+    [InlineData("""{ "dependencies": { "": "1.0.0", "-bad": "1.0.0", "2.0": "1.0.0" } }""")]
+    public void PackageJson_MalformedOrImplausible_ReturnsEmptyWithoutThrowing(string content)
+    {
+        Should.NotThrow(() => DependencyExtractor.ParsePackageJson("skill", "package.json", content))
+            .ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void PackageJson_NonStringVersion_RecordedUnpinned()
+    {
+        var deps = DependencyExtractor.ParsePackageJson(
+            "skill", "package.json", """{ "dependencies": { "lodash": 4, "react": null } }""");
+
+        deps.Count.ShouldBe(2);
+        deps.ShouldAllBe(d => d.Version == null);
+    }
+
+    [Fact]
+    public void PyprojectToml_ExtrasBracketsDoNotTruncateArray()
+    {
+        const string content = """
+            [project]
+            name = "demo"
+            keywords = ["one", "two"]
+            dependencies = [
+                "pkg[extra]==1.0",
+                "after==2.0",
+                "==",
+            ]
+
+            [tool.other]
+            dependencies = ["ignored==9.9"]
+            """;
+
+        var deps = Should.NotThrow(() => DependencyExtractor.ParsePyprojectToml("skill", "pyproject.toml", content));
+
+        deps.Count.ShouldBe(2);
+        deps.ShouldContain(d => d.Name == "pkg" && d.Version == "1.0");
+        deps.ShouldContain(d => d.Name == "after" && d.Version == "2.0");
     }
 
     [Fact]
@@ -172,6 +312,55 @@ public class DependencyExtractorTests
         {
             Directory.Delete(dir, recursive: true);
         }
+    }
+
+    [Fact]
+    public void Extract_BareFileNames_ResolveAgainstSkillDirectoryNotCwd()
+    {
+        var skillDir = Path.Combine(Path.GetTempPath(), $"sentinel-dep-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(skillDir);
+        try
+        {
+            File.WriteAllText(Path.Combine(skillDir, "requirements.txt"), "bundled==1.0.0\n");
+            var skillWithManifest = TestSkills.MakeSkill("skill", "no deps") with
+            {
+                FilePath = Path.Combine(skillDir, "SKILL.md"),
+                AdditionalFiles = ["requirements.txt"]
+            };
+
+            var deps = DependencyExtractor.Extract(skillWithManifest);
+
+            deps.Count.ShouldBe(1);
+            deps[0].Name.ShouldBe("bundled");
+
+            // A skill whose directory holds no manifest must not pick one up from elsewhere.
+            var emptyDir = Path.Combine(skillDir, "empty");
+            Directory.CreateDirectory(emptyDir);
+            var skillWithout = skillWithManifest with { FilePath = Path.Combine(emptyDir, "SKILL.md") };
+
+            DependencyExtractor.Extract(skillWithout).ShouldBeEmpty();
+
+            // Traversal out of the skill directory is refused.
+            var traversing = skillWithout with { AdditionalFiles = [Path.Combine("..", "requirements.txt")] };
+
+            DependencyExtractor.Extract(traversing).ShouldBeEmpty();
+        }
+        finally
+        {
+            Directory.Delete(skillDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Extract_NoFilePath_NeverFallsBackToCwd()
+    {
+        var skill = TestSkills.MakeSkill("skill", "no deps") with
+        {
+            FilePath = string.Empty,
+            AdditionalFiles = ["requirements.txt", "package.json"]
+        };
+
+        DependencyExtractor.Extract(skill).ShouldBeEmpty();
     }
 
     [Fact]

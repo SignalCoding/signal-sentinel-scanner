@@ -61,7 +61,33 @@ public class SkillOsvRulesTests
         findings[0].ServerName.ShouldBe("demo-skill");
         findings[0].Confidence.ShouldBe(0.9);
         findings[0].Source.ShouldBe(FindingSource.Skill);
+        findings[0].Description.ShouldContain(": bad");
         findings[1].Title.ShouldContain("CVE-2026-1");
+        findings[1].Description.ShouldContain("(no summary published)");
+        findings[1].Evidence.ShouldBe("CVE-2026-1");
+    }
+
+    [Fact]
+    public async Task OsvRule_Aliases_ListedInDescription()
+    {
+        var surface = Surface(DependencyQueryStatus.Succeeded) with
+        {
+            Vulnerabilities =
+            [
+                new OsvVulnerability
+                {
+                    Id = "GHSA-aaaa", Summary = "bad", Severity = Severity.High,
+                    Aliases = ["CVE-2018-18074", "PYSEC-2018-28"],
+                    Ecosystem = "PyPI", PackageName = "requests", PackageVersion = "2.19.0",
+                    SkillName = "demo-skill", Source = "instructions"
+                }
+            ]
+        };
+
+        var findings = (await new SkillOsvVulnerabilityRule().EvaluateAsync(Context(surface))).ToList();
+
+        findings.Count.ShouldBe(1);
+        findings[0].Description.ShouldContain("GHSA-aaaa (also CVE-2018-18074, PYSEC-2018-28): bad");
     }
 
     [Fact]

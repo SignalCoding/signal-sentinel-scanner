@@ -43,7 +43,7 @@ public static class OsvLookup
         ArgumentNullException.ThrowIfNull(skills);
 
         var dependencies = skills
-            .SelectMany(DependencyExtractor.Extract)
+            .SelectMany(SafeExtract)
             .GroupBy(d => (d.SkillName, d.Name, d.Version, d.Ecosystem), DependencyKeyComparer.Instance)
             .Select(g => g.First())
             .ToList();
@@ -95,8 +95,11 @@ public static class OsvLookup
                 Truncated = pinned.Count > queried.Count
             };
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
         {
+            // HttpClient reports its own timeout as TaskCanceledException, so filter on the
+            // caller's token rather than the exception type: a timeout is a Failed lookup,
+            // not a cancelled scan.
             return new DependencySurface
             {
                 Dependencies = dependencies,
@@ -105,6 +108,22 @@ public static class OsvLookup
                 QueriedCount = 0,
                 Truncated = pinned.Count > OsvClient.MaxPackagesPerRun
             };
+        }
+    }
+
+    /// <summary>
+    /// Extraction is a best-effort signal on untrusted input; a skill that trips an
+    /// unexpected parsing failure contributes nothing rather than aborting the scan.
+    /// </summary>
+    private static IReadOnlyList<SkillDependency> SafeExtract(SkillDefinition skill)
+    {
+        try
+        {
+            return DependencyExtractor.Extract(skill);
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException and not OperationCanceledException)
+        {
+            return [];
         }
     }
 

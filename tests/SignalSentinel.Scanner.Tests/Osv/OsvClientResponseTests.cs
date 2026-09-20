@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Shouldly;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Scanner.Osv;
@@ -87,4 +88,118 @@ public class OsvClientResponseTests
 
         vulns.ShouldBeEmpty();
     }
+
+    [Fact]
+    public void MalformedEntries_SkippedNotFatal()
+    {
+        const string json = """
+            {
+              "results": [
+                null,
+                { "vulns": [
+                    null,
+                    "text",
+                    { "id": 42 },
+                    { "id": "" },
+                    { "id": "GHSA-ok", "summary": 7,
+                      "severity": [ null, "x", { "type": 1 }, { "type": "CVSS_V3", "score": 5 } ],
+                      "database_specific": { "severity": 9 } },
+                    { "id": "GHSA-label", "database_specific": "HIGH" },
+                    { "id": "GHSA-num", "database_specific": { "severity": "3" } }
+                ] }
+              ]
+            }
+            """;
+
+        var vulns = Should.NotThrow(() => OsvClient.ParseQueryBatchResponse(json, Deps));
+
+        vulns.Count.ShouldBe(3);
+        vulns.ShouldAllBe(v => v.PackageName == "lodash");
+        vulns.ShouldAllBe(v => v.Severity == Severity.Medium);
+        vulns[0].Summary.ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    public void RootArray_ReturnsEmpty()
+    {
+        OsvClient.ParseQueryBatchResponse("[]", Deps).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void ParseVulnDetail_ReadsSummarySeverityAliases()
+    {
+        const string json = """
+            {
+              "id": "GHSA-x84v-xcm2-53pg",
+              "summary": "Requests exposes credentials",
+              "aliases": [ "CVE-2018-18074", "PYSEC-2018-28" ],
+              "severity": [ { "type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N" } ],
+              "database_specific": { "severity": "MODERATE" }
+            }
+            """;
+
+        var detail = OsvClient.ParseVulnDetail(json).ShouldNotBeNull();
+
+        detail.Summary.ShouldBe("Requests exposes credentials");
+        detail.Severity.ShouldBe(Severity.High);
+        detail.Aliases.ShouldBe(["CVE-2018-18074", "PYSEC-2018-28"]);
+    }
+
+    [Fact]
+    public void ParseVulnDetail_NoSeveritySource_ReturnsNullSeverity()
+    {
+        var detail = OsvClient.ParseVulnDetail("""{ "id": "PYSEC-1", "summary": "s" }""").ShouldNotBeNull();
+
+        detail.Severity.ShouldBeNull();
+        OsvClient.ParseVulnDetail("[]").ShouldBeNull();
+    }
+
+    [Fact]
+    public void CollapseAliases_MergesRecordsSharingACve_KeepsHighestSeverity()
+    {
+        var ghsa = Make("GHSA-1", "requests", Severity.High, "credential leak", ["CVE-2018-18074"]);
+        var pysec = Make("PYSEC-1", "requests", Severity.Critical, string.Empty, ["CVE-2018-18074", "GHSA-1"]);
+        var unrelated = Make("GHSA-2", "requests", Severity.Low, "other", ["CVE-2020-1"]);
+        var otherPackage = Make("GHSA-1", "lodash", Severity.High, "same id, other package", ["CVE-2018-18074"]);
+
+        var collapsed = OsvClient.CollapseAliases([ghsa, pysec, unrelated, otherPackage]);
+
+        collapsed.Count.ShouldBe(3);
+        var merged = collapsed.Single(v => v.PackageName == "requests" && v.Aliases.Contains("CVE-2018-18074"));
+        merged.Id.ShouldBe("PYSEC-1");
+        merged.Severity.ShouldBe(Severity.Critical);
+        merged.Aliases.ShouldBe(["CVE-2018-18074", "GHSA-1"]);
+        collapsed.ShouldContain(v => v.Id == "GHSA-2");
+        collapsed.ShouldContain(v => v.PackageName == "lodash");
+    }
+
+    [Fact]
+    public void CollapseAliases_PrefersRecordWithSummaryOnSeverityTie()
+    {
+        var withSummary = Make("GHSA-1", "requests", Severity.High, "has text", ["CVE-1"]);
+        var without = Make("PYSEC-1", "requests", Severity.High, string.Empty, ["CVE-1"]);
+
+        var collapsed = OsvClient.CollapseAliases([without, withSummary]);
+
+        collapsed.Count.ShouldBe(1);
+        collapsed[0].Id.ShouldBe("GHSA-1");
+    }
+
+    [Fact]
+    public void CollapseAliases_NoSharedIdentifiers_KeepsAll()
+    {
+        var a = Make("GHSA-1", "requests", Severity.High, "a", []);
+        var b = Make("GHSA-2", "requests", Severity.High, "b", []);
+
+        OsvClient.CollapseAliases([a, b]).Count.ShouldBe(2);
+    }
+
+    private static OsvVulnerability Make(
+        string id, string package, Severity severity, string summary, string[] aliases) =>
+        new()
+        {
+            Id = id, Summary = summary, Severity = severity, Aliases = aliases,
+            Ecosystem = "PyPI", PackageName = package, PackageVersion = "1.0",
+            SkillName = "skill", Source = "instructions"
+        };
 }

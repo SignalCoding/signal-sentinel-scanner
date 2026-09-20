@@ -83,7 +83,7 @@ public static class Program
 
             // v3.0.0 (WP6): the OSV lookup needs the network; refuse the combination
             // outright (including an offline posture implied by --policy defence).
-            if (config.Osv && config.Offline)
+            if (config.Osv && config.Offline && !config.ListRules)
             {
                 Console.Error.WriteLine("Error: --osv is incompatible with --offline.");
                 return 2;
@@ -927,6 +927,10 @@ public static class Program
                     };
                     Log(statusText);
                 }
+            }
+            else if (config.Osv)
+            {
+                Log("OSV: no skills scanned, nothing to check");
             }
 
             // Run rules

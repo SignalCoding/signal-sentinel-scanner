@@ -135,4 +135,32 @@ public class OsvLookupTests
         surface.FailureReason.ShouldNotBeNull().ShouldContain("HttpRequestException");
         surface.Vulnerabilities.ShouldBeEmpty();
     }
+
+    [Fact]
+    public async Task HttpTimeout_IsAFailedLookup_NotACancelledScan()
+    {
+        // HttpClient surfaces its own timeout as TaskCanceledException; the scan token is untouched.
+        var surface = await OsvLookup.BuildAsync(
+            PipSkill, osvRequested: true, offline: false,
+            queryOverride: (_, _) => Task.FromException<IReadOnlyList<OsvVulnerability>>(
+                new TaskCanceledException("timed out", new TimeoutException())));
+
+        surface.Status.ShouldBe(DependencyQueryStatus.Failed);
+        surface.FailureReason.ShouldNotBeNull().ShouldContain("TaskCanceledException");
+    }
+
+    [Fact]
+    public async Task OperatorCancellation_StillPropagates()
+    {
+        using var cts = new CancellationTokenSource();
+
+        await Should.ThrowAsync<OperationCanceledException>(() => OsvLookup.BuildAsync(
+            PipSkill, osvRequested: true, offline: false,
+            queryOverride: (_, token) =>
+            {
+                cts.Cancel();
+                return Task.FromCanceled<IReadOnlyList<OsvVulnerability>>(token);
+            },
+            cts.Token));
+    }
 }
