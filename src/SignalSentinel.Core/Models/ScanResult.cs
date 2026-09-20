@@ -59,7 +59,7 @@ public sealed record ScanResult
     /// v2.3.0: scoring rubric version used to compute <see cref="Grade"/>. Stable across
     /// minor v2.x releases; changes trigger a major version bump.
     /// </summary>
-    public string RubricVersion { get; init; } = "1.0";
+    public string RubricVersion { get; init; } = "2.0.0";
 
     /// <summary>
     /// v2.3.0: explicit scope disclosure. Tells users what was and was not scanned.

@@ -10,7 +10,8 @@
     <!-- CA1063: xUnit IDisposable pattern is trivially lightweight; full Dispose(bool) is noise. -->
     <!-- CA1515: xUnit discovers public test classes via reflection. -->
     <!-- CA1711: xUnit requires Collection fixtures to be named *Collection. -->
-    <NoWarn>$(NoWarn);CA1707;CA1861;CA1849;CA1063;CA1515;CA1711</NoWarn>
+    <!-- CA1062: FsCheck/xUnit entry points never receive null parameters from the runner. -->
+    <NoWarn>$(NoWarn);CA1707;CA1861;CA1849;CA1063;CA1515;CA1711;CA1062</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,6 +31,10 @@
     </PackageReference>
     <PackageReference Include="Shouldly" Version="4.3.0" />
     <PackageReference Include="NSubstitute" Version="5.3.0" />
+    <!-- v3.0.0 (WP11): property-based scoring monotonicity tests. Pinned; 3.3.4 published
+         2026-07-25, well past the 14-day supply-chain quarantine. xunit v2 integration
+         matches the pinned xunit 2.9.3 above. -->
+    <PackageReference Include="FsCheck.Xunit" Version="3.3.4" />
   </ItemGroup>
 
 </Project>

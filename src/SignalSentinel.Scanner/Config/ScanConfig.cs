@@ -171,6 +171,13 @@ public sealed record ScanConfig
     public string? PolicyArg { get; init; }
 
     /// <summary>
+    /// v3.0.0 (WP11): path to a custom scoring rubric JSON file (<c>--rubric</c>).
+    /// When unset, the embedded v2.0.0 rubric is used. Resolved by
+    /// <c>ScoringRubric.TryLoadFromFile</c> before the scan runs.
+    /// </summary>
+    public string? RubricPath { get; init; }
+
+    /// <summary>
     /// When set, run in diff mode comparing the supplied baseline JSON scan report against the
     /// current scan. Renders only resolved/new/unchanged buckets plus grade-delta attribution.
     /// </summary>

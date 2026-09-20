@@ -192,6 +192,7 @@ v1.0.0 - Initial Release
   <ItemGroup>
     <Content Include="DefaultRules.json" CopyToOutputDirectory="PreserveNewest" />
     <EmbeddedResource Include="Policy\Presets\*.json" />
+    <EmbeddedResource Include="Scoring\scoring-rubric-v2.0.0.json" />
   </ItemGroup>
   
   <!-- NuGet package assets -->
