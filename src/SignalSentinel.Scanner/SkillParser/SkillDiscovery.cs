@@ -27,14 +27,96 @@ public static class SkillDiscovery
         ("Generic Agent Skills", ".agent-skills", false),
     ];
 
-    private static readonly (string Platform, string SubPath)[] ProjectPaths =
+    internal static readonly (string Platform, string SubPath)[] ProjectPaths =
     [
         ("Claude Code", ".claude/skills"),
         ("OpenAI Codex CLI", ".codex/skills"),
         ("Cursor", ".cursor/skills"),
         ("Windsurf", ".windsurf/skills"),
         ("Generic Agent Skills", ".agent-skills"),
+        ("Gemini CLI", ".gemini/skills"),
+        ("OpenCode", ".opencode/skills"),
+        ("GitHub", ".github/skills"),
+        ("Factory", ".factory/skills"),
+        ("Generic Agents", ".agents/skills"),
     ];
+
+    /// <summary>
+    /// v3.0.0 (WP8): skills bundled inside Claude Code plugins live under the plugin
+    /// cache (~/.claude/plugins/cache/&lt;owner&gt;/&lt;plugin&gt;/skills) and marketplace checkouts
+    /// (~/.claude/plugins/marketplaces/.../skills at any depth). Both are enumerated with
+    /// hard bounds; anything unreadable is skipped.
+    /// </summary>
+    internal static IReadOnlyList<string> PluginCacheSkillDirectories(string homeDir)
+    {
+        const int maxDirectories = 100;
+        var results = new List<string>();
+
+        if (string.IsNullOrEmpty(homeDir))
+        {
+            return results;
+        }
+
+        var pluginsRoot = Path.Combine(homeDir, ".claude", "plugins");
+
+        // cache/<owner>/<plugin>/skills — exactly two levels below "cache".
+        var cacheRoot = Path.Combine(pluginsRoot, "cache");
+        if (Directory.Exists(cacheRoot))
+        {
+            try
+            {
+                foreach (var owner in Directory.EnumerateDirectories(cacheRoot))
+                {
+                    foreach (var plugin in Directory.EnumerateDirectories(owner))
+                    {
+                        var skills = Path.Combine(plugin, "skills");
+                        if (Directory.Exists(skills))
+                        {
+                            results.Add(skills);
+                            if (results.Count >= maxDirectories)
+                            {
+                                return results;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Partial results are fine; unreadable entries are skipped.
+            }
+        }
+
+        // marketplaces/**/skills — any depth, bounded.
+        var marketplacesRoot = Path.Combine(pluginsRoot, "marketplaces");
+        if (Directory.Exists(marketplacesRoot))
+        {
+            try
+            {
+                var options = new EnumerationOptions
+                {
+                    IgnoreInaccessible = true,
+                    RecurseSubdirectories = true,
+                    MaxRecursionDepth = 8,
+                    AttributesToSkip = FileAttributes.ReparsePoint
+                };
+                foreach (var dir in Directory.EnumerateDirectories(marketplacesRoot, "skills", options))
+                {
+                    results.Add(dir);
+                    if (results.Count >= maxDirectories)
+                    {
+                        return results;
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Partial results are fine; unreadable entries are skipped.
+            }
+        }
+
+        return results;
+    }
 
     /// <summary>
     /// Discovers all skill directories from well-known platform locations.
@@ -84,6 +166,30 @@ public static class SkillDiscovery
                 {
                     logger?.Invoke($"  Found {skills.Count} skill(s)");
                 }
+            }
+        }
+
+        // v3.0.0 (WP8): Claude Code plugin cache / marketplace skill directories.
+        foreach (var cacheDir in PluginCacheSkillDirectories(homeDir))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (verbose)
+            {
+                logger?.Invoke($"Discovering skills: Claude Code (plugin cache) ({cacheDir})");
+            }
+
+            var skills = await SkillReader.ReadDirectoryAsync(
+                cacheDir, "Claude Code (plugin cache)", isProjectLevel: false, cancellationToken);
+
+            if (skills.Count > 0)
+            {
+                sources.Add(new SkillScanSource
+                {
+                    SourcePath = cacheDir,
+                    Platform = "Claude Code (plugin cache)",
+                    Skills = skills
+                });
             }
         }
 

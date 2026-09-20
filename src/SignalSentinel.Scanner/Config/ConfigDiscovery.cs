@@ -23,15 +23,75 @@ public static class ConfigDiscovery
     };
 
     /// <summary>
-    /// Known MCP configuration file locations by application.
+    /// Allowed root directories for user-level config discovery.
     /// </summary>
-    private static readonly IReadOnlyList<(string Application, Func<string> PathResolver)> KnownConfigLocations =
+    private static IReadOnlyList<string> UserRoots
+    {
+        get
+        {
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            return new[] { userProfile, appData, localAppData }
+                .Where(p => !string.IsNullOrEmpty(p))
+                .ToArray();
+        }
+    }
+
+    /// <summary>
+    /// v3.0.0 (WP8): user-level MCP configuration candidates by application. Pure path
+    /// construction, split out from discovery so the catalogue is testable.
+    /// </summary>
+    internal static IReadOnlyList<(string Application, string FullPath)> UserConfigCandidates(
+        string userProfile, string appData, string localAppData)
+    {
+        var windows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        var osx = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
+        string ClaudeDesktop() => windows
+            ? Path.Combine(appData, "Claude", "claude_desktop_config.json")
+            : osx
+                ? Path.Combine(userProfile, "Library", "Application Support", "Claude", "claude_desktop_config.json")
+                : Path.Combine(userProfile, ".config", "claude", "claude_desktop_config.json");
+
+        string VsCodeUserDir() => windows
+            ? Path.Combine(appData, "Code", "User")
+            : osx
+                ? Path.Combine(userProfile, "Library", "Application Support", "Code", "User")
+                : Path.Combine(userProfile, ".config", "Code", "User");
+
+        string ZedDir() => windows
+            ? Path.Combine(appData, "Zed")
+            : Path.Combine(userProfile, ".config", "zed");
+
+        return
+        [
+            ("Claude Desktop", ClaudeDesktop()),
+            ("Cursor", Path.Combine(userProfile, ".cursor", "mcp.json")),
+            ("VS Code", Path.Combine(VsCodeUserDir(), "settings.json")),
+            ("Windsurf", Path.Combine(userProfile, ".windsurf", "mcp.json")),
+            ("Zed", Path.Combine(ZedDir(), "settings.json")),
+            ("Claude Code", Path.Combine(userProfile, ".claude.json")),
+            ("Gemini CLI", Path.Combine(userProfile, ".gemini", "settings.json")),
+            ("OpenCode", Path.Combine(userProfile, ".config", "opencode", "opencode.json")),
+            ("VS Code / Copilot", Path.Combine(VsCodeUserDir(), "mcp.json")),
+            ("GitHub Copilot (JetBrains)", Path.Combine(userProfile, ".config", "github-copilot", "intellij", "mcp.json")),
+            ("Amazon Q Developer", Path.Combine(userProfile, ".aws", "amazonq", "mcp.json")),
+        ];
+    }
+
+    /// <summary>
+    /// v3.0.0 (WP8): project-level MCP configuration candidates, relative to the current
+    /// working directory. Codex CLI's config.toml is out of scope (TOML).
+    /// </summary>
+    internal static IReadOnlyList<(string Application, string RelativePath)> ProjectConfigCandidates =>
     [
-        ("Claude Desktop", GetClaudeDesktopConfigPath),
-        ("Cursor", GetCursorConfigPath),
-        ("VS Code", GetVsCodeConfigPath),
-        ("Windsurf", GetWindsurfConfigPath),
-        ("Zed", GetZedConfigPath)
+        ("Claude Code (project)", ".mcp.json"),
+        ("Gemini CLI (project)", Path.Combine(".gemini", "settings.json")),
+        ("OpenCode (project)", "opencode.json"),
+        ("VS Code / Copilot (project)", Path.Combine(".vscode", "mcp.json")),
+        ("Amazon Q Developer (project)", Path.Combine(".amazonq", "mcp.json")),
+        ("Cursor (project)", Path.Combine(".cursor", "mcp.json")),
     ];
 
     /// <summary>
@@ -41,49 +101,92 @@ public static class ConfigDiscovery
     {
         var configs = new List<McpConfigFile>();
 
-        foreach (var (application, pathResolver) in KnownConfigLocations)
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var userRoots = UserRoots;
+
+        foreach (var (application, path) in UserConfigCandidates(userProfile, appData, localAppData))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            try
+            var config = await TryLoadAsync(path, application, userRoots, cancellationToken);
+            if (config is not null)
             {
-                var path = pathResolver();
-
-                // Security: Validate path before accessing
-                if (!IsPathSafe(path))
-                {
-                    continue;
-                }
-
-                if (File.Exists(path))
-                {
-                    var config = await ParseConfigFileAsync(path, application, cancellationToken);
-                    if (config is not null && config.Servers.Count > 0)
-                    {
-                        configs.Add(config);
-                    }
-                }
+                configs.Add(config);
             }
-            catch (Exception)
+        }
+
+        // v3.0.0 (WP8): project-level configs live under the working directory, which is
+        // not necessarily inside the user profile, so they get their own allowed root.
+        var cwd = Path.GetFullPath(Environment.CurrentDirectory);
+        string[] projectRoots = [cwd];
+        foreach (var (application, relativePath) in ProjectConfigCandidates)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var config = await TryLoadAsync(
+                Path.Combine(cwd, relativePath), application, projectRoots, cancellationToken);
+            if (config is not null)
             {
-                // Security: Silently ignore errors for individual config files
-                // Don't expose which paths failed or why
+                configs.Add(config);
             }
         }
 
         return configs;
     }
 
+    private static async Task<McpConfigFile?> TryLoadAsync(
+        string path,
+        string application,
+        IReadOnlyList<string> allowedRoots,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Security: Validate path before accessing
+            if (!IsPathSafe(path, allowedRoots))
+            {
+                return null;
+            }
+
+            if (File.Exists(path))
+            {
+                var config = await ParseConfigFileCoreAsync(path, application, allowedRoots, cancellationToken);
+                if (config is not null && config.Servers.Count > 0)
+                {
+                    return config;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Security: Silently ignore errors for individual config files
+            // Don't expose which paths failed or why
+        }
+
+        return null;
+    }
+
     /// <summary>
-    /// Parses a specific MCP configuration file with security validation.
+    /// Parses a specific MCP configuration file with security validation. The path must
+    /// sit under a user-profile root (user-supplied files) — project-level discovery uses
+    /// its own working-directory root instead.
     /// </summary>
-    public static async Task<McpConfigFile?> ParseConfigFileAsync(
+    public static Task<McpConfigFile?> ParseConfigFileAsync(
         string filePath,
         string sourceApplication,
+        CancellationToken cancellationToken = default) =>
+        ParseConfigFileCoreAsync(filePath, sourceApplication, UserRoots, cancellationToken);
+
+    private static async Task<McpConfigFile?> ParseConfigFileCoreAsync(
+        string filePath,
+        string sourceApplication,
+        IReadOnlyList<string> allowedRoots,
         CancellationToken cancellationToken = default)
     {
         // Security: Validate file path
-        if (!IsPathSafe(filePath))
+        if (!IsPathSafe(filePath, allowedRoots))
         {
             return null;
         }
@@ -151,26 +254,64 @@ public static class ConfigDiscovery
                 }
             }
 
-            // Check for servers array (alternative format)
-            if (root.TryGetProperty("servers", out var serversArray) &&
-                serversArray.ValueKind == JsonValueKind.Array)
+            // Check for servers (alternative format): an array of named entries, or the
+            // VS Code mcp.json shape where "servers" is an object keyed by name.
+            if (root.TryGetProperty("servers", out var serversElement))
             {
-                foreach (var server in serversArray.EnumerateArray())
+                if (serversElement.ValueKind == JsonValueKind.Object)
                 {
-                    // Security: Limit servers per config
+                    foreach (var server in serversElement.EnumerateObject())
+                    {
+                        if (servers.Count >= MaxServersPerConfig)
+                        {
+                            break;
+                        }
+
+                        var config = ParseServerConfig(server.Name, server.Value, filePath);
+                        if (config is not null)
+                        {
+                            servers.Add(config);
+                        }
+                    }
+                }
+                else if (serversElement.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var server in serversElement.EnumerateArray())
+                    {
+                        // Security: Limit servers per config
+                        if (servers.Count >= MaxServersPerConfig)
+                        {
+                            break;
+                        }
+
+                        if (server.TryGetProperty("name", out var nameElement) &&
+                            nameElement.ValueKind == JsonValueKind.String)
+                        {
+                            var config = ParseServerConfig(nameElement.GetString() ?? "unknown", server, filePath);
+                            if (config is not null)
+                            {
+                                servers.Add(config);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // v3.0.0 (WP8): OpenCode's opencode.json uses an "mcp" object keyed by name.
+            if (root.TryGetProperty("mcp", out var mcpElement) &&
+                mcpElement.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var server in mcpElement.EnumerateObject())
+                {
                     if (servers.Count >= MaxServersPerConfig)
                     {
                         break;
                     }
 
-                    if (server.TryGetProperty("name", out var nameElement) &&
-                        nameElement.ValueKind == JsonValueKind.String)
+                    var config = ParseServerConfig(server.Name, server.Value, filePath);
+                    if (config is not null)
                     {
-                        var config = ParseServerConfig(nameElement.GetString() ?? "unknown", server, filePath);
-                        if (config is not null)
-                        {
-                            servers.Add(config);
-                        }
+                        servers.Add(config);
                     }
                 }
             }
@@ -200,9 +341,10 @@ public static class ConfigDiscovery
     }
 
     /// <summary>
-    /// Validates that a file path is safe to access.
+    /// Validates that a file path is safe to access: it must resolve under one of the
+    /// supplied allowed roots and carry no traversal or suspicious segments.
     /// </summary>
-    private static bool IsPathSafe(string? path)
+    private static bool IsPathSafe(string? path, IReadOnlyList<string> allowedRoots)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
@@ -214,17 +356,9 @@ public static class ConfigDiscovery
             // Security: Get the full path to resolve any relative components
             var fullPath = Path.GetFullPath(path);
 
-            // Security: Ensure path is within user profile or common app directories
-            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-            var allowedRoots = new[] { userProfile, appData, localAppData }
-                .Where(p => !string.IsNullOrEmpty(p))
-                .ToArray();
-
             // Security: Path must be under an allowed root
             var isUnderAllowedRoot = allowedRoots.Any(root =>
+                !string.IsNullOrEmpty(root) &&
                 fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase));
 
             if (!isUnderAllowedRoot)
@@ -270,6 +404,13 @@ public static class ConfigDiscovery
             // Security: Remove control characters from name
             name = new string([.. name.Where(c => !char.IsControl(c))]);
 
+            // v3.0.0 (WP8): OpenCode entries carry "enabled": honour an explicit opt-out.
+            if (element.TryGetProperty("enabled", out var enabledElement) &&
+                enabledElement.ValueKind == JsonValueKind.False)
+            {
+                return null;
+            }
+
             string? command = null;
             List<string>? args = null;
             Dictionary<string, string>? env = null;
@@ -277,10 +418,26 @@ public static class ConfigDiscovery
             string? url = null;
             var transport = McpTransportType.Stdio;
 
-            if (element.TryGetProperty("command", out var cmdElement) &&
-                cmdElement.ValueKind == JsonValueKind.String)
+            if (element.TryGetProperty("command", out var cmdElement))
             {
-                command = cmdElement.GetString();
+                if (cmdElement.ValueKind == JsonValueKind.String)
+                {
+                    command = cmdElement.GetString();
+                }
+                else if (cmdElement.ValueKind == JsonValueKind.Array)
+                {
+                    // v3.0.0 (WP8): OpenCode local servers shape command as an argv array.
+                    var argv = cmdElement.EnumerateArray()
+                        .Where(a => a.ValueKind == JsonValueKind.String)
+                        .Select(a => a.GetString()!)
+                        .Take(101)
+                        .ToList();
+                    if (argv.Count > 0)
+                    {
+                        command = argv[0];
+                        args = argv.Skip(1).ToList();
+                    }
+                }
 
                 // Security: Validate command
                 if (command is not null && command.Length > 1000)
@@ -289,7 +446,8 @@ public static class ConfigDiscovery
                 }
             }
 
-            if (element.TryGetProperty("args", out var argsElement) &&
+            if (args is null &&
+                element.TryGetProperty("args", out var argsElement) &&
                 argsElement.ValueKind == JsonValueKind.Array)
             {
                 args = [];
@@ -318,8 +476,13 @@ public static class ConfigDiscovery
                 }
             }
 
-            if (element.TryGetProperty("env", out var envElement) &&
-                envElement.ValueKind == JsonValueKind.Object)
+            // v3.0.0 (WP8): OpenCode names the environment map "environment".
+            if (!element.TryGetProperty("env", out var envElement) || envElement.ValueKind != JsonValueKind.Object)
+            {
+                element.TryGetProperty("environment", out envElement);
+            }
+
+            if (envElement.ValueKind == JsonValueKind.Object)
             {
                 env = [];
                 var envCount = 0;
@@ -420,15 +583,21 @@ public static class ConfigDiscovery
                 }
             }
 
-            if (element.TryGetProperty("transport", out var transportElement) &&
-                transportElement.ValueKind == JsonValueKind.String)
+            // v3.0.0 (WP8): VS Code mcp.json and OpenCode carry the transport as "type".
+            if (!element.TryGetProperty("transport", out var transportElement) || transportElement.ValueKind != JsonValueKind.String)
+            {
+                element.TryGetProperty("type", out transportElement);
+            }
+
+            if (transportElement.ValueKind == JsonValueKind.String)
             {
                 var transportStr = transportElement.GetString()?.ToLowerInvariant();
                 transport = transportStr switch
                 {
-                    "stdio" => McpTransportType.Stdio,
+                    "stdio" or "local" => McpTransportType.Stdio,
                     "http" or "sse" => McpTransportType.Http,
                     "streamable-http" => McpTransportType.StreamableHttp,
+                    "remote" => url is not null ? McpTransportType.Http : McpTransportType.Stdio,
                     "websocket" or "ws" or "wss" => McpTransportType.WebSocket,
                     _ => McpTransportType.Stdio
                 };
@@ -453,83 +622,4 @@ public static class ConfigDiscovery
         }
     }
 
-    private static string GetClaudeDesktopConfigPath()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Claude", "claude_desktop_config.json");
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Library", "Application Support", "Claude", "claude_desktop_config.json");
-        }
-        else
-        {
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                ".config", "claude", "claude_desktop_config.json");
-        }
-    }
-
-    private static string GetCursorConfigPath()
-    {
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".cursor", "mcp.json");
-    }
-
-    private static string GetVsCodeConfigPath()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Code", "User", "settings.json");
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Library", "Application Support", "Code", "User", "settings.json");
-        }
-        else
-        {
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                ".config", "Code", "User", "settings.json");
-        }
-    }
-
-    private static string GetWindsurfConfigPath()
-    {
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".windsurf", "mcp.json");
-    }
-
-    private static string GetZedConfigPath()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Zed", "settings.json");
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                ".config", "zed", "settings.json");
-        }
-        else
-        {
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                ".config", "zed", "settings.json");
-        }
-    }
 }
