@@ -604,14 +604,19 @@ Signal Sentinel scans for OWASP Agentic AI Top 10 + OWASP MCP Top 10 vulnerabili
 
 ## Grading System
 
-| Grade | Score | Description |
-|-------|-------|-------------|
-| **A** | 90-100 | Excellent - No critical or high findings |
-| **B** | 80-89 | Good - Minor issues only |
-| **C** | 70-79 | Adequate - Some medium findings |
-| **D** | 60-69 | Poor - High severity findings present |
-| **F** | 0-59 | Failing - Critical issues detected |
-| **Inconclusive** | n/a | Zero servers and zero skills were scanned *(v2.4.1)* - not a security posture result, check your `--config`/`--remote`/`--skills` arguments |
+Grades follow the embedded scoring rubric (v2.0.0; override with `--rubric <path>`).
+Score starts at 100 and deducts 25 per Critical finding, 10 per High, 3 per Medium,
+1 per Low, plus 20 per Critical attack path and 10 per High attack path. Severity
+rules are applied before the score thresholds:
+
+| Grade | Rule | Score band (when no severity rule applies) |
+|-------|------|--------------------------------------------|
+| **F** | 2+ Critical findings, or 2+ Critical attack paths, or one of each | - |
+| **D** | 1 Critical finding or 1 Critical attack path | below 50 |
+| **C** | 1+ High finding or 1+ High attack path | 50-69 |
+| **B** | no Critical/High | 70-89 |
+| **A** | no Critical/High | 90-100 |
+| **Inconclusive** | Zero servers and zero skills were scanned *(v2.4.1)* - not a security posture result, check your `--config`/`--remote`/`--skills` arguments | n/a |
 
 ---
 
