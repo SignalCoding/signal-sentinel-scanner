@@ -194,7 +194,12 @@ public static class ConfigDiscovery
         CancellationToken cancellationToken = default) =>
         ParseConfigFileCoreAsync(filePath, sourceApplication, UserRoots, cancellationToken);
 
-    private static async Task<McpConfigFile?> ParseConfigFileCoreAsync(
+    /// <summary>
+    /// Parses a config file validated against an explicit set of allowed roots. Internal
+    /// so tests can point discovery at a scratch root; production callers use
+    /// <see cref="ParseConfigFileAsync"/> (user-profile roots) or discovery (CWD root).
+    /// </summary>
+    internal static async Task<McpConfigFile?> ParseConfigFileCoreAsync(
         string filePath,
         string sourceApplication,
         IReadOnlyList<string> allowedRoots,

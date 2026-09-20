@@ -204,7 +204,11 @@ public class ConfigDiscoveryTests
         try
         {
             await File.WriteAllTextAsync(path, json).ConfigureAwait(true);
-            var config = await ConfigDiscovery.ParseConfigFileAsync(path, "Test").ConfigureAwait(true);
+
+            // The temp directory is not necessarily under a user-profile root (CI
+            // runners), so the test parses against the temp root explicitly.
+            var config = await ConfigDiscovery.ParseConfigFileCoreAsync(
+                path, "Test", [Path.GetTempPath()]).ConfigureAwait(true);
             config.ShouldNotBeNull();
             assertion(config);
         }
