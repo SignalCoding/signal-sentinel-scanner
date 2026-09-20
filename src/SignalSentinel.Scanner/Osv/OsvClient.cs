@@ -213,33 +213,51 @@ public sealed class OsvClient
         ArgumentNullException.ThrowIfNull(vulnerabilities);
 
         return vulnerabilities
-            .GroupBy(v => (v.SkillName, v.PackageName, v.PackageVersion, Key: CanonicalKey(v)),
-                PackageKeyComparer.Instance)
-            .Select(g =>
-            {
-                var ordered = g
-                    .OrderByDescending(v => v.Severity)
-                    .ThenByDescending(v => v.Summary.Length > 0)
-                    .ThenBy(v => v.Id, StringComparer.Ordinal)
-                    .ToList();
-                var primary = ordered[0];
-                var related = ordered
-                    .SelectMany(v => v.Aliases.Append(v.Id))
-                    .Where(a => !a.Equals(primary.Id, StringComparison.OrdinalIgnoreCase))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(a => a, StringComparer.Ordinal)
-                    .ToList();
-                return primary with { Aliases = related };
-            })
+            .GroupBy(v => (v.SkillName, v.PackageName, v.PackageVersion), PackageKeyComparer.Instance)
+            .SelectMany(MergeConnectedRecords)
             .ToList();
     }
 
-    private static string CanonicalKey(OsvVulnerability v)
+    /// <summary>
+    /// Within one package, records are the same advisory when their identifier sets
+    /// (id plus aliases) overlap, directly or through a chain. A record whose detail
+    /// fetch failed still merges when another record names it as an alias.
+    /// </summary>
+    private static IEnumerable<OsvVulnerability> MergeConnectedRecords(IEnumerable<OsvVulnerability> records)
     {
-        var cve = v.Aliases
-            .Append(v.Id)
-            .FirstOrDefault(a => a.StartsWith("CVE-", StringComparison.OrdinalIgnoreCase));
-        return (cve ?? v.Id).ToUpperInvariant();
+        var groups = new List<(HashSet<string> Identifiers, List<OsvVulnerability> Members)>();
+        foreach (var record in records)
+        {
+            var identifiers = new HashSet<string>(record.Aliases.Append(record.Id), StringComparer.OrdinalIgnoreCase);
+            var members = new List<OsvVulnerability> { record };
+
+            // Fold every existing group that shares an identifier into this one.
+            for (var i = groups.Count - 1; i >= 0; i--)
+            {
+                if (groups[i].Identifiers.Overlaps(identifiers))
+                {
+                    identifiers.UnionWith(groups[i].Identifiers);
+                    members.AddRange(groups[i].Members);
+                    groups.RemoveAt(i);
+                }
+            }
+
+            groups.Add((identifiers, members));
+        }
+
+        foreach (var (identifiers, members) in groups)
+        {
+            var primary = members
+                .OrderByDescending(v => v.Severity)
+                .ThenByDescending(v => v.Summary.Length > 0)
+                .ThenBy(v => v.Id, StringComparer.Ordinal)
+                .First();
+            var related = identifiers
+                .Where(a => !a.Equals(primary.Id, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(a => a, StringComparer.Ordinal)
+                .ToList();
+            yield return primary with { Aliases = related };
+        }
     }
 
     private static List<OsvVulnerability> Enrich(
@@ -275,9 +293,14 @@ public sealed class OsvClient
 
         var tasks = ids.Select(async id =>
         {
-            await gate.WaitAsync(budget.Token).ConfigureAwait(false);
+            var acquired = false;
             try
             {
+                // The wait itself can be cancelled by the budget, so it lives inside the
+                // guarded region; otherwise a queued waiter would fault the whole phase.
+                await gate.WaitAsync(budget.Token).ConfigureAwait(false);
+                acquired = true;
+
                 var detail = await FetchOneDetailAsync(id, budget.Token).ConfigureAwait(false);
                 if (detail is not null)
                 {
@@ -295,7 +318,10 @@ public sealed class OsvClient
             }
             finally
             {
-                gate.Release();
+                if (acquired)
+                {
+                    gate.Release();
+                }
             }
         });
 
@@ -379,23 +405,21 @@ public sealed class OsvClient
     private static string Truncate(string value, int max) =>
         value.Length <= max ? value : value[..max];
 
-    private sealed class PackageKeyComparer : IEqualityComparer<(string Skill, string Package, string Version, string Key)>
+    private sealed class PackageKeyComparer : IEqualityComparer<(string Skill, string Package, string Version)>
     {
         public static readonly PackageKeyComparer Instance = new();
 
         public bool Equals(
-            (string Skill, string Package, string Version, string Key) x,
-            (string Skill, string Package, string Version, string Key) y) =>
+            (string Skill, string Package, string Version) x,
+            (string Skill, string Package, string Version) y) =>
             string.Equals(x.Skill, y.Skill, StringComparison.OrdinalIgnoreCase)
             && string.Equals(x.Package, y.Package, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(x.Version, y.Version, StringComparison.Ordinal)
-            && string.Equals(x.Key, y.Key, StringComparison.Ordinal);
+            && string.Equals(x.Version, y.Version, StringComparison.Ordinal);
 
-        public int GetHashCode((string Skill, string Package, string Version, string Key) obj) =>
+        public int GetHashCode((string Skill, string Package, string Version) obj) =>
             HashCode.Combine(
                 StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Skill),
                 StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Package),
-                StringComparer.Ordinal.GetHashCode(obj.Version),
-                StringComparer.Ordinal.GetHashCode(obj.Key));
+                StringComparer.Ordinal.GetHashCode(obj.Version));
     }
 }

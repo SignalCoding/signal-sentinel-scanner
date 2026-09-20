@@ -186,6 +186,21 @@ public class OsvClientResponseTests
     }
 
     [Fact]
+    public void CollapseAliases_MergesWhenOnlyOneSideNamesTheOther()
+    {
+        // The PYSEC twin's detail fetch failed, so it carries no aliases of its own.
+        var ghsa = Make("GHSA-1", "requests", Severity.High, "text", ["CVE-1", "PYSEC-1"]);
+        var pysec = Make("PYSEC-1", "requests", Severity.Medium, string.Empty, []);
+        var chained = Make("OSV-9", "requests", Severity.Low, string.Empty, ["PYSEC-1"]);
+
+        var collapsed = OsvClient.CollapseAliases([pysec, chained, ghsa]);
+
+        collapsed.Count.ShouldBe(1);
+        collapsed[0].Id.ShouldBe("GHSA-1");
+        collapsed[0].Aliases.ShouldBe(["CVE-1", "OSV-9", "PYSEC-1"]);
+    }
+
+    [Fact]
     public void CollapseAliases_NoSharedIdentifiers_KeepsAll()
     {
         var a = Make("GHSA-1", "requests", Severity.High, "a", []);

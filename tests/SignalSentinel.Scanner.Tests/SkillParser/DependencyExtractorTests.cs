@@ -241,6 +241,24 @@ public class DependencyExtractorTests
     }
 
     [Fact]
+    public void PyprojectToml_CrlfLineEndings_Parsed()
+    {
+        const string content = "[project]\r\nname = 'x'\r\ndependencies = [\r\n  \"requests==2.31.0\",\r\n]\r\n\r\n[tool.x]\r\ndependencies = [\"nope==1\"]\r\n";
+
+        var deps = DependencyExtractor.ParsePyprojectToml("skill", "pyproject.toml", content);
+
+        deps.Count.ShouldBe(1);
+        deps[0].Name.ShouldBe("requests");
+        deps[0].Version.ShouldBe("2.31.0");
+    }
+
+    [Fact]
+    public void Text_NonAsciiName_NotRecorded()
+    {
+        DependencyExtractor.ExtractFromText("skill", "pip install rëquests==2.0").ShouldBeEmpty();
+    }
+
+    [Fact]
     public void PyprojectToml_ExtrasBracketsDoNotTruncateArray()
     {
         const string content = """
@@ -299,7 +317,7 @@ public class DependencyExtractorTests
             File.WriteAllText(manifest, "requests==2.31.0\n");
 
             var skill = TestSkills.MakeSkill("manifest-skill", "nothing here");
-            skill = skill with { AdditionalFiles = [manifest] };
+            skill = skill with { FilePath = Path.Combine(dir, "SKILL.md"), AdditionalFiles = [manifest] };
 
             var deps = DependencyExtractor.Extract(skill);
 
@@ -307,6 +325,12 @@ public class DependencyExtractorTests
             deps[0].Name.ShouldBe("requests");
             deps[0].Version.ShouldBe("2.31.0");
             deps[0].Source.ShouldBe("requirements.txt");
+
+            // A rooted path outside the skill directory is refused just like a relative one.
+            var elsewhere = skill with { FilePath = Path.Combine(dir, "sub", "SKILL.md") };
+            Directory.CreateDirectory(Path.Combine(dir, "sub"));
+
+            DependencyExtractor.Extract(elsewhere).ShouldBeEmpty();
         }
         finally
         {

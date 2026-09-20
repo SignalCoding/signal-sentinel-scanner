@@ -363,18 +363,14 @@ public static partial class DependencyExtractor
     {
         try
         {
-            if (Path.IsPathRooted(file))
-            {
-                return Path.GetFullPath(file);
-            }
-
             if (skillDirectory is null)
             {
                 // No anchor: refuse rather than fall back to the process CWD.
                 return null;
             }
 
-            var candidate = Path.GetFullPath(Path.Combine(skillDirectory, file));
+            // Rooted or relative, a manifest only counts when it lives inside the skill.
+            var candidate = Path.GetFullPath(Path.IsPathRooted(file) ? file : Path.Combine(skillDirectory, file));
             var root = skillDirectory.EndsWith(Path.DirectorySeparatorChar)
                 ? skillDirectory
                 : skillDirectory + Path.DirectorySeparatorChar;
@@ -521,7 +517,8 @@ public static partial class DependencyExtractor
             return false;
         }
 
-        return name.All(c => char.IsLetterOrDigit(c) || c is '.' or '-' or '_' or '/' or '@');
+        // Registry names are ASCII; anything else is prose or a confusable, not a package.
+        return name.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_' or '/' or '@');
     }
 
     private static void AddIfPlausible(
@@ -567,10 +564,11 @@ public static partial class DependencyExtractor
     [GeneratedRegex(@"[ \t]*(===|==|>=|<=|~=|!=|<|>)[ \t]*", RegexOptions.Compiled, matchTimeoutMilliseconds: 500)]
     private static partial Regex SpacedOperatorPattern();
 
-    [GeneratedRegex(@"^[ \t]*\[project\][ \t]*(?:#[^\r\n]*)?$", RegexOptions.Multiline | RegexOptions.Compiled, matchTimeoutMilliseconds: 500)]
+    // Multiline '$' matches before '\n' only, so tolerate a preceding '\r' for CRLF files.
+    [GeneratedRegex(@"^[ \t]*\[project\][ \t]*(?:#[^\r\n]*)?\r?$", RegexOptions.Multiline | RegexOptions.Compiled, matchTimeoutMilliseconds: 500)]
     private static partial Regex ProjectSectionHeaderPattern();
 
-    [GeneratedRegex(@"^[ \t]*\[{1,2}[^\r\n\]]*\]{1,2}[ \t]*(?:#[^\r\n]*)?$", RegexOptions.Multiline | RegexOptions.Compiled, matchTimeoutMilliseconds: 500)]
+    [GeneratedRegex(@"^[ \t]*\[{1,2}[^\r\n\]]*\]{1,2}[ \t]*(?:#[^\r\n]*)?\r?$", RegexOptions.Multiline | RegexOptions.Compiled, matchTimeoutMilliseconds: 500)]
     private static partial Regex AnySectionHeaderPattern();
 
     [GeneratedRegex(@"^[ \t]*dependencies[ \t]*=[ \t]*\[", RegexOptions.Multiline | RegexOptions.Compiled, matchTimeoutMilliseconds: 500)]
