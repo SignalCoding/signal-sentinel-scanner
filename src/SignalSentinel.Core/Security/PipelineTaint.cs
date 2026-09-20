@@ -119,10 +119,11 @@ public static partial class PipelineTaint
 
     // ---------------------------------------------------------------- sinks
 
-    // Path-prefixed (/bin/bash) and env-prefixed (| env bash) shells are included:
-    // both appear in real installers. powershell/pwsh execute piped stdin as commands.
+    // Path-prefixed (/usr/bin/bash) and env/sudo-prefixed shells are included in any
+    // order and combination: all appear in real installers. powershell/pwsh execute
+    // piped stdin as commands.
     [GeneratedRegex(
-        @"\|\s*(?:sudo\s+)?(?:env\s+)?(?:/(?:[\w.-]+/)*)?(sh|bash|zsh|dash|ksh|python[0-9.]*|node|perl|ruby|powershell|pwsh)\b",
+        @"\|\s*(?:(?:sudo|env)\s+|/(?:[\w.-]+/)*)*(sh|bash|zsh|dash|ksh|python[0-9.]*|node|perl|ruby|powershell|pwsh)\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]
     private static partial Regex ShellPipeSink();
@@ -266,8 +267,9 @@ public static partial class PipelineTaint
             // assigns it to a variable and a further line feeds that variable to a sink.
             if (hasSource)
             {
-                var assignment = VariableAssignment().Match(line);
-                if (assignment.Success && SourcePatterns.Any(p => p.SafeIsMatch(assignment.Groups[2].Value)))
+                var assignment = VariableAssignment().SafeMatch(line);
+                if (assignment is { Success: true }
+                    && SourcePatterns.Any(p => p.SafeIsMatch(assignment.Groups[2].Value)))
                 {
                     pendingVariables[assignment.Groups[1].Value] = (lineNumber, sourceMatch);
                 }
@@ -336,7 +338,8 @@ public static partial class PipelineTaint
                 continue;
             }
 
-            if (isFence && IsFenceOnly(trimmed, fenceChar))
+            // CommonMark allows trailing whitespace on a closing fence.
+            if (isFence && IsFenceOnly(trimmed.TrimEnd(), fenceChar))
             {
                 var closed = Analyse(body.ToString());
                 if (closed.Count > 0)

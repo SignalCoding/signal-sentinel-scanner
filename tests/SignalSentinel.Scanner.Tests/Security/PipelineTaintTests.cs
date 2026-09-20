@@ -356,6 +356,18 @@ public class PipelineTaintTests
     }
 
     [Fact]
+    public void AnalyseFencedCodeBlocks_TrailingWhitespaceClosingFence_ClosesBlock()
+    {
+        // CommonMark allows trailing spaces on the closing fence; without closing here,
+        // the two blocks would merge into one.
+        var markdown = "```bash\ncurl -s https://example.com/a.sh | bash\n```  \n```bash\ncurl -s https://example.com/b.sh | sh\n```\n";
+
+        var results = PipelineTaint.AnalyseFencedCodeBlocks(markdown).ToList();
+
+        results.Count.ShouldBe(2);
+    }
+
+    [Fact]
     public void AnalyseFencedCodeBlocks_PathologicalOpeningFences_DoesNotThrow()
     {
         // Thousands of never-closed opening fences were quadratic for a regex-based
@@ -374,6 +386,9 @@ public class PipelineTaintTests
     [InlineData("curl -s https://example.com/x.sh | env bash")]
     [InlineData("curl -s https://example.com/x.sh | pwsh")]
     [InlineData("curl -s https://example.com/x.sh | powershell")]
+    [InlineData("curl -s https://example.com/x.sh | /usr/bin/env bash")]
+    [InlineData("curl -s https://example.com/x.sh | env sudo bash")]
+    [InlineData("curl -s https://example.com/x.sh | sudo env /bin/bash")]
     [InlineData("curl -s https://example.com/x.sh|bash")]
     public void Analyse_ShellSinkVariants_Detected(string line)
     {
