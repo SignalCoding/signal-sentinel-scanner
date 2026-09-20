@@ -36,6 +36,9 @@ namespace SignalSentinel.Scanner.SkillParser;
 /// </remarks>
 public static class DocumentSegmenter
 {
+    private static readonly MarkdownPipeline Pipeline =
+        new MarkdownPipelineBuilder().UsePreciseSourceLocation().Build();
+
     /// <summary>
     /// Segments the full raw content of a SKILL.md file. Returns an empty list for
     /// null or empty input.
@@ -68,7 +71,9 @@ public static class DocumentSegmenter
         MarkdownDocument document;
         try
         {
-            document = Markdown.Parse(body);
+            // UsePreciseSourceLocation: inline elements then carry absolute source
+            // spans, so InlineCode/Link segment StartLine values are correct.
+            document = Markdown.Parse(body, Pipeline);
         }
         catch (ArgumentException)
         {
@@ -135,6 +140,10 @@ public static class DocumentSegmenter
             }
         }
 
+        // The block walk emits inline segments before their parent prose block;
+        // restore document order so concatenated text reads naturally.
+        segments.Sort(static (a, b) => a.StartLine.CompareTo(b.StartLine));
+
         return segments;
     }
 
@@ -190,15 +199,32 @@ public static class DocumentSegmenter
                     segments.Add(new DocumentSegment
                     {
                         Kind = SegmentKind.Link,
-                        Content = LinkText(link),
+                        Content = LinkDestination(link),
                         StartLine = LineAt(lineIndex, link.Span.Start) + bodyStartLine - 1
                     });
-                    if (!link.IsImage)
+                    // The title attribute was part of the raw body pre-WP10; keep it
+                    // visible to prose-scanning rules as well as Link-scanning ones.
+                    if (!string.IsNullOrEmpty(link.Title))
                     {
-                        // Link text stays in prose; only the destination is segregated.
-                        PushInlines(pending, link);
+                        prose.Append(' ').Append(link.Title);
                     }
 
+                    // Link text / image alt text stays in prose; only the destination
+                    // and title are segregated into the Link segment.
+                    PushInlines(pending, link);
+                    break;
+
+                case AutolinkInline autolink:
+                    // <https://...> autolinks are LeafInline, not LinkInline. The URL
+                    // was plain text pre-WP10, so it stays in prose AND surfaces as a
+                    // Link segment; dropping it would blind every rule to the URL.
+                    segments.Add(new DocumentSegment
+                    {
+                        Kind = SegmentKind.Link,
+                        Content = autolink.Url ?? string.Empty,
+                        StartLine = LineAt(lineIndex, autolink.Span.Start) + bodyStartLine - 1
+                    });
+                    prose.Append(autolink.Url);
                     break;
 
                 case HtmlInline html:
@@ -238,30 +264,15 @@ public static class DocumentSegmenter
         }
     }
 
-    private static string LinkText(LinkInline link)
+    // The Link segment carries the destination and the title attribute. The label
+    // (link text / image alt) is intentionally NOT included: it already remains in the
+    // Prose segment, and including it made prose prose-patterns (e.g. SS-016's
+    // curl-pipe-sh) fire on documentation labels.
+    private static string LinkDestination(LinkInline link)
     {
-        var text = new StringBuilder();
-        var pending = new Stack<Inline>();
-        PushInlines(pending, link);
-        while (pending.Count > 0)
-        {
-            switch (pending.Pop())
-            {
-                case LiteralInline literal:
-                    text.Append(literal.Content.ToString());
-                    break;
-                case CodeInline code:
-                    text.Append(code.Content);
-                    break;
-                case ContainerInline container:
-                    PushInlines(pending, container);
-                    break;
-            }
-        }
-
         var url = link.Url ?? string.Empty;
-        var label = text.ToString().Trim();
-        return url.Length > 0 ? $"{url} {label}".TrimEnd() : label;
+        var title = link.Title ?? string.Empty;
+        return (url + " " + title).Trim();
     }
 
     private static string LinesText(StringLineGroup lines)
@@ -318,8 +329,10 @@ public static class DocumentSegmenter
             return content;
         }
 
+        // Fence lines allow trailing whitespace, matching FrontmatterParser's
+        // "^---\s*\n" form (hand-edited YAML commonly has trailing spaces).
         var firstNewline = content.IndexOf('\n', StringComparison.Ordinal);
-        if (firstNewline < 0 || !content.AsSpan(0, firstNewline).TrimEnd('\r').SequenceEqual("---"))
+        if (firstNewline < 0 || !IsFenceLine(content.AsSpan(0, firstNewline)))
         {
             return content;
         }
@@ -331,10 +344,17 @@ public static class DocumentSegmenter
         {
             var newline = content.IndexOf('\n', lineStart);
             var lineEnd = newline < 0 ? content.Length : newline;
-            if (content.AsSpan(lineStart, lineEnd - lineStart).TrimEnd('\r').SequenceEqual("---"))
+            if (IsFenceLine(content.AsSpan(lineStart, lineEnd - lineStart)))
             {
+                // FrontmatterParser requires a newline AFTER the closing fence; a
+                // closing fence at EOF means no frontmatter there either.
+                if (newline < 0)
+                {
+                    break;
+                }
+
                 frontmatter = content[frontmatterStart..lineStart];
-                var bodyStart = newline < 0 ? content.Length : newline + 1;
+                var bodyStart = newline + 1;
                 bodyStartLine = lineNumber + 1;
                 return content[bodyStart..];
             }
@@ -351,4 +371,8 @@ public static class DocumentSegmenter
         // No closing fence: treat the whole document as body (matches FrontmatterParser).
         return content;
     }
+
+    /// <summary>A fence line is exactly <c>---</c> plus optional trailing whitespace.</summary>
+    private static bool IsFenceLine(ReadOnlySpan<char> line) =>
+        line.TrimEnd().SequenceEqual("---");
 }

@@ -44,7 +44,7 @@ public sealed class SkillExfiltrationRule : IRule
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Check instructions document (fenced code and link segments only)
+            // Check instructions document (prose, fenced code and link segments)
             var documentText = SegmentFilter.TextFor(skill, ApplicableSegments);
             foreach (var (id, name, pattern, severity, description) in ExfiltrationPatterns.AllPatterns)
             {

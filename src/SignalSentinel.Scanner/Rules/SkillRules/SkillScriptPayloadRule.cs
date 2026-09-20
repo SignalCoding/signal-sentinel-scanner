@@ -212,14 +212,22 @@ public sealed partial class SkillScriptPayloadRule : IRule
         }
     }
 
-    // Link destinations are executable surface too: a markdown link can point at a
-    // payload URL embedded in a curl-pipe chain described across the destination.
+    // Link destinations are executable surface too: a link can carry a payload chain
+    // in its URL. Only RemoteCodeExecution is meaningful against a URL - the
+    // traversal/persistence patterns match innocent paths like /tmp/ and /usr/ in
+    // ordinary documentation links (validator S1). Link labels are not scanned here;
+    // they remain in the Prose segment.
     private void ScanLinkSegments(List<Finding> findings, SkillDefinition skill)
     {
         foreach (var link in SegmentFilter.SegmentsFor(skill, SegmentKind.Link))
         {
             foreach (var (pattern, name, severity, description, remediation) in ScriptPatterns)
             {
+                if (!ReferenceEquals(pattern, RemoteCodeExecution()))
+                {
+                    continue;
+                }
+
                 if (SafeIsMatch(pattern, link.Content))
                 {
                     var match = SafeMatches(pattern, link.Content).FirstOrDefault();
