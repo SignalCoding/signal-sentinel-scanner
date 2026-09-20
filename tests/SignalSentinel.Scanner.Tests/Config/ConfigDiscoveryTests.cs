@@ -139,6 +139,56 @@ public class ConfigDiscoveryTests
     }
 
     [Fact]
+    public void IsPathSafe_SiblingPrefixOfRoot_IsRejected()
+    {
+        // Regression: "Roaming-evil\x.json" must not pass when the root is "Roaming".
+        var root = Path.Combine(Path.GetTempPath(), $"sentinel-root-{Guid.NewGuid():N}");
+        var sibling = root + "-evil";
+
+        ConfigDiscovery.IsPathSafe(Path.Combine(root, "mcp.json"), [root]).ShouldBeTrue();
+        ConfigDiscovery.IsPathSafe(Path.Combine(sibling, "mcp.json"), [root]).ShouldBeFalse();
+        ConfigDiscovery.IsPathSafe(Path.Combine(root, "sub", "mcp.json"), [root]).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void IsPathSafe_TraversalAndSuspiciousSegments_Rejected()
+    {
+        var root = Path.GetTempPath();
+
+        ConfigDiscovery.IsPathSafe(Path.Combine(root, "..", "mcp.json"), [root]).ShouldBeFalse();
+        ConfigDiscovery.IsPathSafe(null, [root]).ShouldBeFalse();
+        ConfigDiscovery.IsPathSafe("  ", [root]).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Parse_EntryWithNeitherCommandNorUrl_IsDropped()
+    {
+        await WithTempConfig(
+            """{ "mcpServers": { "hollow": { "env": { "A": "1" } }, "real": { "command": "x" } } }""",
+            config =>
+            {
+                config.Servers.Count.ShouldBe(1);
+                config.Servers[0].Name.ShouldBe("real");
+            });
+    }
+
+    [Fact]
+    public async Task Parse_OpenCodeRemoteWithoutUrl_IsDropped()
+    {
+        await WithTempConfig(
+            """{ "mcp": { "hollow-remote": { "type": "remote" } } }""",
+            config => config.Servers.ShouldBeEmpty());
+    }
+
+    [Fact]
+    public async Task Parse_EnabledFalseInMcpServers_IsSkipped()
+    {
+        await WithTempConfig(
+            """{ "mcpServers": { "off": { "enabled": false, "command": "x" } } }""",
+            config => config.Servers.ShouldBeEmpty());
+    }
+
+    [Fact]
     public async Task Parse_PathOutsideUserRoots_ReturnsNull()
     {
         var outside = Path.Combine(Path.GetPathRoot(Path.GetTempPath())!, "definitely-not-a-user-root", "mcp.json");

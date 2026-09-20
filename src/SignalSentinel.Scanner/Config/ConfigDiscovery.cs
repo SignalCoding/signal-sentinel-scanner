@@ -101,6 +101,11 @@ public static class ConfigDiscovery
     {
         var configs = new List<McpConfigFile>();
 
+        // v3.0.0 (WP8): the same file can appear as both a user-level and a
+        // project-level candidate (e.g. running the scanner with CWD == the user
+        // profile); each path is loaded once.
+        var seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -109,6 +114,11 @@ public static class ConfigDiscovery
         foreach (var (application, path) in UserConfigCandidates(userProfile, appData, localAppData))
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (!seenPaths.Add(Path.GetFullPath(path)))
+            {
+                continue;
+            }
 
             var config = await TryLoadAsync(path, application, userRoots, cancellationToken);
             if (config is not null)
@@ -124,6 +134,11 @@ public static class ConfigDiscovery
         foreach (var (application, relativePath) in ProjectConfigCandidates)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (!seenPaths.Add(Path.GetFullPath(Path.Combine(cwd, relativePath))))
+            {
+                continue;
+            }
 
             var config = await TryLoadAsync(
                 Path.Combine(cwd, relativePath), application, projectRoots, cancellationToken);
@@ -344,7 +359,7 @@ public static class ConfigDiscovery
     /// Validates that a file path is safe to access: it must resolve under one of the
     /// supplied allowed roots and carry no traversal or suspicious segments.
     /// </summary>
-    private static bool IsPathSafe(string? path, IReadOnlyList<string> allowedRoots)
+    internal static bool IsPathSafe(string? path, IReadOnlyList<string> allowedRoots)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
@@ -356,10 +371,24 @@ public static class ConfigDiscovery
             // Security: Get the full path to resolve any relative components
             var fullPath = Path.GetFullPath(path);
 
-            // Security: Path must be under an allowed root
+            // Security: Path must be under an allowed root. The root is normalised with
+            // a trailing separator so a sibling whose name merely starts with the root's
+            // name (Roaming-evil vs Roaming) does not pass.
             var isUnderAllowedRoot = allowedRoots.Any(root =>
-                !string.IsNullOrEmpty(root) &&
-                fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase));
+            {
+                if (string.IsNullOrEmpty(root))
+                {
+                    return false;
+                }
+
+                var normalizedRoot = Path.GetFullPath(root);
+                if (!normalizedRoot.EndsWith(Path.DirectorySeparatorChar))
+                {
+                    normalizedRoot += Path.DirectorySeparatorChar;
+                }
+
+                return fullPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
+            });
 
             if (!isUnderAllowedRoot)
             {
@@ -601,6 +630,14 @@ public static class ConfigDiscovery
                     "websocket" or "ws" or "wss" => McpTransportType.WebSocket,
                     _ => McpTransportType.Stdio
                 };
+            }
+
+            // An entry with neither a command nor a URL is not a runnable server
+            // (e.g. OpenCode "remote" without a url); drop it rather than emit a hollow
+            // configuration that rules would see as a stdio server with no command.
+            if (command is null && url is null)
+            {
+                return null;
             }
 
             return new McpServerConfig

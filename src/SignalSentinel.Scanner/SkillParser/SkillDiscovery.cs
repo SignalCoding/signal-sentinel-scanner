@@ -59,18 +59,25 @@ public static class SkillDiscovery
 
         var pluginsRoot = Path.Combine(homeDir, ".claude", "plugins");
 
-        // cache/<owner>/<plugin>/skills — exactly two levels below "cache".
+        // cache/<owner>/<plugin>/skills — exactly two levels below "cache". Junctions
+        // and symlinks are skipped so enumeration cannot escape the plugins root.
+        var shallowOptions = new EnumerationOptions
+        {
+            IgnoreInaccessible = true,
+            RecurseSubdirectories = false,
+            AttributesToSkip = FileAttributes.ReparsePoint
+        };
+
         var cacheRoot = Path.Combine(pluginsRoot, "cache");
         if (Directory.Exists(cacheRoot))
         {
             try
             {
-                foreach (var owner in Directory.EnumerateDirectories(cacheRoot))
+                foreach (var owner in Directory.EnumerateDirectories(cacheRoot, "*", shallowOptions))
                 {
-                    foreach (var plugin in Directory.EnumerateDirectories(owner))
+                    foreach (var plugin in Directory.EnumerateDirectories(owner, "*", shallowOptions))
                     {
-                        var skills = Path.Combine(plugin, "skills");
-                        if (Directory.Exists(skills))
+                        foreach (var skills in Directory.EnumerateDirectories(plugin, "skills", shallowOptions))
                         {
                             results.Add(skills);
                             if (results.Count >= maxDirectories)
