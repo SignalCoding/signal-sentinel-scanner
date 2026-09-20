@@ -283,10 +283,12 @@ public static class Program
                     break;
 
                 case "--policy":
-                    if (i + 1 < args.Length)
+                    if (i + 1 >= args.Length)
                     {
-                        config = config with { PolicyArg = args[++i] };
+                        Console.Error.WriteLine("Error: --policy expects a preset name (default, strict, defence) or a path to a JSON file.");
+                        return null;
                     }
+                    config = config with { PolicyArg = args[++i] };
                     break;
 
                 case "--triage":

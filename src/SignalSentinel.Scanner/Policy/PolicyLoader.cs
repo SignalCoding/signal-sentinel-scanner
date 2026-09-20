@@ -175,8 +175,15 @@ public static class PolicyLoader
         return true;
     }
 
-    private static bool TryParseSeverity(string text, out Severity severity) =>
-        Enum.TryParse(text, ignoreCase: true, out severity) && Enum.IsDefined(severity);
+    private static bool TryParseSeverity(string text, out Severity severity)
+    {
+        // Enum.TryParse accepts numeric strings ("3" -> High); a policy file that says
+        // "3" is an operator typo, so only the alphabetic names are accepted.
+        severity = default;
+        return text.All(char.IsLetter)
+            && Enum.TryParse(text, ignoreCase: true, out severity)
+            && Enum.IsDefined(severity);
+    }
 
     private static string NormaliseRuleId(string ruleId) => ruleId.Trim().ToUpperInvariant();
 

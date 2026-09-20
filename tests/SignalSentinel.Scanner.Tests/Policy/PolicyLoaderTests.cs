@@ -102,6 +102,19 @@ public class PolicyLoaderTests
         });
     }
 
+    [Theory]
+    [InlineData("""{ "severityOverrides": { "SS-013": "3" } }""")]
+    [InlineData("""{ "failOn": "4" }""")]
+    public void Resolve_NumericSeverity_Errors(string json)
+    {
+        // Enum.TryParse would silently accept "3" as High; only alphabetic names are valid.
+        WithTempPolicyFile(json, path =>
+        {
+            PolicyLoader.TryResolve(path, out _, out var error).ShouldBeFalse();
+            error.ShouldNotBeNullOrWhiteSpace();
+        });
+    }
+
     [Fact]
     public void Resolve_InvalidFailOn_Errors()
     {
