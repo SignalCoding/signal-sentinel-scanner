@@ -270,6 +270,20 @@ public class SkillForensicsRulesTests
         findings[0].Title.ShouldContain("Executable Permission");
     }
 
+    [Theory]
+    [InlineData("LICENSE")]
+    [InlineData("Dockerfile")]
+    [InlineData("docs/Makefile")]
+    public async Task SuspiciousArtefact_WellKnownExtensionlessWithExecutableBit_NoFinding(string path)
+    {
+        var artefact = A(path, "", FileArtefactKind.Unknown) with { IsExecutable = true };
+        var ctx = Context(SkillWith(artefact));
+
+        var findings = await new SkillSuspiciousArtefactRule().EvaluateAsync(ctx);
+
+        findings.ShouldBeEmpty();
+    }
+
     [Fact]
     public async Task SuspiciousArtefact_ShebangScriptWithExecutableBit_NoFinding()
     {

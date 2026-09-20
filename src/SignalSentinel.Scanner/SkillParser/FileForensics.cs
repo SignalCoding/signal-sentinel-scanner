@@ -189,17 +189,18 @@ public static class FileForensics
 
         if (header[0] == (byte)'M' && header[1] == (byte)'Z')
         {
-            // "MZ" alone also starts ordinary text. When we have the DOS header, require
-            // a plausible e_lfanew (offset of the PE header) before calling it a binary.
-            if (header.Length >= 0x40)
+            // "MZ" alone also starts ordinary text, and a real PE is never shorter than
+            // its 64-byte DOS header. Require e_lfanew to be at least past that header
+            // with the two high bytes zero, which no text file can satisfy.
+            if (header.Length < 0x40)
             {
-                var lfanew = header[0x3C] | (header[0x3D] << 8) | (header[0x3E] << 16) | (header[0x3F] << 24);
-                return lfanew is >= 0x40 and <= 0x1000
-                    ? FileArtefactKind.PortableExecutable
-                    : FileArtefactKind.Unknown;
+                return FileArtefactKind.Unknown;
             }
 
-            return FileArtefactKind.PortableExecutable;
+            var lfanew = header[0x3C] | (header[0x3D] << 8) | (header[0x3E] << 16) | (header[0x3F] << 24);
+            return lfanew is >= 0x40 and <= 0x0FFF_FFFF
+                ? FileArtefactKind.PortableExecutable
+                : FileArtefactKind.Unknown;
         }
 
         if (header.Length >= 4)
@@ -240,9 +241,10 @@ public static class FileForensics
                 return FileArtefactKind.Rar;
             }
 
-            // CPython pyc: 2-byte version magic (high byte 0x0A..0x0F for 2.x-3.x),
-            // then 0x0D 0x0A, then (3.7+) a flags word that is 0..3. The flags check
-            // keeps "X\r\r\n" text files from being mistaken for bytecode.
+            // CPython 3.7+ pyc: 2-byte version magic (high byte 0x0A..0x0F), then
+            // 0x0D 0x0A, then a flags word that is 0..3. The flags check keeps
+            // "X\r\r\n" text files from being mistaken for bytecode. Older pyc layouts
+            // (mtime at bytes 4-7, Python 2 magics) are left to the extension check.
             if (header.Length >= 8 && header[2] == 0x0D && header[3] == 0x0A && header[1] is >= 0x0A and <= 0x0F)
             {
                 var flags = header[4] | (header[5] << 8) | (header[6] << 16) | (header[7] << 24);

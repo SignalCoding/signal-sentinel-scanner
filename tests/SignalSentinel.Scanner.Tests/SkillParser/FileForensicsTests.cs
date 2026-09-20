@@ -15,7 +15,7 @@ namespace SignalSentinel.Scanner.Tests.SkillParser;
 public class FileForensicsTests
 {
     [Theory]
-    [InlineData(new byte[] { 0x4D, 0x5A, 0x90, 0x00 }, FileArtefactKind.PortableExecutable)]
+    [InlineData(new byte[] { 0x4D, 0x5A, 0x90, 0x00 }, FileArtefactKind.Unknown)]
     [InlineData(new byte[] { 0x7F, 0x45, 0x4C, 0x46, 0x02 }, FileArtefactKind.Elf)]
     [InlineData(new byte[] { 0xFE, 0xED, 0xFA, 0xCF }, FileArtefactKind.MachO)]
     [InlineData(new byte[] { 0xCF, 0xFA, 0xED, 0xFE }, FileArtefactKind.MachO)]
@@ -71,7 +71,11 @@ public class FileForensicsTests
         try
         {
             File.WriteAllText(Path.Combine(dir, "SKILL.md"), "# hi");
-            File.WriteAllBytes(Path.Combine(dir, "scripts", "helper.md"), [0x4D, 0x5A, 0x00, 0x00]);
+            var pe = new byte[128];
+            pe[0] = (byte)'M';
+            pe[1] = (byte)'Z';
+            pe[0x3C] = 0x80;
+            File.WriteAllBytes(Path.Combine(dir, "scripts", "helper.md"), pe);
             File.WriteAllText(Path.Combine(dir, ".hidden"), "x");
             File.WriteAllText(Path.Combine(dir, "node_modules", "x", "index.js"), "module.exports = 1;");
 

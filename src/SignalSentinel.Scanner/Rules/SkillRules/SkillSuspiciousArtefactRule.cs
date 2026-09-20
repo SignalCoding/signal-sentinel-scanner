@@ -47,6 +47,14 @@ public sealed class SkillSuspiciousArtefactRule : IRule
         ".bin", ".dat", ".blob"
     };
 
+    // Extensionless text files that routinely arrive with 0755 from zip extraction.
+    private static readonly HashSet<string> WellKnownExtensionlessFiles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "LICENSE", "LICENCE", "COPYING", "NOTICE", "README", "CHANGELOG", "AUTHORS", "CONTRIBUTORS",
+        "CODEOWNERS", "Dockerfile", "Makefile", "Procfile", "Gemfile", "Rakefile", "Vagrantfile",
+        "Justfile", "Brewfile", "Pipfile", "requirements", "VERSION", "MANIFEST"
+    };
+
     private static readonly HashSet<string> ArchiveExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".zip", ".jar", ".whl", ".egg", ".gz", ".tgz", ".bz2", ".xz", ".7z", ".rar", ".tar"
@@ -178,7 +186,8 @@ public sealed class SkillSuspiciousArtefactRule : IRule
                 0.7);
         }
 
-        if (artefact.IsExecutable && artefact.Extension.Length == 0 && artefact.Kind == FileArtefactKind.Unknown)
+        if (artefact.IsExecutable && artefact.Extension.Length == 0 && artefact.Kind == FileArtefactKind.Unknown
+            && !WellKnownExtensionlessFiles.Contains(name))
         {
             return Create(skill, artefact, Severity.Medium,
                 "Executable Permission On Unrecognised File",

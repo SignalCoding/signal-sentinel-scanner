@@ -171,7 +171,15 @@ public static class IntegrityVerifier
         List<string> lines;
         try
         {
-            if (new FileInfo(manifestPath).Length > MaxManifestSize)
+            var manifestInfo = new FileInfo(manifestPath);
+            if ((manifestInfo.Attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                // A symlinked manifest reports the link's size, not the target's, so the
+                // size cap below could be bypassed. Manifests must be real files.
+                return [];
+            }
+
+            if (manifestInfo.Length > MaxManifestSize)
             {
                 return [];
             }
