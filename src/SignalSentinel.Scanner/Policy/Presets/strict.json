@@ -1,0 +1,4 @@
+{
+  "bumpOneBand": [ "SS-004", "SS-021", "SS-024", "SS-029", "SS-034", "SS-039" ],
+  "failOn": "medium"
+}

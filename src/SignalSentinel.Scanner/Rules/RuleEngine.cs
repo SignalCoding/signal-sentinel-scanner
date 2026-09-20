@@ -73,6 +73,33 @@ public sealed class RuleEngine
             // v2.5.0 rules
             new LegacyMcpProtocolRule(),          // SS-INFO-004 (G13a)
             new SkillUnpinnedDependencyRule(),    // SS-029 (G14, SkillJacking)
+
+            // v3.0.0 MCP surface rules (WP2)
+            new PromptPoisoningRule(),            // SS-030
+            new ResourcePoisoningRule(),          // SS-031
+            new ServerInstructionsInjectionRule(), // SS-032
+            new UnsolicitedServerRequestRule(),   // SS-033
+            new CapabilitySurfaceRule(),          // SS-INFO-005
+
+            // v3.0.0 skill forensics (WP3)
+            new SkillIntegrityMismatchRule(),     // SS-034
+            new SkillSuspiciousArtefactRule(),    // SS-035
+
+            // v3.0.0 identifier confusion (WP4)
+            new ConfusableIdentifierRule(),       // SS-036 (MCP + skills)
+            new SkillDescriptionOverlapRule(),    // SS-037
+
+            // v3.0.0 script pipeline taint (WP5)
+            new SkillPipelineTaintRule(),          // SS-038
+
+            // v3.0.0 OSV dependency lookup (WP6)
+            new SkillOsvVulnerabilityRule(),       // SS-039
+            new SkillDependencySurfaceRule(),      // SS-INFO-006
+
+            // v3.0.0 tier-3 surfaces (WP9)
+            new ErrorChannelInjectionRule(),       // SS-040
+            new ServerSourceSinkRule(),            // SS-041
+            new AgentCardRule(),                   // SS-042
         };
 
         if (customRules is not null)

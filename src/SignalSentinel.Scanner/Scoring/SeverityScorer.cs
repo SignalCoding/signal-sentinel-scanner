@@ -21,12 +21,21 @@ public static class SeverityScorer
     /// existing tests/call sites that don't have this context).
     /// </param>
     /// <param name="totalSkills">See <paramref name="totalServers"/>.</param>
+    /// <param name="rubric">
+    /// v3.0.0 (WP11): the scoring rubric supplying deductions, grade-rule counts and
+    /// grade thresholds. Defaults to the embedded <see cref="ScoringRubric.Default"/>
+    /// (v2.0.0, weights identical to the hard-coded v2.x algorithm); the CLI passes a
+    /// custom rubric here when <c>--rubric &lt;path&gt;</c> is given.
+    /// </param>
     public static (SecurityGrade Grade, int Score) CalculateGrade(
         IReadOnlyList<Finding> findings,
         IReadOnlyList<AttackPath> attackPaths,
         int? totalServers = null,
-        int? totalSkills = null)
+        int? totalSkills = null,
+        ScoringRubric? rubric = null)
     {
+        rubric ??= ScoringRubric.Default;
+
         // v2.4.1 (G1): a scan that evaluated no scannable surface (no servers AND no
         // skills) previously fell through to the finding-count-driven algorithm below,
         // which - having zero findings by construction - always returned Grade A
@@ -56,64 +65,75 @@ public static class SeverityScorer
 
         // Start with perfect score
         var score = 100;
+        var deductions = rubric.Deductions;
 
         // Deduct points based on findings
-        score -= criticalCount * 25;
-        score -= highCount * 10;
-        score -= mediumCount * 3;
-        score -= lowCount * 1;
+        score -= criticalCount * deductions.CriticalFinding;
+        score -= highCount * deductions.HighFinding;
+        score -= mediumCount * deductions.MediumFinding;
+        score -= lowCount * deductions.LowFinding;
 
         // Deduct points for attack paths
-        score -= criticalAttackPaths * 20;
-        score -= highAttackPaths * 10;
+        score -= criticalAttackPaths * deductions.CriticalAttackPath;
+        score -= highAttackPaths * deductions.HighAttackPath;
 
         // Ensure score is within bounds
         score = Math.Max(0, Math.Min(100, score));
 
         // Determine grade
-        var grade = DetermineGrade(criticalCount, highCount, criticalAttackPaths, highAttackPaths, score);
+        var grade = DetermineGrade(rubric, criticalCount, highCount, criticalAttackPaths, highAttackPaths, score);
 
         return (grade, score);
     }
 
     private static SecurityGrade DetermineGrade(
+        ScoringRubric rubric,
         int criticalCount,
         int highCount,
         int criticalAttackPaths,
         int highAttackPaths,
         int score)
     {
-        // F: Multiple critical findings or high-severity attack paths
-        if (criticalCount >= 2 || criticalAttackPaths >= 2 || (criticalCount >= 1 && criticalAttackPaths >= 1))
+        var rules = rubric.GradeRules;
+        var thresholds = rubric.GradeThresholds;
+
+        // F: multiple critical findings or critical attack paths, or one of each
+        // (the co-occurrence clause uses the D thresholds: any critical on both axes).
+        if (criticalCount >= rules.F.CriticalFindingsAtLeast
+            || criticalAttackPaths >= rules.F.CriticalAttackPathsAtLeast
+            || (criticalCount >= rules.D.CriticalFindingsAtLeast
+                && criticalAttackPaths >= rules.D.CriticalAttackPathsAtLeast))
         {
             return SecurityGrade.F;
         }
 
-        // D: Critical findings present
-        if (criticalCount >= 1 || criticalAttackPaths >= 1)
+        // D: critical findings present
+        if (criticalCount >= rules.D.CriticalFindingsAtLeast
+            || criticalAttackPaths >= rules.D.CriticalAttackPathsAtLeast)
         {
             return SecurityGrade.D;
         }
 
-        // C: 1-2 high findings or 1 attack path
-        if (highCount >= 1 || highAttackPaths >= 1)
+        // C: high findings or a high attack path
+        if (highCount >= rules.C.HighFindingsAtLeast
+            || highAttackPaths >= rules.C.HighAttackPathsAtLeast)
         {
             return SecurityGrade.C;
         }
 
         // B: No critical findings, some issues but score is still decent
-        if (score >= 70 && score < 90)
+        if (score >= thresholds.B && score < thresholds.A)
         {
             return SecurityGrade.B;
         }
 
         // A: No critical/high findings, good score
-        if (score >= 90)
+        if (score >= thresholds.A)
         {
             return SecurityGrade.A;
         }
 
-        return score >= 50 ? SecurityGrade.C : SecurityGrade.D;
+        return score >= thresholds.C ? SecurityGrade.C : SecurityGrade.D;
     }
 
     /// <summary>

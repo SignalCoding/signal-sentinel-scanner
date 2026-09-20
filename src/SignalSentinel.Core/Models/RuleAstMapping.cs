@@ -74,7 +74,44 @@ public static class RuleAstMapping
 
             // v2.5.0 rules (G13a/G14)
             ["SS-INFO-004"] = [OwaspAstCodes.AST08],
-            ["SS-029"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07]
+            ["SS-029"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07],
+
+            // v3.0.0 MCP surface rules (WP2). Prompts/resources/instructions are
+            // metadata channels (AST04); unsolicited server requests indicate a
+            // server probing client trust boundaries (AST08 Poor Scanning of the
+            // protocol surface); capability surface is an over-privilege signal (AST03).
+            ["SS-030"] = [OwaspAstCodes.AST04],
+            ["SS-031"] = [OwaspAstCodes.AST04],
+            ["SS-032"] = [OwaspAstCodes.AST04, OwaspAstCodes.AST05],
+            ["SS-033"] = [OwaspAstCodes.AST08],
+            ["SS-INFO-005"] = [OwaspAstCodes.AST03],
+
+            // v3.0.0 skill forensics (WP3). A checksum mismatch is supply-chain
+            // tampering or update drift; a mis-typed or hidden binary is a malicious
+            // skill signature and an isolation concern.
+            ["SS-034"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07],
+            ["SS-035"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST06],
+
+            // v3.0.0 identifier confusion (WP4). Both are goal-hijack vectors: the
+            // agent is steered to the wrong tool or skill by a lookalike name or a
+            // copied description.
+            ["SS-036"] = [OwaspAstCodes.AST04],
+            ["SS-037"] = [OwaspAstCodes.AST04],
+
+            // v3.0.0 script pipeline taint (WP5). A fetch-to-exec flow is both malicious
+            // code introduction and an unrestricted dangerous capability.
+            ["SS-038"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST06],
+
+            // v3.0.0 OSV dependency lookup (WP6). Known-vulnerable pins are supply-chain
+            // compromise / untrusted artefact risks; the surface note is visibility.
+            ["SS-039"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07],
+            ["SS-INFO-006"] = [OwaspAstCodes.AST02],
+
+            // v3.0.0 tier-3 surfaces (WP9). Error/result-channel and Agent Card text are
+            // description-level injection; source sinks are unsafe execution.
+            ["SS-040"] = [OwaspAstCodes.AST04],
+            ["SS-041"] = [OwaspAstCodes.AST06],
+            ["SS-042"] = [OwaspAstCodes.AST04]
         };
 
     /// <summary>

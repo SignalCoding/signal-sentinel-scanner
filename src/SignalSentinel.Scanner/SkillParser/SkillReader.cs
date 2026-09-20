@@ -60,6 +60,7 @@ public static class SkillReader
         var parsed = FrontmatterParser.Parse(content);
         var skillDir = Path.GetDirectoryName(fullPath) ?? fullPath;
         var scripts = await ScriptInventory.DiscoverAsync(skillDir, cancellationToken);
+        var artefacts = await FileForensics.AnalyseAsync(skillDir, cancellationToken);
 
         var name = parsed.GetField("name")
             ?? Path.GetFileName(Path.GetDirectoryName(fullPath))
@@ -116,6 +117,9 @@ public static class SkillReader
             IsProjectLevel = isProjectLevel,
             Scripts = scripts,
             AdditionalFiles = additionalFiles,
+            Artefacts = artefacts,
+            // v3.0.0 (WP10): typed document segments for per-rule segment filtering.
+            Segments = DocumentSegmenter.Segment(content),
             ExtraFrontmatter = extraFields,
             Capabilities = parsed.GetListField("capabilities"),
             // v2.5.0 (G15b): supports both the nested block form

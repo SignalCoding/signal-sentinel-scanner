@@ -28,6 +28,12 @@ public sealed partial class SkillScopeViolationRule : IRule
     public bool EnabledByDefault => true;
     public IReadOnlyList<string> AstCodes => [OwaspAstCodes.AST03];
 
+    /// <summary>
+    /// v3.0.0 (WP10): scope is judged from prose and frontmatter. Code examples in
+    /// fenced blocks no longer count as capability usage (SS-016/SS-038 own those).
+    /// </summary>
+    public SegmentKind ApplicableSegments => SegmentKind.Frontmatter | SegmentKind.Prose;
+
     // v2.3.0: lemma/synonym table used to check whether a skill's frontmatter description
     // implicitly declares a dangerous capability. Matching is OrdinalIgnoreCase against
     // each synonym; any hit means "the skill has declared this capability, do not flag".
@@ -158,6 +164,7 @@ public sealed partial class SkillScopeViolationRule : IRule
 
             var statedPurpose = skill.Description ?? skill.Name;
             var isBenignPurpose = SafeIsMatch(BenignPurpose(), statedPurpose);
+            var documentText = SegmentFilter.TextFor(skill, ApplicableSegments);
 
             // v2.3.0 fix #22a: collect capabilities the skill declares in its
             // YAML `capabilities:` block, mapped to the lemma-table keys so we
@@ -183,7 +190,9 @@ public sealed partial class SkillScopeViolationRule : IRule
                 // fall back to the regex match for code-like mentions (e.g. "fs.read").
                 var purposeHasCapability = PurposeDeclaresCapability(statedPurpose, capability)
                     || SafeIsMatch(pattern, statedPurpose);
-                var bodyHasCapability = SafeIsMatch(pattern, skill.InstructionsBody);
+                // v3.0.0 (WP10): capability usage counts when declared in prose or
+                // frontmatter; fenced code is SS-016/SS-038 surface.
+                var bodyHasCapability = SafeIsMatch(pattern, documentText);
 
                 // Scope violation: body uses capability not mentioned in purpose
                 if (bodyHasCapability && !purposeHasCapability)

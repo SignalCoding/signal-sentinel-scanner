@@ -76,6 +76,20 @@ public sealed record SkillDefinition
     public IReadOnlyList<string> AdditionalFiles { get; init; } = [];
 
     /// <summary>
+    /// Every file in the skill package (recursive, bounded) classified by content
+    /// type. Feeds SS-035.
+    /// </summary>
+    public IReadOnlyList<FileArtefact> Artefacts { get; init; } = [];
+
+    /// <summary>
+    /// v3.0.0 (WP10): the document segmented by kind (frontmatter, prose, fenced code,
+    /// inline code, links, HTML). Populated by the scanner's DocumentSegmenter at read
+    /// time. Empty when the definition was constructed by hand (e.g. in tests) - skill
+    /// rules segment lazily through SegmentFilter in that case.
+    /// </summary>
+    public IReadOnlyList<DocumentSegment> Segments { get; init; } = [];
+
+    /// <summary>
     /// All additional frontmatter keys not explicitly modelled.
     /// </summary>
     public IReadOnlyDictionary<string, string> ExtraFrontmatter { get; init; } =
@@ -158,7 +172,97 @@ public enum ScriptLanguage
     Bash,
     PowerShell,
     JavaScript,
-    TypeScript
+    TypeScript,
+    Ruby,
+    Perl,
+    Php,
+    Lua,
+    Batch,
+    VbScript
+}
+
+/// <summary>
+/// Content type of a file as determined from its leading bytes, independent of
+/// its extension.
+/// </summary>
+public enum FileArtefactKind
+{
+    /// <summary>No recognised signature; treated as text or opaque data.</summary>
+    Unknown,
+
+    /// <summary>Windows PE executable or DLL (<c>MZ</c>).</summary>
+    PortableExecutable,
+
+    /// <summary>Linux ELF binary.</summary>
+    Elf,
+
+    /// <summary>Apple Mach-O binary (thin or fat).</summary>
+    MachO,
+
+    /// <summary>ZIP container, which also covers JAR, wheel, egg, and Office files.</summary>
+    Zip,
+
+    /// <summary>gzip stream.</summary>
+    Gzip,
+
+    /// <summary>bzip2 stream.</summary>
+    Bzip2,
+
+    /// <summary>xz / LZMA stream.</summary>
+    Xz,
+
+    /// <summary>7-Zip archive.</summary>
+    SevenZip,
+
+    /// <summary>RAR archive.</summary>
+    Rar,
+
+    /// <summary>Compiled Java class file.</summary>
+    JavaClass,
+
+    /// <summary>CPython bytecode (<c>.pyc</c>).</summary>
+    PythonBytecode,
+
+    /// <summary>Text file starting with <c>#!</c>.</summary>
+    Shebang
+}
+
+/// <summary>
+/// A file discovered inside a skill package, described by what it actually is rather
+/// than what its name claims.
+/// </summary>
+public sealed record FileArtefact
+{
+    /// <summary>
+    /// Path relative to the skill directory, using the platform separator.
+    /// </summary>
+    public required string RelativePath { get; init; }
+
+    /// <summary>
+    /// Lower-case extension including the dot, or empty when there is none.
+    /// </summary>
+    public required string Extension { get; init; }
+
+    /// <summary>
+    /// Content type inferred from magic bytes.
+    /// </summary>
+    public required FileArtefactKind Kind { get; init; }
+
+    /// <summary>
+    /// File size in bytes.
+    /// </summary>
+    public required long Size { get; init; }
+
+    /// <summary>
+    /// True when the file name starts with a dot or the file carries the hidden
+    /// attribute on Windows.
+    /// </summary>
+    public bool IsHidden { get; init; }
+
+    /// <summary>
+    /// Whether the file is executable by permission bits (Unix) or by extension (Windows).
+    /// </summary>
+    public bool IsExecutable { get; init; }
 }
 
 /// <summary>

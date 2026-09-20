@@ -18,6 +18,13 @@ public sealed record ScanConfig
     public string? RemoteUrl { get; init; }
 
     /// <summary>
+    /// v3.0.0: when true, <see cref="RemoteUrl"/> may resolve to a loopback, RFC1918, or
+    /// link-local address. Off by default (SSRF protection). SS-INFO-002 still annotates
+    /// the scan as a non-public target when this is used.
+    /// </summary>
+    public bool AllowPrivate { get; init; }
+
+    /// <summary>
     /// Auto-discover MCP configurations from known locations.
     /// </summary>
     public bool AutoDiscover { get; init; }
@@ -137,6 +144,38 @@ public sealed record ScanConfig
     /// If true, print every registered rule (id, name, owasp code, ast codes, severity) and exit 0.
     /// </summary>
     public bool ListRules { get; init; }
+
+    /// <summary>
+    /// v3.0.0 (WP6): opt-in OSV vulnerability lookup for pinned skill dependencies.
+    /// Refused under <see cref="Offline"/>.
+    /// </summary>
+    public bool Osv { get; init; }
+
+    /// <summary>
+    /// v3.0.0 (WP9): directory of MCP server source (JS/TS/Python) for the static
+    /// dangerous-sink pass (SS-041). Local only; works offline.
+    /// </summary>
+    public string? ServerSourcePath { get; init; }
+
+    /// <summary>
+    /// v3.0.0 (WP9): A2A Agent Card URL or local JSON path for SS-042. A URL is refused
+    /// under <see cref="Offline"/>; a file path is not.
+    /// </summary>
+    public string? AgentCard { get; init; }
+
+    /// <summary>
+    /// v3.0.0 (WP7): raw <c>--policy</c> argument — a preset name (default, strict,
+    /// defence) or a path to a policy JSON file. Resolved by <c>PolicyLoader</c> after
+    /// argument parsing; explicit CLI flags override anything the policy sets.
+    /// </summary>
+    public string? PolicyArg { get; init; }
+
+    /// <summary>
+    /// v3.0.0 (WP11): path to a custom scoring rubric JSON file (<c>--rubric</c>).
+    /// When unset, the embedded v2.0.0 rubric is used. Resolved by
+    /// <c>ScoringRubric.TryLoadFromFile</c> before the scan runs.
+    /// </summary>
+    public string? RubricPath { get; init; }
 
     /// <summary>
     /// When set, run in diff mode comparing the supplied baseline JSON scan report against the

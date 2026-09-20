@@ -103,9 +103,12 @@ public sealed class ToolEnumerator(TimeSpan timeout, bool verbose = false, Actio
             probeResult = null;
         }
 
+        // Declared outside the try so the catch blocks can still harvest protocol
+        // evidence (unsolicited requests, error bodies) from a partially failed session.
+        McpConnection? connection = null;
         try
         {
-            await using var connection = new McpConnection(config, _timeout);
+            connection = new McpConnection(config, _timeout);
 
             var safeName = SanitizeForLogging(config.Name);
             Log($"  Connecting to {safeName}...");
@@ -117,6 +120,7 @@ public sealed class ToolEnumerator(TimeSpan timeout, bool verbose = false, Actio
                 ServerVersion = SanitizeForLogging(initResult.ServerInfo.Version),
                 ProtocolVersion = initResult.ProtocolVersion,
                 Capabilities = initResult.Capabilities,
+                ServerInstructions = TruncateInstructions(initResult.Instructions),
                 ConnectionSuccessful = true
             };
 
@@ -223,6 +227,21 @@ public sealed class ToolEnumerator(TimeSpan timeout, bool verbose = false, Actio
             };
         }
 
+        finally
+        {
+            // v3.0.0: harvest protocol evidence regardless of how the session ended,
+            // then release the transport.
+            if (connection is not null)
+            {
+                result = result with
+                {
+                    UnsolicitedRequests = connection.UnsolicitedRequests.ToList(),
+                    ProtocolErrors = connection.ProtocolErrors.ToList()
+                };
+                await connection.DisposeAsync();
+            }
+        }
+
         // Attach the v2.4.0 A2 probe result (may be null for stdio / non-public / etc.).
         if (probeResult is not null)
         {
@@ -230,6 +249,36 @@ public sealed class ToolEnumerator(TimeSpan timeout, bool verbose = false, Actio
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Bounds the server-supplied <c>instructions</c> string. The text is evaluated by
+    /// SS-032 and may be reproduced (truncated) in reports, so it gets the same size and
+    /// control-character treatment as tool descriptions.
+    /// </summary>
+    private static string? TruncateInstructions(string? instructions)
+    {
+        if (string.IsNullOrEmpty(instructions))
+        {
+            return null;
+        }
+
+        const int maxLength = 100_000;
+        var text = instructions.Length > maxLength
+            ? instructions[..maxLength] + "... (truncated)"
+            : instructions;
+
+        // Keep newlines: instructions are multi-line prose and injection rules key on
+        // line structure. Strip other control characters only.
+        var sb = new System.Text.StringBuilder(text.Length);
+        foreach (var c in text)
+        {
+            if (!char.IsControl(c) || c is ' ' or '\t' or '\n' or '\r')
+            {
+                sb.Append(c);
+            }
+        }
+        return sb.ToString();
     }
 
     /// <summary>
@@ -462,6 +511,28 @@ public sealed record ServerEnumeration
     /// Powers <c>SS-INFO-003</c>.
     /// </summary>
     public TlsErrorEvidence? TlsEvidence { get; init; }
+
+    /// <summary>
+    /// v3.0.0: free-text <c>instructions</c> returned by the server in its
+    /// <c>initialize</c> result. Clients typically place this in the system prompt,
+    /// so it is a first-class injection surface. Bounded and control-stripped. Null
+    /// when the server sent none. Powers <c>SS-032</c>.
+    /// </summary>
+    public string? ServerInstructions { get; init; }
+
+    /// <summary>
+    /// v3.0.0: server-to-client requests/notifications observed during enumeration.
+    /// The scanner declares no client capabilities, so <c>sampling/*</c>,
+    /// <c>elicitation/*</c>, and <c>roots/*</c> here are protocol violations.
+    /// Powers <c>SS-033</c>.
+    /// </summary>
+    public IReadOnlyList<McpUnsolicitedRequest> UnsolicitedRequests { get; init; } = [];
+
+    /// <summary>
+    /// v3.0.0: JSON-RPC error objects returned for the scanner's own requests, with
+    /// sanitised message bodies. Powers <c>SS-040</c>.
+    /// </summary>
+    public IReadOnlyList<McpProtocolError> ProtocolErrors { get; init; } = [];
 }
 
 /// <summary>

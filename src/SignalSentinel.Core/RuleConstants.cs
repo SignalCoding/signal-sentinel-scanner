@@ -81,6 +81,35 @@ public static class RuleConstants
         // v2.5.0 Informational rule (G13a - MCP 2026-07-28 protocol/transport currency)
         public const string LegacyMcpProtocol = "SS-INFO-004";
 
+        // SS-027 is intentionally unallocated.
+
+        // v3.0.0 MCP surface rules (WP2)
+        public const string PromptPoisoning = "SS-030";
+        public const string ResourcePoisoning = "SS-031";
+        public const string ServerInstructionsInjection = "SS-032";
+        public const string UnsolicitedServerRequest = "SS-033";
+        public const string CapabilitySurface = "SS-INFO-005";
+
+        // v3.0.0 skill forensics rules (WP3)
+        public const string SkillIntegrityMismatch = "SS-034";
+        public const string SkillSuspiciousArtefact = "SS-035";
+
+        // v3.0.0 identifier/description rules (WP4)
+        public const string ConfusableIdentifier = "SS-036";
+        public const string SkillDescriptionOverlap = "SS-037";
+
+        // v3.0.0 script pipeline taint (WP5)
+        public const string SkillPipelineTaint = "SS-038";
+
+        // v3.0.0 OSV dependency lookup (WP6)
+        public const string SkillOsvVulnerability = "SS-039";
+        public const string SkillDependencySurface = "SS-INFO-006";
+
+        // v3.0.0 tier-3 surfaces (WP9)
+        public const string ErrorChannelInjection = "SS-040";
+        public const string ServerSourceSink = "SS-041";
+        public const string AgentCard = "SS-042";
+
         /// <summary>
         /// Rules that depend on successful MCP JSON-RPC protocol exchange with the
         /// target server. When SS-INFO-001 fires on a server, these rules cannot
@@ -97,7 +126,9 @@ public static class RuleConstants
                 ExcessiveDescription, CrossServerAttackPaths,
                 CredentialHygiene, OAuthCompliance, PackageProvenance,
                 RugPullDetection, ShadowToolInjection, SkillIntegrityVerification,
-                ExcessiveToolResponse
+                ExcessiveToolResponse,
+                PromptPoisoning, ResourcePoisoning, ServerInstructionsInjection,
+                UnsolicitedServerRequest, CapabilitySurface, ErrorChannelInjection
             };
     }
 

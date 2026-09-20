@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.Net;
 using System.Text.RegularExpressions;
 using SignalSentinel.Core.Models;
 using SignalSentinel.Core.RuleFormats;
@@ -32,11 +31,9 @@ public static class Program
     // .csproj moved to 2.5.0).
     private static readonly string Version =
         typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
-    private const string RubricVersion = "1.0";
 
     // Security: Limits for input validation
     private const int MaxPathLength = 4096;
-    private const int MaxUrlLength = 2048;
     private const int MaxTimeoutSeconds = 300;
     private const int MinTimeoutSeconds = 1;
 
@@ -59,6 +56,60 @@ public static class Program
                 return 0;
             }
 
+            // v3.0.0 (WP7): resolve --policy after CLI parsing so explicit flags win.
+            Policy.ResolvedPolicy? policy = null;
+            if (config.PolicyArg is not null)
+            {
+                if (!Policy.PolicyLoader.TryResolve(config.PolicyArg, out policy, out var policyError))
+                {
+                    Console.Error.WriteLine($"Error: {SanitizeErrorMessage(policyError ?? "invalid policy")}");
+                    return 2;
+                }
+
+                if (policy!.ImpliesOffline && config.RemoteUrl is not null)
+                {
+                    Console.Error.WriteLine(
+                        $"Warning: --policy {policy.Name} implies --offline, but --remote was given; the explicit flag wins and the scan will use the network.");
+                }
+
+                config = config with
+                {
+                    FailOn = config.FailOn ?? policy.FailOn,
+                    MinConfidence = config.MinConfidence > 0 ? config.MinConfidence : policy.MinConfidence ?? 0,
+                    Offline = config.Offline || (policy.ImpliesOffline && config.RemoteUrl is null)
+                };
+            }
+
+            // v3.0.0 (WP6): the OSV lookup needs the network; refuse the combination
+            // outright (including an offline posture implied by --policy defence).
+            if (config.Osv && config.Offline && !config.ListRules)
+            {
+                Console.Error.WriteLine("Error: --osv is incompatible with --offline.");
+                return 2;
+            }
+
+            // v3.0.0 (WP9): an Agent Card URL is a network fetch; a local card file is fine offline.
+            if (config.AgentCard is not null && config.Offline && !config.ListRules
+                && AgentCard.AgentCardReader.IsUrl(config.AgentCard))
+            {
+                Console.Error.WriteLine("Error: --agent-card <url> is incompatible with --offline (pass a local file instead).");
+                return 2;
+            }
+
+            // v3.0.0 (WP11): resolve --rubric before the scan; an invalid custom
+            // rubric fails closed (exit 2) rather than scoring with partial weights.
+            var rubric = ScoringRubric.Default;
+            if (config.RubricPath is not null)
+            {
+                if (!ScoringRubric.TryLoadFromFile(config.RubricPath, out var customRubric, out var rubricError))
+                {
+                    Console.Error.WriteLine($"Error: {SanitizeErrorMessage(rubricError ?? "invalid rubric")}");
+                    return 2;
+                }
+
+                rubric = customRubric!;
+            }
+
             // Security: Use a cancellation token with overall timeout
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(30));
 
@@ -70,7 +121,7 @@ public static class Program
                 Console.Error.WriteLine("\nScan cancelled by user.");
             };
 
-            return await RunScanAsync(config, cts.Token);
+            return await RunScanAsync(config, policy, rubric, cts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -126,13 +177,19 @@ public static class Program
                     if (i + 1 < args.Length)
                     {
                         var url = args[++i];
-                        if (!ValidateUrl(url))
+                        // Network policy (private-range block) is applied after the loop so
+                        // that --allow-private is honoured regardless of argument order.
+                        if (!RemoteUrlPolicy.IsValidSyntax(url))
                         {
                             Console.Error.WriteLine("Error: Invalid URL");
                             return null;
                         }
                         config = config with { RemoteUrl = url };
                     }
+                    break;
+
+                case "--allow-private":
+                    config = config with { AllowPrivate = true };
                     break;
 
                 case "--discover" or "-d":
@@ -252,6 +309,74 @@ public static class Program
                         }
                         config = config with { MinConfidence = conf };
                     }
+                    break;
+
+                case "--policy":
+                    if (i + 1 >= args.Length)
+                    {
+                        Console.Error.WriteLine("Error: --policy expects a preset name (default, strict, defence) or a path to a JSON file.");
+                        return null;
+                    }
+                    config = config with { PolicyArg = args[++i] };
+                    break;
+
+                case "--rubric":
+                    if (i + 1 >= args.Length || args[i + 1].StartsWith('-'))
+                    {
+                        Console.Error.WriteLine("Error: --rubric requires a path to a scoring rubric JSON file.");
+                        return null;
+                    }
+                    var rubricPath = args[++i];
+                    if (!ValidatePath(rubricPath) || !File.Exists(rubricPath))
+                    {
+                        Console.Error.WriteLine("Error: --rubric file not found or invalid.");
+                        return null;
+                    }
+                    config = config with { RubricPath = rubricPath };
+                    break;
+
+                case "--osv":
+                    config = config with { Osv = true };
+                    break;
+
+                case "--server-source":
+                    if (i + 1 >= args.Length || args[i + 1].StartsWith('-'))
+                    {
+                        Console.Error.WriteLine("Error: --server-source requires a directory path.");
+                        return null;
+                    }
+                    var sourceDir = args[++i];
+                    if (!ValidatePath(sourceDir) || !Directory.Exists(sourceDir))
+                    {
+                        Console.Error.WriteLine("Error: --server-source directory not found or invalid.");
+                        return null;
+                    }
+                    config = config with { ServerSourcePath = sourceDir };
+                    break;
+
+                case "--agent-card":
+                    if (i + 1 >= args.Length || args[i + 1].StartsWith('-'))
+                    {
+                        Console.Error.WriteLine("Error: --agent-card requires a URL or file path.");
+                        return null;
+                    }
+                    var cardTarget = args[++i];
+                    if (AgentCard.AgentCardReader.IsUrl(cardTarget))
+                    {
+                        // Private-range policy is applied after the loop so --allow-private
+                        // is honoured regardless of argument order.
+                        if (!RemoteUrlPolicy.IsValidSyntax(cardTarget))
+                        {
+                            Console.Error.WriteLine("Error: Invalid --agent-card URL");
+                            return null;
+                        }
+                    }
+                    else if (!ValidatePath(cardTarget, ".json"))
+                    {
+                        Console.Error.WriteLine("Error: --agent-card must be an http(s) URL or a .json file path.");
+                        return null;
+                    }
+                    config = config with { AgentCard = cardTarget };
                     break;
 
                 case "--triage":
@@ -425,6 +550,29 @@ public static class Program
             config = config with { AutoDiscover = true };
         }
 
+        // Security: SSRF protection - block --remote targets on loopback/private/link-local
+        // ranges unless the operator explicitly opted in. SS-INFO-002 annotates the scan
+        // when the target is non-public either way.
+        if (config.RemoteUrl is not null && !config.AllowPrivate &&
+            RemoteUrlPolicy.TargetsPrivateNetwork(config.RemoteUrl))
+        {
+            Console.Error.WriteLine(
+                "Error: --remote target resolves to a loopback, private, or link-local address. " +
+                "Pass --allow-private to scan it anyway.");
+            return null;
+        }
+
+        // v3.0.0 (WP9): the same SSRF policy applies to an Agent Card URL.
+        if (config.AgentCard is not null && !config.AllowPrivate
+            && AgentCard.AgentCardReader.IsUrl(config.AgentCard)
+            && RemoteUrlPolicy.TargetsPrivateNetwork(config.AgentCard))
+        {
+            Console.Error.WriteLine(
+                "Error: --agent-card target resolves to a loopback, private, or link-local address. " +
+                "Pass --allow-private to fetch it anyway.");
+            return null;
+        }
+
         return config;
     }
 
@@ -490,81 +638,6 @@ public static class Program
     }
 
     /// <summary>
-    /// Validates a URL for safety.
-    /// </summary>
-    private static bool ValidateUrl(string? url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            return false;
-        }
-
-        if (url.Length > MaxUrlLength)
-        {
-            return false;
-        }
-
-        // Security: Only allow http/https/ws/wss
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-        {
-            return false;
-        }
-
-        if (uri.Scheme != "http" && uri.Scheme != "https" &&
-            uri.Scheme != "ws" && uri.Scheme != "wss")
-        {
-            return false;
-        }
-
-        // Security: SSRF protection - block requests to internal/private networks
-        try
-        {
-            var host = uri.DnsSafeHost;
-            var addresses = Dns.GetHostAddresses(host);
-
-            foreach (var addr in addresses)
-            {
-                var bytes = addr.GetAddressBytes();
-
-                // Block loopback (127.0.0.0/8, ::1)
-                if (IPAddress.IsLoopback(addr))
-                    return false;
-
-                if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                {
-                    // Block 10.0.0.0/8
-                    if (bytes[0] == 10)
-                        return false;
-
-                    // Block 172.16.0.0/12
-                    if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
-                        return false;
-
-                    // Block 192.168.0.0/16
-                    if (bytes[0] == 192 && bytes[1] == 168)
-                        return false;
-
-                    // Block link-local 169.254.0.0/16 (includes cloud metadata 169.254.169.254)
-                    if (bytes[0] == 169 && bytes[1] == 254)
-                        return false;
-                }
-                else if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
-                {
-                    // Block fe80::/10 (link-local)
-                    if (bytes[0] == 0xfe && (bytes[1] & 0xc0) == 0x80)
-                        return false;
-                }
-            }
-        }
-        catch
-        {
-            // If DNS resolution fails, allow the URL (don't block on DNS failure)
-        }
-
-        return true;
-    }
-
-    /// <summary>
     /// Sanitizes a string for safe display (prevents terminal injection).
     /// </summary>
     private static string SanitizeForDisplay(string input)
@@ -624,7 +697,7 @@ public static class Program
     private static void PrintUsage()
     {
         Console.WriteLine($"""
-            Signal Sentinel Scanner v{Version} (rubric v{RubricVersion})
+            Signal Sentinel Scanner v{Version} (rubric v{ScoringRubric.Default.Version})
             Fast, deterministic, offline-capable first-pass security aid for
             MCP servers and Agent Skill authors. OWASP ASI/AST Top 10 aligned.
             
@@ -636,8 +709,11 @@ public static class Program
             SCAN TARGETS:
                 -c, --config <path>     Path to MCP configuration file
                 -r, --remote <url>      Remote MCP server URL (http/https/ws/wss)
+                    --allow-private     Permit --remote targets on loopback/RFC1918/link-local
                 -d, --discover          Auto-discover MCP configurations
                 -s, --skills [path]     Scan Agent Skills (auto-discover or specify path)
+                    --server-source <dir>  Static pass over MCP server source (JS/TS/Python) for dangerous sinks
+                    --agent-card <url|path> Evaluate an A2A Agent Card (bare origin gets /.well-known/agent.json)
             
             OUTPUT:
                 -f, --format <format>   Output format: json, markdown, html, sarif (default: markdown)
@@ -647,7 +723,13 @@ public static class Program
             v2.3.0 TRIAGE & ACCEPTED RISK:
                     --suppressions <p>  Suppressions file (default: ./.sentinel-suppressions.json)
                     --ignore-rule <ids> Comma-separated rule ids to drop (no justification)
+                    --policy <name|path> Policy preset (default|strict|defence) or JSON file.
+                                strict: supply-chain rules one band up, fail-on medium.
+                                defence: everything one band up, fail-on low, implies --offline.
+                                Explicit --fail-on/--min-confidence/--remote flags override the preset.
                     --min-confidence <f> Drop findings below confidence [0..1]
+                    --rubric <path>     Custom scoring rubric JSON (default: embedded rubric v2.0.0)
+                    --osv               Check pinned skill dependencies against osv.dev (network; refused under --offline)
                     --triage            Demote low-confidence findings to 'low' (keeps them visible)
                     --fail-on <sev>     Exit 1 at/above severity: critical|high|medium|low|info
                     --environment <e>   Environment label ("dev"/"staging"/"prod"/custom)
@@ -706,6 +788,14 @@ public static class Program
                 SS-023  Shadow Tool Injection (ASI01)
                 SS-025  Excessive Tool Response Size (ASI06)
                 SS-026  Instructional Tool/Skill Description (ASI01, AST04)
+                SS-030  MCP Prompt Poisoning (ASI01, AST04)
+                SS-031  MCP Resource Poisoning (ASI01, AST04)
+                SS-032  MCP Server Instructions Injection (ASI01, AST04/AST05)
+                SS-033  Unsolicited Server-to-Client Request (ASI07, AST08)
+                SS-036  Unicode Confusable Identifier (ASI01, AST04) - also covers skills
+                SS-040  Error-Channel / Result-Channel Injection (ASI01, AST04)
+                SS-041  Server Source Dangerous Sink (ASI05, AST06) - needs --server-source
+                SS-042  A2A Agent Card Findings (ASI01/ASI03, AST04) - needs --agent-card
             
             SKILL SECURITY RULES:
                 SS-011  Skill Prompt Injection (ASI01, AST01/AST04/AST05)
@@ -719,19 +809,30 @@ public static class Program
                 SS-024  Skill Integrity Verification (ASI04, AST02/AST07)
                 SS-028  Skill Identity/Memory File Write Access (ASI02, AST03)
                 SS-029  Skill Unpinned Dependency Reference (ASI04, AST02/AST07)
+                SS-034  Skill Integrity Mismatch (ASI04, AST02/AST07)
+                SS-035  Skill Suspicious File Artefact (ASI04, AST01/AST06)
+                SS-037  Cross-Skill Description Overlap (ASI01, AST04)
+                SS-038  Skill Script Pipeline Taint (ASI05, AST01/AST06)
+                SS-039  Skill Dependency Known Vulnerability (ASI04, AST02/AST07)
             
             INFORMATIONAL:
                 SS-INFO-001  Non-MCP Endpoint Detected (ASI10, AST08)
                 SS-INFO-002  Non-Public Scan Target (ASI03)
                 SS-INFO-003  Untrusted Server Certificate (ASI10, AST08)
                 SS-INFO-004  Legacy MCP Protocol / Transport (ASI04, AST08)
+                SS-INFO-005  MCP Capability Surface (ASI02, AST03)
+                SS-INFO-006  Skill Dependency Surface (Unchecked) (ASI04, AST02)
             
             For more information: https://github.com/SignalCoding/signal-sentinel-scanner
             Report security issues: security@signalcoding.co.uk
             """);
     }
 
-    private static async Task<int> RunScanAsync(ScanConfig config, CancellationToken cancellationToken)
+    private static async Task<int> RunScanAsync(
+        ScanConfig config,
+        Policy.ResolvedPolicy? policy,
+        ScoringRubric rubric,
+        CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
 
@@ -795,9 +896,10 @@ public static class Program
                 }
             }
 
-            if (configFiles.Count == 0 && config.RemoteUrl is null && !config.ScanSkills)
+            if (configFiles.Count == 0 && config.RemoteUrl is null && !config.ScanSkills
+                && config.ServerSourcePath is null && config.AgentCard is null)
             {
-                Console.Error.WriteLine("Error: No MCP configurations found. Use --discover, --config, --remote, or --skills.");
+                Console.Error.WriteLine("Error: No MCP configurations found. Use --discover, --config, --remote, --skills, --server-source, or --agent-card.");
                 return 2;
             }
 
@@ -900,10 +1002,65 @@ public static class Program
             customRules.Add(new ExcessiveResponseRule());
             customRules.Add(new Rules.SkillRules.SkillIntegrityRule());
 
+            // v3.0.0 (WP6): extract skill dependency references (always, local-only) and
+            // optionally check pinned ones against OSV (--osv; refused under --offline).
+            Osv.DependencySurface? dependencySurface = null;
+            if (allSkills.Count > 0)
+            {
+                dependencySurface = await Osv.OsvLookup.BuildAsync(
+                    allSkills, config.Osv, config.Offline, cancellationToken);
+                if (dependencySurface.Dependencies.Count > 0)
+                {
+                    var statusText = dependencySurface.Status switch
+                    {
+                        Osv.DependencyQueryStatus.Succeeded =>
+                            $"OSV: {dependencySurface.Vulnerabilities.Count} known vulnerability(ies) across {dependencySurface.QueriedCount} pinned package(s)" +
+                            (dependencySurface.Truncated ? " (truncated at 100)" : string.Empty),
+                        Osv.DependencyQueryStatus.Failed =>
+                            $"OSV lookup failed ({dependencySurface.FailureReason}); dependencies reported unchecked",
+                        _ => $"{dependencySurface.Dependencies.Count} skill dependency reference(s) not checked against OSV"
+                    };
+                    Log(statusText);
+                }
+            }
+            else if (config.Osv)
+            {
+                Log("OSV: no skills scanned, nothing to check");
+            }
+
+            // v3.0.0 (WP9): optional static pass over MCP server source (local, offline-safe).
+            ServerSource.ServerSourceAnalysis? serverSource = null;
+            if (config.ServerSourcePath is not null)
+            {
+                serverSource = await ServerSource.ServerSourceAnalyzer.AnalyseAsync(config.ServerSourcePath, cancellationToken);
+                Log($"Server source: {serverSource.FilesScanned} file(s) read, {serverSource.ToolFiles} register tools, " +
+                    $"{serverSource.Sinks.Count} dangerous sink(s)" + (serverSource.Truncated ? " (walk truncated)" : string.Empty));
+            }
+
+            // v3.0.0 (WP9): optional A2A Agent Card (URL refused under --offline; file is fine).
+            AgentCard.AgentCardAnalysis? agentCard = null;
+            if (config.AgentCard is not null)
+            {
+                agentCard = await AgentCard.AgentCardReader.LoadAsync(config.AgentCard, cancellationToken);
+                Log(agentCard.Status == AgentCard.AgentCardStatus.Loaded
+                    ? $"Agent Card: loaded '{agentCard.DisplayName}' ({agentCard.Skills.Count} skill(s))"
+                    : $"Agent Card: could not be loaded ({agentCard.FailureReason})");
+            }
+
             // Run rules
             Log("Executing security rules...");
             var ruleEngine = new RuleEngine(customRules: customRules, verbose: config.Verbose, logger: Log);
-            var context = new ScanContext { Servers = serverEnumerations, Skills = allSkills };
+            var context = new ScanContext
+            {
+                Servers = serverEnumerations,
+                Skills = allSkills,
+                DependencySurface = dependencySurface,
+                ServerSource = serverSource,
+                AgentCard = agentCard,
+                Policy = policy is null
+                    ? null
+                    : new PolicyConfiguration { SeverityOverrides = policy.SeverityOverrides }
+            };
             var ruleResult = await ruleEngine.ExecuteAsync(context, cancellationToken);
 
             // Deduplicate findings (v2.2.0)
@@ -926,6 +1083,19 @@ public static class Program
                     Log($"Dropped {before - kept.Count} finding(s) per --ignore-rule");
                 }
                 ruleResult = ruleResult with { Findings = kept };
+            }
+
+            // v3.0.0 (WP7): apply --policy after dedup, before the confidence filter.
+            if (policy is not null && !policy.IsEmpty)
+            {
+                var before = ruleResult.Findings.Count;
+                var applied = Policy.PolicyApplier.Apply(ruleResult.Findings, policy);
+                if (applied.Count != before)
+                {
+                    Log($"Policy '{policy.Name}': dropped {before - applied.Count} finding(s) from disabled rules");
+                }
+                Log($"Policy '{policy.Name}' applied");
+                ruleResult = ruleResult with { Findings = applied };
             }
 
             // v2.3.0: confidence-based triage / filtering.
@@ -1044,10 +1214,14 @@ public static class Program
             // Calculate grade
             // v2.4.1 (G1): pass total server/skill counts so a scan that evaluated no
             // scannable surface at all reports Inconclusive instead of a misleading
-            // Grade A.
+            // Grade A. v3.0.0 (WP9): a server-source tree or an Agent Card is an
+            // evaluable surface too, so each counts as one server-equivalent here.
+            var evaluableServers = serverEnumerations.Count
+                + (serverSource is null ? 0 : 1)
+                + (agentCard is null ? 0 : 1);
             var (grade, score) = SeverityScorer.CalculateGrade(
                 ruleResult.Findings, ruleResult.AttackPaths,
-                serverEnumerations.Count, allSkills.Count);
+                evaluableServers, allSkills.Count, rubric);
 
             // v2.3.0 fix (Section 0.4): compute the counter-factual grade with
             // every suppression removed so reports can show technical-debt
@@ -1062,7 +1236,7 @@ public static class Program
                 combined.AddRange(suppressedFindings);
                 var (g, s) = SeverityScorer.CalculateGrade(
                     combined, ruleResult.AttackPaths,
-                    serverEnumerations.Count, allSkills.Count);
+                    evaluableServers, allSkills.Count, rubric);
                 gradeWithoutSupp = g;
                 scoreWithoutSupp = s;
                 // v2.4.1 (G9): explicit numeric delta so consumers don't have to
@@ -1164,7 +1338,7 @@ public static class Program
                     ServersProbed = serverEnumerations.Count > 0
                 },
                 Environment = config.Environment,
-                RubricVersion = RubricVersion,
+                RubricVersion = rubric.Version,
                 SuppressedFindings = suppressedFindings,
                 GradeWithoutSuppressions = gradeWithoutSupp,
                 ScoreWithoutSuppressions = scoreWithoutSupp,
@@ -1278,6 +1452,15 @@ public static class Program
             scanned.Add("Skill signature artefacts (.sentinel-sig, SHA256SUMS)");
         }
 
+        if (config.ServerSourcePath is not null)
+        {
+            scanned.Add("MCP server source (JS/TS/Python) - regex-level dangerous-sink pass");
+        }
+        if (config.AgentCard is not null)
+        {
+            scanned.Add("A2A Agent Card (descriptions, securitySchemes, endpoint scheme)");
+        }
+
         notScanned.Add("Transitive third-party dependencies (use Bandit / Gitleaks / Trivy)");
         notScanned.Add("Runtime behaviour of skills or MCP tools (static scan only)");
         notScanned.Add("Content referenced by external URLs (not fetched)");
@@ -1288,6 +1471,14 @@ public static class Program
         if (!hasSkills)
         {
             notScanned.Add("Agent skills (no --skills supplied)");
+        }
+        if (config.ServerSourcePath is null)
+        {
+            notScanned.Add("MCP server source code (no --server-source supplied)");
+        }
+        if (config.AgentCard is null)
+        {
+            notScanned.Add("A2A Agent Card (no --agent-card supplied)");
         }
 
         return new ScanScope

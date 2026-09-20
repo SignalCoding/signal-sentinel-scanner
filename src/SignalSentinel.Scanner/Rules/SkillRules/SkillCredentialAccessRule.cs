@@ -26,6 +26,17 @@ public sealed class SkillCredentialAccessRule : IRule
         "variables in skill instructions and bundled scripts.";
     public bool EnabledByDefault => true;
 
+    /// <summary>
+    /// v3.0.0 (WP10): superset of the spec's FencedCode + Link assignment - prose is
+    /// retained because a skill's prose IS the executable surface ("Access
+    /// $AWS_SECRET_ACCESS_KEY" is a directive to the agent, not documentation), and
+    /// dropping it lost locked true positives in the pattern-accuracy suite. Inline
+    /// code spans and raw HTML are excluded, which removes the dominant false-positive
+    /// class (credential names shown as inline examples in legitimate docs).
+    /// </summary>
+    public SegmentKind ApplicableSegments =>
+        SegmentKind.Prose | SegmentKind.FencedCode | SegmentKind.Link;
+
     public Task<IEnumerable<Finding>> EvaluateAsync(
         ScanContext context,
         CancellationToken cancellationToken = default)
@@ -36,12 +47,13 @@ public sealed class SkillCredentialAccessRule : IRule
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Check instructions body
+            // Check instructions document (prose, fenced code and link segments)
+            var documentText = SegmentFilter.TextFor(skill, ApplicableSegments);
             foreach (var (id, name, pattern, severity, description) in CredentialPatterns.AllPatterns)
             {
-                if (InjectionPatterns.SafeIsMatch(pattern, skill.InstructionsBody))
+                if (InjectionPatterns.SafeIsMatch(pattern, documentText))
                 {
-                    var match = InjectionPatterns.SafeMatches(pattern, skill.InstructionsBody)
+                    var match = InjectionPatterns.SafeMatches(pattern, documentText)
                         .FirstOrDefault();
 
                     findings.Add(new Finding

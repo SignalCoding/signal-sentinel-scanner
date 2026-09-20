@@ -49,7 +49,8 @@ public sealed class SkillIntegrityRule : IRule
         foreach (var skill in context.Skills)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var report = IntegrityVerifier.Verify(skill);
+            // Presence only; SS-034 does the per-file hashing pass.
+            var report = IntegrityVerifier.Verify(skill, verifyChecksums: false);
 
             if (!report.SignaturePresent)
             {
