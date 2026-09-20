@@ -106,34 +106,47 @@ public static partial class InjectionPatterns
     public static partial Regex InstructionInjection();
 
     /// <summary>
-    /// Pattern 2: Data exfiltration indicators (v2.4.0 tightened).
+    /// Pattern 2: Data exfiltration indicators (v2.4.0 tightened, v2.5.1 re-tightened).
     /// <para>
     /// The v2.3.x pattern fired on any <c>https://</c>, <c>fetch(</c>, <c>curl</c>, or
     /// <c>POST to</c> token, which matched every legitimate skill that described HTTP
-    /// interaction. The tightened pattern requires evidence of actual data transfer:
+    /// interaction. The v2.4.0 pass required evidence of actual data transfer, but kept
+    /// a standalone <c>exfiltrate|siphon|smuggle</c> alternative with no object/target
+    /// requirement - a real-world review found this fired Critical on a skill's own
+    /// anti-exfiltration guidance (defensive prose containing the word "Exfiltrate").
+    /// Those verbs are now folded into the same object+destination-gated verb list as
+    /// every other outbound verb, so bare mentions no longer match. The pattern now
+    /// requires:
     /// </para>
     /// <list type="bullet">
-    /// <item>rare exfiltration verbs (exfiltrate / siphon / smuggle), OR</item>
-    /// <item>an outbound verb (send / post / put / upload / forward / transmit / ...)
-    ///       paired with a data-object (data / credentials / secrets / tokens / response
-    ///       / history / keys / passwords / file(s) / contents / variables / ...) and
-    ///       a "to / via / through / at" target, OR</item>
+    /// <item>an outbound verb (exfiltrate / siphon / smuggle / send / post / put /
+    ///       upload / forward / transmit / ...) paired with a data-object (data /
+    ///       credentials / secrets / tokens / response / history / keys / passwords /
+    ///       file(s) / contents / variables / ...) and a "to / via / through / at"
+    ///       target, OR</item>
     /// <item>a network fetcher (curl / wget / fetch / retrieve) within 80 chars of an
     ///       explicit <c>https?://</c> URL.</item>
     /// </list>
     /// </summary>
     [GeneratedRegex(
-        @"(?:\b(?:exfiltrate|siphon|smuggle)\b|\b(?:sends?|sending|posts?|posting|puts?|putting|uploads?|uploading|forwards?|forwarding|pushes|pushing|ships?|shipping|submits?|submitting|transfers?|transfer(?:ring)?|transmits?|transmit(?:ting)?|leaks?)\s+(?:\S+\s+){0,4}?(?:data|credentials?|secrets?|tokens?|content|contents|response|history|transcript|logs?|keys?|passwords?|input|prompt|conversation|information|results?|files?|env(?:ironment)?|variables?|configs?|it|them|this|everything|all)\s+(?:to|via|through|at)\b|\b(?:fetch(?:es|ed|ing)?|curl|wget|retrieve(?:s|d|ing)?)\b[^\n]{0,80}?https?://)",
+        @"(?:\b(?:exfiltrates?|exfiltrating|siphons?|siphoning|smuggles?|smuggling|sends?|sending|posts?|posting|puts?|putting|uploads?|uploading|forwards?|forwarding|pushes|pushing|ships?|shipping|submits?|submitting|transfers?|transfer(?:ring)?|transmits?|transmit(?:ting)?|leaks?)\s+(?:\S+\s+){0,4}?(?:data|credentials?|secrets?|tokens?|content|contents|response|history|transcript|logs?|keys?|passwords?|input|prompt|conversation|information|results?|files?|env(?:ironment)?|variables?|configs?|it|them|this|everything|all)\s+(?:to|via|through|at)\b|\b(?:fetch(?:es|ed|ing)?|curl|wget|retrieve(?:s|d|ing)?)\b[^\n]{0,80}?https?://)",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex DataExfiltration();
 
     /// <summary>
-    /// Pattern 3: Sensitive file system access.
-    /// Detects references to sensitive files, paths, or environment variables.
+    /// Pattern 3: Sensitive file system access (v2.5.1 tightened).
+    /// <para>
+    /// Detects references to sensitive files, paths, or environment variables. The
+    /// bare <c>.env</c> mention fired on documentation prose ("store your key in a
+    /// .env file") as much as on real file access - it now requires an actual access
+    /// verb/call, matching the identical fix applied to
+    /// <see cref="CredentialPatterns.SecretFileAccess"/> (this rule is a separate
+    /// detection path over the same skill content, so both needed the fix).
+    /// </para>
     /// </summary>
     [GeneratedRegex(
-        @"(/etc/passwd|/etc/shadow|~/.ssh|\.env\b|\.aws/credentials|api[_-]?key|secret[_-]?key|\.git/config|id_rsa)",
+        @"(/etc/passwd|/etc/shadow|~/.ssh|\b(?:cat|source|less|head|tail|type|read(?:s|ing)?)\s+\.env\b|\bload_dotenv\s*\(|\bdotenv\.config\s*\(|\.aws/credentials|api[_-]?key|secret[_-]?key|\.git/config|id_rsa)",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex SensitiveFileAccess();
@@ -149,11 +162,21 @@ public static partial class InjectionPatterns
     public static partial Regex CrossToolManipulation();
 
     /// <summary>
-    /// Pattern 5: Hidden content indicators.
+    /// Pattern 5: Hidden content indicators (v2.5.1 tightened).
+    /// <para>
     /// Detects HTML comments, zero-width characters, or Unicode direction overrides.
+    /// A single zero-width joiner (<c>\u200D</c>) is common and legitimate - it appears
+    /// in ordinary emoji ZWJ sequences (e.g. a "family" or "profession" emoji built from
+    /// several codepoints). Requiring a cluster of two or more consecutive zero-width
+    /// characters (matching the already-correct threshold used by
+    /// <see cref="ObfuscationPatterns.ZeroWidthCharClusters"/>) keeps the real signal -
+    /// steganographic runs of invisible characters - while dropping the emoji false
+    /// positive. BiDi overrides and null bytes remain single-occurrence flags since
+    /// those are genuinely anomalous even in isolation.
+    /// </para>
     /// </summary>
     [GeneratedRegex(
-        @"(<!--.*?-->|\u200B|\u200C|\u200D|\u2060|\uFEFF|[\u202A-\u202E]|\u0000)",
+        @"(<!--.*?-->|[\u200B\u200C\u200D\u2060\uFEFF]{2,}|[\u202A-\u202E]|\u0000)",
         RegexOptions.None,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex HiddenContent();

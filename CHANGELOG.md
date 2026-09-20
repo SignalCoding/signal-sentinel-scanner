@@ -90,6 +90,25 @@ positives on skill documents.
   security fixes only), `openclaw-*` scan artefacts and packed `*.nupkg` excluded
   from git.
 
+## [2.5.1] - 2026-08-11
+
+(back-filled summary; full notes in `RELEASE_NOTES_v2.5.1.md`)
+
+False-positive remediation patch for the skill-scanning rules, informed by a
+real-world review of 65 production Claude skills. Regex/logic tightenings only; no
+rule removed. Each fix ships with a false-positive regression test and a
+genuine-intent counterpart.
+
+- Bare `.env` mentions no longer fire `CredentialPatterns.SecretFileAccess` /
+  `InjectionPatterns.SensitiveFileAccess`; an access verb or call is required.
+- `#!` shebang lines are stripped before `SS-016` script-payload matching.
+- `SS-018` flags only `<meta http-equiv>`, not ordinary `<meta>` tags.
+- Bare "exfiltrate"/"siphon"/"smuggle" join the object+destination-gated verb list.
+- `.profile` and siblings require a non-word lookbehind (no `resp.profile` match).
+- `Function(` requires a non-word lookbehind (no `someFunction(` match); the
+  Dynamic Code Execution finding now populates `Evidence`.
+- Hidden-content zero-width detection requires a cluster of 2+ characters.
+
 ## [2.5.0] - 2026-08-02
 
 (back-filled summary; v2.5.0 predates this changelog)
@@ -103,5 +122,6 @@ positives on skill documents.
   `permissions.deny_write` recognition on `SS-028`.
 - Fixed dotted-key frontmatter parsing (`network.allow`, `permissions.deny_write`).
 
-[3.0.0]: https://github.com/SignalCoding/signal-sentinel-scanner/compare/v2.5.0...v3.0.0
+[3.0.0]: https://github.com/SignalCoding/signal-sentinel-scanner/compare/v2.5.1...v3.0.0
+[2.5.1]: https://github.com/SignalCoding/signal-sentinel-scanner/compare/v2.5.0...v2.5.1
 [2.5.0]: https://github.com/SignalCoding/signal-sentinel-scanner/releases/tag/v2.5.0

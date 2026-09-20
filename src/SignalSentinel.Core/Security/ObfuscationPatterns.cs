@@ -46,8 +46,14 @@ public static partial class ObfuscationPatterns
     /// <summary>
     /// Detects eval/exec calls that execute dynamically constructed strings.
     /// </summary>
+    // v2.5.1 tightened: the bare "Function(" alternative matched inside any ordinary
+    // identifier ending in "Function" followed by a call, e.g. "someFunction(x)" - a
+    // real-world review found this firing with no actual eval/exec/Function-constructor
+    // usage present at all. A negative lookbehind now requires the token not be
+    // preceded by a word character, so "Function(...)" (the constructor, called with or
+    // without "new") still matches while "someFunction(", "myFunction(", etc. do not.
     [GeneratedRegex(
-        @"(\beval\s*\(|\bexec\s*\(|Function\s*\(|Invoke-Expression|iex\s+|new\s+Function\s*\(|compile\s*\(.+exec\s*\()",
+        @"(\beval\s*\(|\bexec\s*\(|(?<!\w)Function\s*\(|Invoke-Expression|iex\s+|new\s+Function\s*\(|compile\s*\(.+exec\s*\()",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex DynamicExecution();
