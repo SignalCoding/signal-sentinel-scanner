@@ -43,4 +43,4 @@ Not activated: Cloud Security Specialist (no cloud runtime), Data Protection Spe
 
 - The scanner must remain fully functional under `--offline`. Any feature that needs network egress is opt-in by flag and refused in offline mode.
 - `REPO-STANDARDS.md` governs repository presentation, commit format, branching, and versioning. The kit adoption (release-please, CODEOWNERS, hooks, branch protection) is tracked separately from product releases.
-- The v3.0.0 release spec lives at `_docs/ai/specs/v3.0-release.md`.
+- The v3.0.0 release spec is archived at `_docs/ai/completed/2026-09-20_v3.0-release.md`.
