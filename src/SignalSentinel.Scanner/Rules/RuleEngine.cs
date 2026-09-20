@@ -95,6 +95,11 @@ public sealed class RuleEngine
             // v3.0.0 OSV dependency lookup (WP6)
             new SkillOsvVulnerabilityRule(),       // SS-039
             new SkillDependencySurfaceRule(),      // SS-INFO-006
+
+            // v3.0.0 tier-3 surfaces (WP9)
+            new ErrorChannelInjectionRule(),       // SS-040
+            new ServerSourceSinkRule(),            // SS-041
+            new AgentCardRule(),                   // SS-042
         };
 
         if (customRules is not null)

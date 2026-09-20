@@ -7,8 +7,9 @@ Drop-in integrations for the three most common Git hook frameworks.
 | [pre-commit.com](https://pre-commit.com) | `.pre-commit-hooks.yaml` | Add the `signal-sentinel` hook id to your consumer repo's `.pre-commit-config.yaml` |
 | [lefthook](https://github.com/evilmartians/lefthook) | `lefthook.yml` | Copy or merge into your consumer repo |
 | [husky](https://typicode.github.io/husky/) | `husky/pre-commit` | Copy to `.husky/pre-commit` or reference via `bash hooks/husky/pre-commit` |
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code/hooks) | `claude-code/` | `SessionStart` + `PreToolUse` (Skill) hooks; see `claude-code/README.md` |
 
-All three run the scanner with:
+The three Git hooks run the scanner with:
 
 ```
 sentinel-scan --skills --format sarif --min-confidence 0.75 --fail-on high

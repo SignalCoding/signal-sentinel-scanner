@@ -84,6 +84,18 @@ public sealed record ScanContext
     public Osv.DependencySurface? DependencySurface { get; init; }
 
     /// <summary>
+    /// v3.0.0 (WP9): result of the optional <c>--server-source</c> static pass. Null when
+    /// the flag was not given.
+    /// </summary>
+    public ServerSource.ServerSourceAnalysis? ServerSource { get; init; }
+
+    /// <summary>
+    /// v3.0.0 (WP9): the optional <c>--agent-card</c> load result. Null when the flag was
+    /// not given.
+    /// </summary>
+    public AgentCard.AgentCardAnalysis? AgentCard { get; init; }
+
+    /// <summary>
     /// Optional policy configuration for rule customisation.
     /// </summary>
     public PolicyConfiguration? Policy { get; init; }
