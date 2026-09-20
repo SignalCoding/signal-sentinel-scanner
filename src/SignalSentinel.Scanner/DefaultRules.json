@@ -250,6 +250,22 @@
       "severity": "dynamic"
     },
     {
+      "id": "SS-036",
+      "name": "Unicode Confusable Identifier",
+      "owaspCode": "ASI01",
+      "astCodes": ["AST04"],
+      "enabled": true,
+      "severity": "dynamic"
+    },
+    {
+      "id": "SS-037",
+      "name": "Cross-Skill Description Overlap",
+      "owaspCode": "ASI01",
+      "astCodes": ["AST04"],
+      "enabled": true,
+      "severity": "medium"
+    },
+    {
       "id": "SS-INFO-001",
       "name": "Non-MCP Endpoint Detected",
       "owaspCode": "ASI10",
