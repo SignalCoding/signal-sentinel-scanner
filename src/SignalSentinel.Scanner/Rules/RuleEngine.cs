@@ -88,6 +88,9 @@ public sealed class RuleEngine
             // v3.0.0 identifier confusion (WP4)
             new ConfusableIdentifierRule(),       // SS-036 (MCP + skills)
             new SkillDescriptionOverlapRule(),    // SS-037
+
+            // v3.0.0 script pipeline taint (WP5)
+            new SkillPipelineTaintRule(),          // SS-038
         };
 
         if (customRules is not null)

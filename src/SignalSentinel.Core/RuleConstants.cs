@@ -98,6 +98,9 @@ public static class RuleConstants
         public const string ConfusableIdentifier = "SS-036";
         public const string SkillDescriptionOverlap = "SS-037";
 
+        // v3.0.0 script pipeline taint (WP5)
+        public const string SkillPipelineTaint = "SS-038";
+
         /// <summary>
         /// Rules that depend on successful MCP JSON-RPC protocol exchange with the
         /// target server. When SS-INFO-001 fires on a server, these rules cannot
