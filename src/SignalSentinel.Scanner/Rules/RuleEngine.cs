@@ -84,6 +84,10 @@ public sealed class RuleEngine
             // v3.0.0 skill forensics (WP3)
             new SkillIntegrityMismatchRule(),     // SS-034
             new SkillSuspiciousArtefactRule(),    // SS-035
+
+            // v3.0.0 identifier confusion (WP4)
+            new ConfusableIdentifierRule(),       // SS-036 (MCP + skills)
+            new SkillDescriptionOverlapRule(),    // SS-037
         };
 
         if (customRules is not null)

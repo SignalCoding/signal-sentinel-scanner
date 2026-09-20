@@ -94,6 +94,10 @@ public static class RuleConstants
         public const string SkillIntegrityMismatch = "SS-034";
         public const string SkillSuspiciousArtefact = "SS-035";
 
+        // v3.0.0 identifier/description rules (WP4)
+        public const string ConfusableIdentifier = "SS-036";
+        public const string SkillDescriptionOverlap = "SS-037";
+
         /// <summary>
         /// Rules that depend on successful MCP JSON-RPC protocol exchange with the
         /// target server. When SS-INFO-001 fires on a server, these rules cannot

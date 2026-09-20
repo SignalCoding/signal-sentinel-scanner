@@ -652,6 +652,7 @@ public static class Program
                 SS-031  MCP Resource Poisoning (ASI01, AST04)
                 SS-032  MCP Server Instructions Injection (ASI01, AST04/AST05)
                 SS-033  Unsolicited Server-to-Client Request (ASI07, AST08)
+                SS-036  Unicode Confusable Identifier (ASI01, AST04) - also covers skills
             
             SKILL SECURITY RULES:
                 SS-011  Skill Prompt Injection (ASI01, AST01/AST04/AST05)
@@ -667,6 +668,7 @@ public static class Program
                 SS-029  Skill Unpinned Dependency Reference (ASI04, AST02/AST07)
                 SS-034  Skill Integrity Mismatch (ASI04, AST02/AST07)
                 SS-035  Skill Suspicious File Artefact (ASI04, AST01/AST06)
+                SS-037  Cross-Skill Description Overlap (ASI01, AST04)
             
             INFORMATIONAL:
                 SS-INFO-001  Non-MCP Endpoint Detected (ASI10, AST08)

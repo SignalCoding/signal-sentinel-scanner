@@ -90,7 +90,13 @@ public static class RuleAstMapping
             // tampering or update drift; a mis-typed or hidden binary is a malicious
             // skill signature and an isolation concern.
             ["SS-034"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07],
-            ["SS-035"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST06]
+            ["SS-035"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST06],
+
+            // v3.0.0 identifier confusion (WP4). Both are goal-hijack vectors: the
+            // agent is steered to the wrong tool or skill by a lookalike name or a
+            // copied description.
+            ["SS-036"] = [OwaspAstCodes.AST04],
+            ["SS-037"] = [OwaspAstCodes.AST04]
         };
 
     /// <summary>
