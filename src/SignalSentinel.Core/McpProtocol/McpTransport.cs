@@ -19,6 +19,15 @@ public static class McpProtocolVersions
     /// comparison against this value is chronologically correct.
     /// </summary>
     public const string Current = "2026-07-28";
+
+    /// <summary>
+    /// v3.0.0: the revision the scanner requests when a server rejects
+    /// <see cref="Current"/> outright instead of answering with its own highest
+    /// supported version as the negotiation rules require. This is the newest
+    /// revision whose handshake (initialize/initialized, Mcp-Session-Id) the
+    /// client implements in full.
+    /// </summary>
+    public const string Fallback = "2025-06-18";
 }
 
 /// <summary>
