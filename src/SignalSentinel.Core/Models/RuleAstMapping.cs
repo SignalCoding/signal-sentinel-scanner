@@ -100,7 +100,12 @@ public static class RuleAstMapping
 
             // v3.0.0 script pipeline taint (WP5). A fetch-to-exec flow is both malicious
             // code introduction and an unrestricted dangerous capability.
-            ["SS-038"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST06]
+            ["SS-038"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST06],
+
+            // v3.0.0 OSV dependency lookup (WP6). Known-vulnerable pins are supply-chain
+            // compromise / untrusted artefact risks; the surface note is visibility.
+            ["SS-039"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07],
+            ["SS-INFO-006"] = [OwaspAstCodes.AST02]
         };
 
     /// <summary>

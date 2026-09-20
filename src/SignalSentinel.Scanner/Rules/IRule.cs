@@ -78,6 +78,12 @@ public sealed record ScanContext
     public ScanResult? PreviousScan { get; init; }
 
     /// <summary>
+    /// v3.0.0 (WP6): skill dependency surface and the outcome of the optional OSV
+    /// vulnerability lookup. Null only when no skills were scanned.
+    /// </summary>
+    public Osv.DependencySurface? DependencySurface { get; init; }
+
+    /// <summary>
     /// Optional policy configuration for rule customisation.
     /// </summary>
     public PolicyConfiguration? Policy { get; init; }

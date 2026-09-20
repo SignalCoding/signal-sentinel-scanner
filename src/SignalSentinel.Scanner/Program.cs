@@ -81,6 +81,14 @@ public static class Program
                 };
             }
 
+            // v3.0.0 (WP6): the OSV lookup needs the network; refuse the combination
+            // outright (including an offline posture implied by --policy defence).
+            if (config.Osv && config.Offline)
+            {
+                Console.Error.WriteLine("Error: --osv is incompatible with --offline.");
+                return 2;
+            }
+
             // Security: Use a cancellation token with overall timeout
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(30));
 
@@ -289,6 +297,10 @@ public static class Program
                         return null;
                     }
                     config = config with { PolicyArg = args[++i] };
+                    break;
+
+                case "--osv":
+                    config = config with { Osv = true };
                     break;
 
                 case "--triage":
@@ -627,6 +639,7 @@ public static class Program
                                 defence: everything one band up, fail-on low, implies --offline.
                                 Explicit --fail-on/--min-confidence/--remote flags override the preset.
                     --min-confidence <f> Drop findings below confidence [0..1]
+                    --osv               Check pinned skill dependencies against osv.dev (network; refused under --offline)
                     --triage            Demote low-confidence findings to 'low' (keeps them visible)
                     --fail-on <sev>     Exit 1 at/above severity: critical|high|medium|low|info
                     --environment <e>   Environment label ("dev"/"staging"/"prod"/custom)
@@ -707,6 +720,7 @@ public static class Program
                 SS-035  Skill Suspicious File Artefact (ASI04, AST01/AST06)
                 SS-037  Cross-Skill Description Overlap (ASI01, AST04)
                 SS-038  Skill Script Pipeline Taint (ASI05, AST01/AST06)
+                SS-039  Skill Dependency Known Vulnerability (ASI04, AST02/AST07)
             
             INFORMATIONAL:
                 SS-INFO-001  Non-MCP Endpoint Detected (ASI10, AST08)
@@ -714,6 +728,7 @@ public static class Program
                 SS-INFO-003  Untrusted Server Certificate (ASI10, AST08)
                 SS-INFO-004  Legacy MCP Protocol / Transport (ASI04, AST08)
                 SS-INFO-005  MCP Capability Surface (ASI02, AST03)
+                SS-INFO-006  Skill Dependency Surface (Unchecked) (ASI04, AST02)
             
             For more information: https://github.com/SignalCoding/signal-sentinel-scanner
             Report security issues: security@signalcoding.co.uk
@@ -892,6 +907,28 @@ public static class Program
             customRules.Add(new ExcessiveResponseRule());
             customRules.Add(new Rules.SkillRules.SkillIntegrityRule());
 
+            // v3.0.0 (WP6): extract skill dependency references (always, local-only) and
+            // optionally check pinned ones against OSV (--osv; refused under --offline).
+            Osv.DependencySurface? dependencySurface = null;
+            if (allSkills.Count > 0)
+            {
+                dependencySurface = await Osv.OsvLookup.BuildAsync(
+                    allSkills, config.Osv, config.Offline, cancellationToken);
+                if (dependencySurface.Dependencies.Count > 0)
+                {
+                    var statusText = dependencySurface.Status switch
+                    {
+                        Osv.DependencyQueryStatus.Succeeded =>
+                            $"OSV: {dependencySurface.Vulnerabilities.Count} known vulnerability(ies) across {dependencySurface.QueriedCount} pinned package(s)" +
+                            (dependencySurface.Truncated ? " (truncated at 100)" : string.Empty),
+                        Osv.DependencyQueryStatus.Failed =>
+                            $"OSV lookup failed ({dependencySurface.FailureReason}); dependencies reported unchecked",
+                        _ => $"{dependencySurface.Dependencies.Count} skill dependency reference(s) not checked against OSV"
+                    };
+                    Log(statusText);
+                }
+            }
+
             // Run rules
             Log("Executing security rules...");
             var ruleEngine = new RuleEngine(customRules: customRules, verbose: config.Verbose, logger: Log);
@@ -899,6 +936,7 @@ public static class Program
             {
                 Servers = serverEnumerations,
                 Skills = allSkills,
+                DependencySurface = dependencySurface,
                 Policy = policy is null
                     ? null
                     : new PolicyConfiguration { SeverityOverrides = policy.SeverityOverrides }
