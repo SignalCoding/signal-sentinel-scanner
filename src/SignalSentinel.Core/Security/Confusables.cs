@@ -210,8 +210,11 @@ public static class Confusables
 
             if (InvisibleCodePoints.Contains(cp)
                 || category is UnicodeCategory.Format or UnicodeCategory.Control
-                    or UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator)
+                    or UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator
+                || (category == UnicodeCategory.PrivateUse && cp is not (LunateSigmaSentinel or MicroSignSentinel)))
             {
+                // Private-use characters render as tofu or nothing depending on the font;
+                // an identifier has no business containing one.
                 invisibles.Add($"U+{cp:X4}");
                 continue;
             }

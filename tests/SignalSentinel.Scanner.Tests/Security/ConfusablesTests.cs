@@ -319,6 +319,17 @@ public class ConfusablesTests
     }
 
     [Theory]
+    [InlineData("read_file\uE005", "U+E005")]
+    [InlineData("read_file\U000F0000", "U+F0000")]
+    public void Analyse_PrivateUseCharacter_Invisible(string identifier, string expected)
+    {
+        var a = Confusables.Analyse(identifier);
+
+        a.Invisibles.ShouldBe([expected]);
+        a.Skeleton.ShouldBe("read_file");
+    }
+
+    [Theory]
     [InlineData("read_file\u2800", "U+2800")]
     [InlineData("read_file\u2800\uFE0F", "U+2800")]
     public void Analyse_BrailleBlank_InvisibleAndDoesNotLegitimiseSelector(string identifier, string first)
