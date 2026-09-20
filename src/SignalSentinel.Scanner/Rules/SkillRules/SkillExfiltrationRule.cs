@@ -48,6 +48,14 @@ public sealed class SkillExfiltrationRule : IRule
             var documentText = SegmentFilter.TextFor(skill, ApplicableSegments);
             foreach (var (id, name, pattern, severity, description) in ExfiltrationPatterns.AllPatterns)
             {
+                // v3.0.0 (WP12): EXFIL-005 (JS fetch) is evaluated only inside js/ts
+                // fenced code below; in prose it is the canonical way to describe an
+                // API call and was a steady false-positive source.
+                if (id == "EXFIL-005")
+                {
+                    continue;
+                }
+
                 if (InjectionPatterns.SafeIsMatch(pattern, documentText))
                 {
                     var match = InjectionPatterns.SafeMatches(pattern, documentText)
@@ -60,6 +68,39 @@ public sealed class SkillExfiltrationRule : IRule
                         Severity = severity,
                         Title = $"Skill Exfiltration: {name}",
                         Description = $"{description}. Found in instructions for skill '{skill.Name}'.",
+                        Remediation = "Remove data transmission instructions from the skill. " +
+                            "Skills should not instruct the agent to send data to external services.",
+                        ServerName = skill.Name,
+                        Evidence = TruncateEvidence(match?.Value ?? "(matched)"),
+                        Confidence = 0.9,
+                        Source = FindingSource.Skill,
+                        SkillFilePath = skill.FilePath
+                    });
+                }
+            }
+
+            // v3.0.0 (WP12): fetch( fires only inside js/ts fenced code blocks.
+            foreach (var block in SegmentFilter.SegmentsFor(skill, SegmentKind.FencedCode))
+            {
+                if (block.Language is not ("js" or "javascript" or "jsx" or "mjs" or "cjs"
+                    or "ts" or "typescript" or "tsx" or "mts" or "cts"))
+                {
+                    continue;
+                }
+
+                if (InjectionPatterns.SafeIsMatch(ExfiltrationPatterns.HttpFetchSend(), block.Content))
+                {
+                    var match = InjectionPatterns.SafeMatches(ExfiltrationPatterns.HttpFetchSend(), block.Content)
+                        .FirstOrDefault();
+
+                    findings.Add(new Finding
+                    {
+                        RuleId = Id,
+                        OwaspCode = OwaspCode,
+                        Severity = Severity.Critical,
+                        Title = "Skill Exfiltration: JavaScript fetch() to External Endpoint",
+                        Description = $"Detected a fetch() call to an external endpoint in a " +
+                            $"{block.Language} code block (line {block.StartLine}) of skill '{skill.Name}'.",
                         Remediation = "Remove data transmission instructions from the skill. " +
                             "Skills should not instruct the agent to send data to external services.",
                         ServerName = skill.Name,

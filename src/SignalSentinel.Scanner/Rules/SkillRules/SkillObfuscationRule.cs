@@ -33,8 +33,11 @@ public sealed partial class SkillObfuscationRule : IRule
     // / override / hide / "do not mention") within 120 characters of the trigger phrase.
     // That keeps the high-fidelity signal (conditional + covert intent) while eliminating
     // the v2.3.x false-positive firing on descriptive instructions.
+    // v3.0.0 (WP12): the "when the user asks/says/mentions" trigger phrase is removed
+    // entirely - it is canonical routing phrasing used across every orchestrator's
+    // platform skill descriptions (docs/keyword-rules.md).
     [GeneratedRegex(
-        @"\b(?:if\s+the\s+user\s+(?:mentions?|asks?|says?|types?)|when\s+the\s+user\s+(?:mentions?|asks?|says?)|only\s+when|only\s+if|trigger(?:ed)?\s+when|activate(?:d)?\s+when|if\s+prompted\s+with)\b[^.\n]{0,120}?\b(?:silently|secretly|covertly|quietly|without\s+(?:asking|telling|notifying|warning|informing|the\s+user\s+knowing)|bypass|exfiltrate|leak|siphon|ignore\s+previous|override|hidden|hide|do\s+not\s+(?:mention|tell|show|display|reveal))\b",
+        @"\b(?:if\s+the\s+user\s+(?:mentions?|asks?|says?|types?)|only\s+when|only\s+if|trigger(?:ed)?\s+when|activate(?:d)?\s+when|if\s+prompted\s+with)\b[^.\n]{0,120}?\b(?:silently|secretly|covertly|quietly|without\s+(?:asking|telling|notifying|warning|informing|the\s+user\s+knowing)|bypass|exfiltrate|leak|siphon|ignore\s+previous|override|hidden|hide|do\s+not\s+(?:mention|tell|show|display|reveal))\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]
     private static partial Regex ConditionalTrigger();

