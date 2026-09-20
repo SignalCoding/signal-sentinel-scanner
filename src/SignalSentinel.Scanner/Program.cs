@@ -57,6 +57,30 @@ public static class Program
                 return 0;
             }
 
+            // v3.0.0 (WP7): resolve --policy after CLI parsing so explicit flags win.
+            Policy.ResolvedPolicy? policy = null;
+            if (config.PolicyArg is not null)
+            {
+                if (!Policy.PolicyLoader.TryResolve(config.PolicyArg, out policy, out var policyError))
+                {
+                    Console.Error.WriteLine($"Error: {SanitizeErrorMessage(policyError ?? "invalid policy")}");
+                    return 2;
+                }
+
+                if (policy!.ImpliesOffline && config.RemoteUrl is not null)
+                {
+                    Console.Error.WriteLine(
+                        $"Warning: --policy {policy.Name} implies --offline, but --remote was given; the explicit flag wins and the scan will use the network.");
+                }
+
+                config = config with
+                {
+                    FailOn = config.FailOn ?? policy.FailOn,
+                    MinConfidence = config.MinConfidence > 0 ? config.MinConfidence : policy.MinConfidence ?? 0,
+                    Offline = config.Offline || (policy.ImpliesOffline && config.RemoteUrl is null)
+                };
+            }
+
             // Security: Use a cancellation token with overall timeout
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(30));
 
@@ -68,7 +92,7 @@ public static class Program
                 Console.Error.WriteLine("\nScan cancelled by user.");
             };
 
-            return await RunScanAsync(config, cts.Token);
+            return await RunScanAsync(config, policy, cts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -255,6 +279,13 @@ public static class Program
                             return null;
                         }
                         config = config with { MinConfidence = conf };
+                    }
+                    break;
+
+                case "--policy":
+                    if (i + 1 < args.Length)
+                    {
+                        config = config with { PolicyArg = args[++i] };
                     }
                     break;
 
@@ -589,6 +620,10 @@ public static class Program
             v2.3.0 TRIAGE & ACCEPTED RISK:
                     --suppressions <p>  Suppressions file (default: ./.sentinel-suppressions.json)
                     --ignore-rule <ids> Comma-separated rule ids to drop (no justification)
+                    --policy <name|path> Policy preset (default|strict|defence) or JSON file.
+                                strict: supply-chain rules one band up, fail-on medium.
+                                defence: everything one band up, fail-on low, implies --offline.
+                                Explicit --fail-on/--min-confidence/--remote flags override the preset.
                     --min-confidence <f> Drop findings below confidence [0..1]
                     --triage            Demote low-confidence findings to 'low' (keeps them visible)
                     --fail-on <sev>     Exit 1 at/above severity: critical|high|medium|low|info
@@ -683,7 +718,10 @@ public static class Program
             """);
     }
 
-    private static async Task<int> RunScanAsync(ScanConfig config, CancellationToken cancellationToken)
+    private static async Task<int> RunScanAsync(
+        ScanConfig config,
+        Policy.ResolvedPolicy? policy,
+        CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
 
@@ -855,7 +893,14 @@ public static class Program
             // Run rules
             Log("Executing security rules...");
             var ruleEngine = new RuleEngine(customRules: customRules, verbose: config.Verbose, logger: Log);
-            var context = new ScanContext { Servers = serverEnumerations, Skills = allSkills };
+            var context = new ScanContext
+            {
+                Servers = serverEnumerations,
+                Skills = allSkills,
+                Policy = policy is null
+                    ? null
+                    : new PolicyConfiguration { SeverityOverrides = policy.SeverityOverrides }
+            };
             var ruleResult = await ruleEngine.ExecuteAsync(context, cancellationToken);
 
             // Deduplicate findings (v2.2.0)
@@ -878,6 +923,19 @@ public static class Program
                     Log($"Dropped {before - kept.Count} finding(s) per --ignore-rule");
                 }
                 ruleResult = ruleResult with { Findings = kept };
+            }
+
+            // v3.0.0 (WP7): apply --policy after dedup, before the confidence filter.
+            if (policy is not null && !policy.IsEmpty)
+            {
+                var before = ruleResult.Findings.Count;
+                var applied = Policy.PolicyApplier.Apply(ruleResult.Findings, policy);
+                if (applied.Count != before)
+                {
+                    Log($"Policy '{policy.Name}': dropped {before - applied.Count} finding(s) from disabled rules");
+                }
+                Log($"Policy '{policy.Name}' applied");
+                ruleResult = ruleResult with { Findings = applied };
             }
 
             // v2.3.0: confidence-based triage / filtering.
