@@ -47,6 +47,13 @@ public sealed record TaintFinding
 
     /// <summary>The captured variable name, when <see cref="Flow"/> is <see cref="TaintFlow.VariableMediated"/>.</summary>
     public string? Variable { get; init; }
+
+    /// <summary>
+    /// False only for the "echo &lt;b64&gt; | base64 -d | bash" shape, where the payload is
+    /// embedded in the script rather than fetched. Callers should not describe the source
+    /// as a network fetch when this is false.
+    /// </summary>
+    public required bool HasNetworkSource { get; init; }
 }
 
 /// <summary>
@@ -75,6 +82,12 @@ public static partial class PipelineTaint
 
     /// <summary>Scripts beyond this many lines are truncated; taint analysis is best-effort, not exhaustive.</summary>
     private const int MaxLines = 20_000;
+
+    /// <summary>
+    /// At most this many findings per analysed input. A script of nothing but
+    /// <c>curl ... | bash</c> lines should not produce a 20,000-finding report.
+    /// </summary>
+    public const int MaxFindingsPerInput = 100;
 
     private const int MaxEvidenceLength = 100;
 
@@ -106,8 +119,10 @@ public static partial class PipelineTaint
 
     // ---------------------------------------------------------------- sinks
 
+    // Path-prefixed (/bin/bash) and env-prefixed (| env bash) shells are included:
+    // both appear in real installers. powershell/pwsh execute piped stdin as commands.
     [GeneratedRegex(
-        @"\|\s*(sudo\s+)?(sh|bash|zsh|dash|ksh|python[0-9.]*|node|perl|ruby)\b",
+        @"\|\s*(?:sudo\s+)?(?:env\s+)?(?:/(?:[\w.-]+/)*)?(sh|bash|zsh|dash|ksh|python[0-9.]*|node|perl|ruby|powershell|pwsh)\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]
     private static partial Regex ShellPipeSink();
@@ -161,9 +176,9 @@ public static partial class PipelineTaint
     // ---------------------------------------------------------------- variable capture
 
     // "x=$(curl ...)", "x=`curl ...`", "$x = Invoke-WebRequest ...", "x = requests.get(...)",
-    // "const body = await fetch(...)", "local data=$(...)".
+    // "const body = await fetch(...)", "local -r data=$(...)".
     [GeneratedRegex(
-        @"^\s*(?:(?:const|let|var|local|declare|typeset|export|my|final)\s+)?(?:\$)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:\$\(|`)?\s*(.+)$",
+        @"^\s*(?:(?:const|let|var|local|declare|typeset|export|my|final)(?:\s+-[a-zA-Z]+)*\s+)?(?:\$)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:\$\(|`)?\s*(.+)$",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]
     private static partial Regex VariableAssignment();
@@ -184,6 +199,11 @@ public static partial class PipelineTaint
 
         for (var i = 0; i < lines.Length; i++)
         {
+            if (findings.Count >= MaxFindingsPerInput)
+            {
+                break;
+            }
+
             var line = lines[i];
             if (line.Length == 0 || IsCommentLine(line))
             {
@@ -208,7 +228,8 @@ public static partial class PipelineTaint
                     SourceText = Truncate(hasSource ? sourceMatch : decodeMatch!.Value),
                     SinkLine = lineNumber,
                     SinkText = Truncate(sinkMatch),
-                    Flow = hasDecode ? TaintFlow.EncodedPipe : TaintFlow.DirectPipe
+                    Flow = hasDecode ? TaintFlow.EncodedPipe : TaintFlow.DirectPipe,
+                    HasNetworkSource = hasSource
                 });
                 continue;
             }
@@ -218,6 +239,11 @@ public static partial class PipelineTaint
             {
                 foreach (var (variable, capture) in pendingVariables)
                 {
+                    if (findings.Count >= MaxFindingsPerInput)
+                    {
+                        break;
+                    }
+
                     if (!ReferencesVariable(line, variable))
                     {
                         continue;
@@ -230,7 +256,8 @@ public static partial class PipelineTaint
                         SinkLine = lineNumber,
                         SinkText = Truncate(sinkMatch),
                         Flow = TaintFlow.VariableMediated,
-                        Variable = variable
+                        Variable = variable,
+                        HasNetworkSource = true
                     });
                 }
             }
@@ -268,6 +295,15 @@ public static partial class PipelineTaint
     /// (skill instructions, MCP server instructions, tool/prompt descriptions), tagged or
     /// not (```bash, ```, ~~~python, ...). Line numbers are relative to the block content.
     /// </summary>
+    /// <remarks>
+    /// Fences are found by a linear line walk, not a regex: a multiline regex over
+    /// attacker-controlled Markdown is a quadratic-time (and therefore timeout/evasion)
+    /// risk, and a CRLF or unterminated closing fence would silently hide the block.
+    /// Detection is deliberately favourable over CommonMark strictness: a fence-only
+    /// line of the same marker closes a block, a block that never closes runs to end of
+    /// input, and only the first whitespace-delimited token of the info string is the
+    /// reported language ("```bash -e" -> "bash").
+    /// </remarks>
     public static IEnumerable<(string Language, IReadOnlyList<TaintFinding> Findings)> AnalyseFencedCodeBlocks(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -275,23 +311,80 @@ public static partial class PipelineTaint
             yield break;
         }
 
-        foreach (Match block in FencedCodeBlock().Matches(text))
+        var inFence = false;
+        var fenceChar = '`';
+        var language = "unspecified";
+        var body = new System.Text.StringBuilder();
+
+        foreach (var rawLine in text.Split('\n'))
         {
-            var language = block.Groups["lang"].Value;
-            var body = block.Groups["body"].Value;
-            var findings = Analyse(body);
-            if (findings.Count > 0)
+            var line = rawLine.TrimEnd('\r');
+            var trimmed = line.TrimStart();
+            var isFence = trimmed.StartsWith("```", StringComparison.Ordinal)
+                || trimmed.StartsWith("~~~", StringComparison.Ordinal);
+
+            if (!inFence)
             {
-                yield return (string.IsNullOrWhiteSpace(language) ? "unspecified" : language, findings);
+                if (isFence)
+                {
+                    inFence = true;
+                    fenceChar = trimmed[0];
+                    language = FirstToken(trimmed.TrimStart(fenceChar).Trim());
+                    body.Clear();
+                }
+
+                continue;
+            }
+
+            if (isFence && IsFenceOnly(trimmed, fenceChar))
+            {
+                var closed = Analyse(body.ToString());
+                if (closed.Count > 0)
+                {
+                    yield return (language, closed);
+                }
+
+                inFence = false;
+                continue;
+            }
+
+            body.Append(line).Append('\n');
+        }
+
+        if (inFence && body.Length > 0)
+        {
+            // Unterminated fence: the rest of the document is the block.
+            var unterminated = Analyse(body.ToString());
+            if (unterminated.Count > 0)
+            {
+                yield return (language, unterminated);
             }
         }
     }
 
-    [GeneratedRegex(
-        @"^[ \t]*(?:```|~~~)[ \t]*(?<lang>[A-Za-z0-9_+-]*)[ \t]*\r?\n(?<body>.*?)^[ \t]*(?:```|~~~)[ \t]*$",
-        RegexOptions.Multiline | RegexOptions.Singleline | RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 1000)]
-    private static partial Regex FencedCodeBlock();
+    private static string FirstToken(string infoString)
+    {
+        if (infoString.Length == 0)
+        {
+            return "unspecified";
+        }
+
+        var spaceIndex = infoString.IndexOfAny([' ', '\t']);
+        return spaceIndex < 0 ? infoString : infoString[..spaceIndex];
+    }
+
+    private static bool IsFenceOnly(string trimmedLine, char fenceChar)
+    {
+        foreach (var ch in trimmedLine)
+        {
+            if (ch != fenceChar)
+            {
+                return false;
+            }
+        }
+
+        return trimmedLine.Length >= 3;
+    }
 
     private static string[] SplitLines(string content)
     {

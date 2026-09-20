@@ -69,30 +69,37 @@ public sealed class SkillPipelineTaintRule : IRule
 
     private Finding Create(SkillDefinition skill, TaintFinding taint, string location)
     {
-        var (severity, flowLabel) = taint.Flow switch
-        {
-            TaintFlow.DirectPipe => (Severity.Critical, "is piped directly into"),
-            TaintFlow.EncodedPipe => (Severity.Critical, "is base64-decoded and piped into"),
-            TaintFlow.VariableMediated => (Severity.High, $"is captured in '${taint.Variable}' and later reaches"),
-            _ => (Severity.High, "reaches")
-        };
+        var inBlock = location.StartsWith("(fenced", StringComparison.Ordinal);
+        var sourceLine = inBlock ? $"line {taint.SourceLine} of the block" : $"line {taint.SourceLine}";
+        var sinkLine = inBlock ? $"line {taint.SinkLine} of the block" : $"line {taint.SinkLine}";
 
-        var description = taint.Flow == TaintFlow.VariableMediated
-            ? $"In '{location}' of skill '{skill.Name}', a network fetch on line {taint.SourceLine} ('{taint.SourceText}') {flowLabel} an execution sink on line {taint.SinkLine} ('{taint.SinkText}'). Fetched content should never be executed without review."
-            : $"In '{location}' of skill '{skill.Name}', a network fetch on line {taint.SourceLine} ('{taint.SourceText}') {flowLabel} an execution sink ('{taint.SinkText}'). This runs unreviewed remote content as code.";
+        var (severity, title, whatHappens) = taint switch
+        {
+            { Flow: TaintFlow.DirectPipe } => (
+                Severity.Critical,
+                "Script Pipeline Taint: Fetch Piped Directly To Execution",
+                $"a network fetch on {sourceLine} ('{taint.SourceText}') is piped directly into an execution sink on {sinkLine} ('{taint.SinkText}'). This runs unreviewed remote content as code."),
+            { Flow: TaintFlow.EncodedPipe, HasNetworkSource: true } => (
+                Severity.Critical,
+                "Script Pipeline Taint: Fetch Decoded And Executed",
+                $"a network fetch on {sourceLine} ('{taint.SourceText}') is base64-decoded and piped into an execution sink on {sinkLine} ('{taint.SinkText}'). This runs unreviewed remote content as code."),
+            { Flow: TaintFlow.EncodedPipe } => (
+                Severity.Critical,
+                "Script Pipeline Taint: Embedded Payload Decoded And Executed",
+                $"an embedded payload is decoded on {sourceLine} ('{taint.SourceText}') and piped into an execution sink on {sinkLine} ('{taint.SinkText}'). The script carries its own hidden command."),
+            _ => (
+                Severity.High,
+                "Script Pipeline Taint: Fetch Result Executed Via Variable",
+                $"a network fetch on {sourceLine} ('{taint.SourceText}') is captured in '${taint.Variable}' and later reaches an execution sink on {sinkLine} ('{taint.SinkText}'). Fetched content should never be executed without review.")
+        };
 
         return new Finding
         {
             RuleId = Id,
             OwaspCode = OwaspCode,
             Severity = severity,
-            Title = taint.Flow switch
-            {
-                TaintFlow.DirectPipe => "Script Pipeline Taint: Fetch Piped Directly To Execution",
-                TaintFlow.EncodedPipe => "Script Pipeline Taint: Fetch Decoded And Executed",
-                _ => "Script Pipeline Taint: Fetch Result Executed Via Variable"
-            },
-            Description = description,
+            Title = title,
+            Description = $"In '{location}' of skill '{skill.Name}', {whatHappens}",
             Remediation = "Never pipe or pass fetched content to a shell, eval, or exec sink. Download to a file, verify its checksum or signature, and inspect it before running.",
             ServerName = skill.Name,
             ToolName = location,

