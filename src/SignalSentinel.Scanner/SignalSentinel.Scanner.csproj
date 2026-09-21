@@ -177,7 +177,7 @@ v1.0.0 - Initial Release
   <!-- v3.0.0 (WP10): Markdown AST for document segmentation. Apache-2.0.
        0.38.0 released January 2025 - well past the 14-day supply-chain quarantine. -->
   <ItemGroup>
-    <PackageReference Include="Markdig" Version="0.38.0" />
+    <PackageReference Include="Markdig" Version="1.4.0" />
   </ItemGroup>
 
   <ItemGroup>
