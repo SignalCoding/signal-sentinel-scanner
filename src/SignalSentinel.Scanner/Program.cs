@@ -56,6 +56,11 @@ public static class Program
                 return 0;
             }
 
+            if (config.ExitSilently)
+            {
+                return 0;
+            }
+
             // v3.0.0 (D12): a rejected option has already printed its error; do not
             // follow it with the usage text and a success exit code.
             if (config.ArgumentError)
@@ -143,7 +148,7 @@ public static class Program
         }
     }
 
-    private static ScanConfig? ParseArguments(string[] args)
+    internal static ScanConfig? ParseArguments(string[] args)
     {
         var config = new ScanConfig();
 
@@ -165,7 +170,7 @@ public static class Program
 
                 case "--version":
                     Console.WriteLine($"Signal Sentinel Scanner v{Version}");
-                    return null;
+                    return ScanConfig.VersionPrinted;
 
                 case "--config" or "-c":
                     if (i + 1 < args.Length)
@@ -207,15 +212,20 @@ public static class Program
                     if (i + 1 < args.Length)
                     {
                         var formatStr = args[++i].ToLowerInvariant();
-                        var format = formatStr switch
+                        OutputFormat? format = formatStr switch
                         {
                             "json" => OutputFormat.Json,
                             "html" => OutputFormat.Html,
                             "sarif" => OutputFormat.Sarif,
                             "markdown" or "md" => OutputFormat.Markdown,
-                            _ => OutputFormat.Markdown
+                            _ => null
                         };
-                        config = config with { OutputFormat = format };
+                        if (format is null)
+                        {
+                            Console.Error.WriteLine("Error: Unknown output format. Use json, markdown, html or sarif.");
+                            return ScanConfig.InvalidArguments;
+                        }
+                        config = config with { OutputFormat = format.Value };
                     }
                     break;
 
