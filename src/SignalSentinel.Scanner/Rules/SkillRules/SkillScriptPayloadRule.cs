@@ -34,6 +34,9 @@ public sealed partial class SkillScriptPayloadRule : IRule
     /// </summary>
     public SegmentKind ApplicableSegments => SegmentKind.FencedCode | SegmentKind.Link;
 
+    /// <summary>Characters inspected after a Process Execution match to grade its argument (v3.0.1, F13).</summary>
+    private const int ArgumentInspectionLength = 300;
+
     [GeneratedRegex(
         @"(curl\s+.*\|\s*(ba)?sh|wget\s+.*\|\s*(ba)?sh|Invoke-WebRequest.*\|\s*Invoke-Expression|iwr.*\|\s*iex|curl\s+.*-o\s+\S+.*chmod\s+\+x)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
@@ -51,8 +54,12 @@ public sealed partial class SkillScriptPayloadRule : IRule
         matchTimeoutMilliseconds: 500)]
     private static partial Regex PersistenceMechanism();
 
+    // v3.0.1 (F12) [migration]: /tmp/, /var/, /usr/ and %TEMP% are ordinary working
+    // locations for a bundled script (a converter staging its input in /tmp/ is not
+    // traversal) and accounted for the remaining File System Traversal false positives
+    // after the v2.5.1 shebang fix. The escape and identity-bearing paths stay.
     [GeneratedRegex(
-        @"(\.\.[\\/]\.\.[\\/]|/etc/|/usr/|/var/|/tmp/|C:\\Windows|C:\\Users|%USERPROFILE%|%APPDATA%|%TEMP%|\$HOME/\.\w)",
+        @"(\.\.[\\/]\.\.[\\/]|/etc/|C:\\Windows|C:\\Users|%USERPROFILE%|%APPDATA%|\$HOME/\.\w)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]
     private static partial Regex FileSystemTraversal();
@@ -62,6 +69,14 @@ public sealed partial class SkillScriptPayloadRule : IRule
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]
     private static partial Regex ProcessExecution();
+
+    // v3.0.1 (F13): shell=True / { shell: true } hands the whole argument to a shell,
+    // so the command is dynamic regardless of how literal it looks.
+    [GeneratedRegex(
+        @"\bshell\s*[:=]\s*true\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        matchTimeoutMilliseconds: 500)]
+    private static partial Regex ShellTrueArgument();
 
     private static readonly (Regex Pattern, string Name, Severity Severity, string Description, string Remediation)[] ScriptPatterns =
     [
@@ -113,19 +128,20 @@ public sealed partial class SkillScriptPayloadRule : IRule
                     if (SafeIsMatch(pattern, scriptContent))
                     {
                         var match = SafeMatches(pattern, scriptContent).FirstOrDefault();
+                        var (gradedSeverity, evidence) = Grade(pattern, match, scriptContent, severity);
 
                         findings.Add(new Finding
                         {
                             RuleId = Id,
                             OwaspCode = OwaspCode,
-                            Severity = severity,
+                            Severity = gradedSeverity,
                             Title = $"Skill Script Payload: {name}",
                             Description = $"{description}. Found in '{script.RelativePath}' " +
                                 $"({script.Language}) of skill '{skill.Name}'.",
                             Remediation = remediation,
                             ServerName = skill.Name,
                             ToolName = script.RelativePath,
-                            Evidence = TruncateEvidence(match?.Value ?? "(matched)"),
+                            Evidence = TruncateEvidence(evidence),
                             Confidence = 0.9,
                             Source = FindingSource.Skill,
                             SkillFilePath = skill.FilePath
@@ -186,18 +202,19 @@ public sealed partial class SkillScriptPayloadRule : IRule
                 if (SafeIsMatch(pattern, code))
                 {
                     var match = SafeMatches(pattern, code).FirstOrDefault();
+                    var (gradedSeverity, evidence) = Grade(pattern, match, code, severity);
 
                     findings.Add(new Finding
                     {
                         RuleId = Id,
                         OwaspCode = OwaspCode,
-                        Severity = severity,
+                        Severity = gradedSeverity,
                         Title = $"Skill Inline Code: {name}",
                         Description = $"{description}. Found in markdown code block of skill '{skill.Name}' (line {block.StartLine}).",
                         Remediation = remediation,
                         ServerName = skill.Name,
                         ToolName = "(inline code block)",
-                        Evidence = TruncateEvidence(match?.Value ?? "(matched)"),
+                        Evidence = TruncateEvidence(evidence),
                         Confidence = 0.85,
                         Source = FindingSource.Skill,
                         SkillFilePath = skill.FilePath
@@ -269,6 +286,222 @@ public sealed partial class SkillScriptPayloadRule : IRule
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// v3.0.1 (F13) [migration]: a Process Execution hit is graded by the shape of its
+    /// first argument, inspected up to 300 characters past the match.
+    /// <c>shell=True</c> / <c>{ shell: true }</c>, or a first argument that is not a
+    /// literal (concatenation, f-string, <c>.format(</c>, <c>%</c>, <c>${...}</c>,
+    /// <c>$(...)</c>, or a bare identifier) stays <see cref="Severity.High"/>. A fixed
+    /// literal command - a string literal, or a list whose first element (the program)
+    /// is a string literal - is <see cref="Severity.Medium"/>: 17 of the corpus's SS-016
+    /// Highs were <c>subprocess.run(["soffice", "--headless", ...])</c>. Evidence carries
+    /// the first 80 characters of the argument. Every other pattern is unchanged.
+    /// </summary>
+    private static (Severity Severity, string Evidence) Grade(
+        Regex pattern,
+        Match? match,
+        string text,
+        Severity defaultSeverity)
+    {
+        var evidence = match?.Value ?? "(matched)";
+
+        if (match is null || !ReferenceEquals(pattern, ProcessExecution()))
+        {
+            return (defaultSeverity, evidence);
+        }
+
+        var argumentStart = ArgumentStart(text, match);
+        if (argumentStart < 0)
+        {
+            return (defaultSeverity, evidence);
+        }
+
+        var windowEnd = Math.Min(text.Length, argumentStart + ArgumentInspectionLength);
+        var window = text[argumentStart..windowEnd];
+        var argument = ReadArgument(window, 0);
+
+        if (argument.Length > 0)
+        {
+            // v3.0.1 round 2 (security F-2): a multi-line call would otherwise copy raw
+            // newlines into Finding.Evidence, which breaks the markdown report's evidence
+            // code span. Collapse first, then slice, so the 80 characters carry signal
+            // rather than indentation.
+            var snippet = SingleLine(argument);
+            evidence = SingleLine(match.Value) + (snippet.Length <= 80 ? snippet : snippet[..80]);
+        }
+
+        if (SafeIsMatch(ShellTrueArgument(), window))
+        {
+            return (Severity.High, evidence);
+        }
+
+        return (IsLiteralCommand(argument) ? Severity.Medium : Severity.High, evidence);
+    }
+
+    /// <summary>
+    /// v3.0.1 (F11): whether the text runs a <i>dynamic</i> command - a process
+    /// execution whose argument is not a fixed literal (the same grading as
+    /// <see cref="Grade"/>). <see cref="SkillObfuscationRule"/> uses this as one of the
+    /// execution sinks that turn a decode or a string reversal into obfuscation: a
+    /// converter that calls <c>subprocess.run(["soffice", ...])</c> cannot run a
+    /// decoded payload, so it is not a sink.
+    /// </summary>
+    internal static bool HasDynamicProcessExecution(string? text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return false;
+        }
+
+        foreach (var match in SafeMatches(ProcessExecution(), text))
+        {
+            if (Grade(ProcessExecution(), match, text, Severity.High).Severity == Severity.High)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// v3.0.1 round 2 (security F-2): evidence is a slice of scanned, attacker-influenced
+    /// content and every report renders it inline, so it must always be one line. Runs of
+    /// whitespace and control characters collapse to a single space; the text either side
+    /// of a newline survives.
+    /// </summary>
+    private static string SingleLine(string value)
+    {
+        var builder = new System.Text.StringBuilder(value.Length);
+        var pendingSeparator = false;
+
+        foreach (var character in value)
+        {
+            if (char.IsWhiteSpace(character) || char.IsControl(character))
+            {
+                pendingSeparator = builder.Length > 0;
+                continue;
+            }
+
+            if (pendingSeparator)
+            {
+                builder.Append(' ');
+                pendingSeparator = false;
+            }
+
+            builder.Append(character);
+        }
+
+        return builder.ToString();
+    }
+
+    /// <summary>Index just past the opening parenthesis of the matched call, or -1.</summary>
+    private static int ArgumentStart(string text, Match match)
+    {
+        var end = match.Index + match.Length;
+        if (end > 0 && end <= text.Length && text[end - 1] == '(')
+        {
+            return end;
+        }
+
+        var limit = Math.Min(text.Length, end + ArgumentInspectionLength);
+        for (var i = end; i < limit; i++)
+        {
+            if (text[i] == '(')
+            {
+                return i + 1;
+            }
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// The first argument of a call: everything up to the first comma or closing
+    /// bracket at nesting depth zero, ignoring separators inside quotes.
+    /// </summary>
+    private static string ReadArgument(string text, int start)
+    {
+        var depth = 0;
+        var quote = '\0';
+        var i = start;
+
+        for (; i < text.Length; i++)
+        {
+            var c = text[i];
+
+            if (quote != '\0')
+            {
+                if (c == '\\')
+                {
+                    i++;
+                }
+                else if (c == quote)
+                {
+                    quote = '\0';
+                }
+
+                continue;
+            }
+
+            if (c is '"' or '\'')
+            {
+                quote = c;
+            }
+            else if (c is '(' or '[' or '{')
+            {
+                depth++;
+            }
+            else if (c is ')' or ']' or '}')
+            {
+                if (depth == 0)
+                {
+                    break;
+                }
+
+                depth--;
+            }
+            else if (c == ',' && depth == 0)
+            {
+                break;
+            }
+        }
+
+        return text[start..i].Trim();
+    }
+
+    /// <summary>
+    /// Whether the argument is a fixed literal command: a string literal with no
+    /// interpolation/concatenation, or a list/array whose first element is one.
+    /// </summary>
+    private static bool IsLiteralCommand(string argument)
+    {
+        var value = argument.Trim();
+        if (value.Length == 0)
+        {
+            return false;
+        }
+
+        if (value[0] is '[' or '(')
+        {
+            // A list/array argument: the first element is the program and decides the shape.
+            return IsLiteralCommand(ReadArgument(value, 1));
+        }
+
+        if (value[0] is not ('"' or '\''))
+        {
+            // Bare identifier, f-string prefix, ${...}, $(...) - all dynamic.
+            return false;
+        }
+
+        return !value.Contains('+')
+            && !value.Contains('%')
+            && !value.Contains('`')
+            && !value.Contains("${", StringComparison.Ordinal)
+            && !value.Contains("$(", StringComparison.Ordinal)
+            && !value.Contains(".format(", StringComparison.Ordinal);
     }
 
     /// <summary>

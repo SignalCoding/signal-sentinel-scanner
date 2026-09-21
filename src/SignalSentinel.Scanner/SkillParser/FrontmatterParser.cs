@@ -5,6 +5,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SignalSentinel.Scanner.SkillParser;
@@ -35,6 +36,18 @@ public static partial class FrontmatterParser
         matchTimeoutMilliseconds: 500)]
     private static partial Regex YamlKeyValue();
 
+    // v3.0.1 (F1): a YAML block-scalar header - "|" (literal) or ">" (folded), an
+    // optional explicit indentation digit, and an optional chomping indicator
+    // ("-" strip, "+" keep, absent = clip). Anything else is an ordinary value.
+    [GeneratedRegex(
+        @"^([|>])(\d?)([+-]?)$",
+        RegexOptions.Compiled,
+        matchTimeoutMilliseconds: 500)]
+    private static partial Regex BlockScalarHeader();
+
+    /// <summary>Maximum characters accumulated for a single block scalar before the value is capped.</summary>
+    private const int MaxBlockScalarLength = 20_000;
+
     /// <summary>
     /// Parses a SKILL.md file into frontmatter key-value pairs and the remaining markdown body.
     /// </summary>
@@ -60,21 +73,7 @@ public static partial class FrontmatterParser
 
                 if (rawFrontmatter.Length <= MaxFrontmatterLength)
                 {
-                    foreach (Match kvMatch in YamlKeyValue().Matches(rawFrontmatter))
-                    {
-                        var key = kvMatch.Groups[1].Value.Trim();
-                        var value = kvMatch.Groups[2].Value.Trim().Trim('"', '\'');
-
-                        if (key.Length <= 100 && value.Length <= 10_000)
-                        {
-                            fields[key] = value;
-                        }
-
-                        if (fields.Count > 50)
-                        {
-                            break;
-                        }
-                    }
+                    ParseFields(rawFrontmatter, fields);
                 }
 
                 body = content[(match.Index + match.Length)..];
@@ -96,6 +95,149 @@ public static partial class FrontmatterParser
             RawFrontmatter = rawFrontmatter,
             HasFrontmatter = rawFrontmatter is not null
         };
+    }
+
+    /// <summary>
+    /// v3.0.1 (F1): walks the frontmatter a line at a time so YAML block scalars
+    /// (<c>key: &gt;</c>, <c>&gt;-</c>, <c>&gt;+</c>, <c>|</c>, <c>|-</c>, <c>|+</c>) collapse to their
+    /// folded/literal value instead of parsing to the bare indicator character.
+    /// Single-line, quoted, dotted and list-valued fields keep their previous
+    /// behaviour: only lines whose key starts in column 0 become fields, and the
+    /// 100-character key / 10,000-character value / 50-field caps still apply.
+    /// </summary>
+    private static void ParseFields(string rawFrontmatter, Dictionary<string, string> fields)
+    {
+        var lines = rawFrontmatter.Split('\n');
+
+        for (var i = 0; i < lines.Length; i++)
+        {
+            var kvMatch = YamlKeyValue().Match(lines[i].TrimEnd('\r'));
+            if (!kvMatch.Success)
+            {
+                continue;
+            }
+
+            var key = kvMatch.Groups[1].Value.Trim();
+            var rawValue = kvMatch.Groups[2].Value.Trim();
+
+            var header = BlockScalarHeader().Match(rawValue);
+            var value = header.Success
+                ? ReadBlockScalar(lines, ref i, literal: rawValue[0] == '|', chomping: header.Groups[3].Value)
+                : rawValue.Trim('"', '\'');
+
+            if (key.Length <= 100 && value.Length <= 10_000)
+            {
+                fields[key] = value;
+            }
+
+            if (fields.Count > 50)
+            {
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Reads the continuation lines of a block scalar whose header is at
+    /// <paramref name="index"/>. Continuation lines are indented by at least one
+    /// space; the block ends at the first non-blank line in column 0.
+    /// <paramref name="index"/> is advanced to the last line consumed.
+    /// </summary>
+    private static string ReadBlockScalar(string[] lines, ref int index, bool literal, string chomping)
+    {
+        var content = new List<string>();
+        var baseIndent = -1;
+        var accumulated = 0;
+
+        var next = index + 1;
+        for (; next < lines.Length; next++)
+        {
+            var line = lines[next].TrimEnd('\r');
+
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                if (accumulated <= MaxBlockScalarLength)
+                {
+                    content.Add(string.Empty);
+                }
+
+                continue;
+            }
+
+            if (!char.IsWhiteSpace(line[0]))
+            {
+                // A non-blank line in column 0 starts the next field: the block ends here.
+                break;
+            }
+
+            if (baseIndent < 0)
+            {
+                baseIndent = line.Length - line.TrimStart(' ', '\t').Length;
+            }
+
+            var stripped = line.Length >= baseIndent ? line[baseIndent..] : line.TrimStart(' ', '\t');
+            accumulated += stripped.Length + 1;
+            if (accumulated <= MaxBlockScalarLength)
+            {
+                content.Add(stripped);
+            }
+        }
+
+        index = next - 1;
+
+        var trailingBlankLines = 0;
+        while (content.Count > 0 && content[^1].Length == 0)
+        {
+            content.RemoveAt(content.Count - 1);
+            trailingBlankLines++;
+        }
+
+        if (content.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var body = literal ? string.Join('\n', content) : Fold(content);
+
+        return chomping switch
+        {
+            "-" => body,
+            "+" => body + new string('\n', trailingBlankLines + 1),
+            _ => body + "\n"
+        };
+    }
+
+    /// <summary>
+    /// YAML 1.2 folding: consecutive non-empty lines join with a single space, and a
+    /// run of N blank lines between them becomes N newlines.
+    /// </summary>
+    private static string Fold(List<string> content)
+    {
+        var builder = new StringBuilder(content[0]);
+        var pendingBreaks = 0;
+
+        for (var i = 1; i < content.Count; i++)
+        {
+            if (content[i].Length == 0)
+            {
+                pendingBreaks++;
+                continue;
+            }
+
+            if (pendingBreaks == 0)
+            {
+                builder.Append(' ');
+            }
+            else
+            {
+                builder.Append('\n', pendingBreaks);
+                pendingBreaks = 0;
+            }
+
+            builder.Append(content[i]);
+        }
+
+        return builder.ToString();
     }
 }
 

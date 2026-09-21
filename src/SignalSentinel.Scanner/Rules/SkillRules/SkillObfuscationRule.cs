@@ -55,6 +55,34 @@ public sealed partial class SkillObfuscationRule : IRule
             // Check shared obfuscation patterns
             foreach (var (id, name, pattern, severity, description) in ObfuscationPatterns.AllPatterns)
             {
+                // v3.0.1 (F11): Base64 Decoding and String Reversal need an execution
+                // sink in the same unit of code; everything else keeps scanning the
+                // whole instructions body.
+                if (NeedsExecutionSink(pattern))
+                {
+                    var gatedEvidence = GatedDocumentEvidence(skill, pattern);
+                    if (gatedEvidence is not null)
+                    {
+                        findings.Add(new Finding
+                        {
+                            RuleId = Id,
+                            OwaspCode = OwaspCode,
+                            Severity = severity,
+                            Title = $"Skill Obfuscation: {name}",
+                            Description = $"{description}. Found in instructions for skill '{skill.Name}'.",
+                            Remediation = "Remove obfuscated content from skill instructions. " +
+                                "All instructions should be in plain, readable text.",
+                            ServerName = skill.Name,
+                            Evidence = TruncateEvidence(gatedEvidence),
+                            Confidence = 0.85,
+                            Source = FindingSource.Skill,
+                            SkillFilePath = skill.FilePath
+                        });
+                    }
+
+                    continue;
+                }
+
                 if (InjectionPatterns.SafeIsMatch(pattern, skill.InstructionsBody))
                 {
                     var match = InjectionPatterns.SafeMatches(pattern, skill.InstructionsBody)
@@ -106,8 +134,17 @@ public sealed partial class SkillObfuscationRule : IRule
             foreach (var script in skill.Scripts)
             {
                 if (script.Content is null) continue;
+                var scriptHasSink = HasExecutionSink(script.Content);
+
                 foreach (var (_, name, pattern, severity, description) in ObfuscationPatterns.AllPatterns)
                 {
+                    // v3.0.1 (F11): a decode or reversal with no execution sink in the
+                    // same script is ordinary data handling, not obfuscation.
+                    if (NeedsExecutionSink(pattern) && !scriptHasSink)
+                    {
+                        continue;
+                    }
+
                     if (InjectionPatterns.SafeIsMatch(pattern, script.Content))
                     {
                         findings.Add(new Finding
@@ -132,6 +169,63 @@ public sealed partial class SkillObfuscationRule : IRule
         }
 
         return Task.FromResult<IEnumerable<Finding>>(findings);
+    }
+
+    /// <summary>
+    /// v3.0.1 (F11) [migration]: OBFUSC-003 (Base64 Decoding) and OBFUSC-006 (String
+    /// Reversal) are only obfuscation when the decoded/reversed value can reach an
+    /// execution sink. <c>base64.b64decode</c> on an image and <c>name[::-1]</c> in a
+    /// string helper are ordinary code and fired Medium on the corpus.
+    /// </summary>
+    private static bool NeedsExecutionSink(Regex pattern) =>
+        ReferenceEquals(pattern, ObfuscationPatterns.Base64Decoding())
+        || ReferenceEquals(pattern, ObfuscationPatterns.StringReversal());
+
+    /// <summary>
+    /// Whether a unit of code contains an execution sink: dynamic execution
+    /// (eval/exec/Function), character-code assembly, or a dynamic process execution
+    /// (SS-016). A fixed literal command such as
+    /// <c>subprocess.run(["soffice", "--headless", ...])</c> cannot run a decoded or
+    /// reversed string and is not a sink (consistent with F13's severity grading).
+    /// </summary>
+    private static bool HasExecutionSink(string? unit) =>
+        InjectionPatterns.SafeIsMatch(ObfuscationPatterns.DynamicExecution(), unit)
+        || InjectionPatterns.SafeIsMatch(ObfuscationPatterns.CharCodeAssembly(), unit)
+        || SkillScriptPayloadRule.HasDynamicProcessExecution(unit);
+
+    /// <summary>
+    /// The first match of a sink-gated pattern in a document unit that also carries an
+    /// execution sink. Each fenced code block is its own unit, as is the remaining
+    /// (non-fenced) document text: a decode helper documented in one fence and an
+    /// unrelated <c>exec()</c> example in another is not obfuscation.
+    /// </summary>
+    private static string? GatedDocumentEvidence(SkillDefinition skill, Regex pattern)
+    {
+        foreach (var unit in DocumentUnits(skill))
+        {
+            if (!InjectionPatterns.SafeIsMatch(pattern, unit) || !HasExecutionSink(unit))
+            {
+                continue;
+            }
+
+            var match = InjectionPatterns.SafeMatches(pattern, unit).FirstOrDefault();
+            if (match is not null)
+            {
+                return match.Value;
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<string> DocumentUnits(SkillDefinition skill)
+    {
+        foreach (var block in SegmentFilter.SegmentsFor(skill, SegmentKind.FencedCode))
+        {
+            yield return block.Content;
+        }
+
+        yield return SegmentFilter.TextFor(skill, SegmentKind.All & ~SegmentKind.FencedCode);
     }
 
     private static bool SafeIsMatch(Regex pattern, string? input)

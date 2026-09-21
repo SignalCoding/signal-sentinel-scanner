@@ -52,8 +52,13 @@ public static partial class ObfuscationPatterns
     // usage present at all. A negative lookbehind now requires the token not be
     // preceded by a word character, so "Function(...)" (the constructor, called with or
     // without "new") still matches while "someFunction(", "myFunction(", etc. do not.
+    // v3.0.1 (F10): "\bexec\s*\(" also matched member calls - JavaScript's
+    // RegExp.prototype.exec (`/^#?([a-f\d]{2})$/i.exec(hex)`) and Node's
+    // `child_process.exec(` - neither of which is dynamic code evaluation
+    // (child_process.exec is SS-016's Process Execution signal and stays there).
+    // A negative lookbehind on [\w.] keeps bare Python `exec(` while dropping `x.exec(`.
     [GeneratedRegex(
-        @"(\beval\s*\(|\bexec\s*\(|(?<!\w)Function\s*\(|Invoke-Expression|iex\s+|new\s+Function\s*\(|compile\s*\(.+exec\s*\()",
+        @"(\beval\s*\(|(?<![\w.])exec\s*\(|(?<!\w)Function\s*\(|Invoke-Expression|iex\s+|new\s+Function\s*\(|compile\s*\(.+exec\s*\()",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex DynamicExecution();

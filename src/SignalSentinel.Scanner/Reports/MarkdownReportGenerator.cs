@@ -24,6 +24,44 @@ public sealed class MarkdownReportGenerator : IReportGenerator
             .Replace(">", "&gt;");
     }
 
+    /// <summary>
+    /// v3.0.1 round 2 (security F-2, CWE-116): evidence is a slice of the scanned content
+    /// and renders inside a backtick code span, so a raw newline breaks the span across
+    /// lines and a backtick terminates it early - scanned content could inject markdown
+    /// into a governance artefact. Control characters collapse to a single space (the text
+    /// after a newline survives on the same line rather than being truncated) and backticks
+    /// become the <c>&amp;#96;</c> entity, which can no longer close the span. The
+    /// <c>| [ ] &lt; &gt;</c> escapes and the length cap of <see cref="SanitizeMarkdown"/>
+    /// are unchanged.
+    /// </summary>
+    private static string SanitizeEvidence(string? value)
+    {
+        var sanitized = SanitizeMarkdown(value);
+        if (sanitized.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        var builder = new StringBuilder(sanitized.Length);
+        foreach (var character in sanitized)
+        {
+            if (character == '`')
+            {
+                builder.Append("&#96;");
+            }
+            else if (char.IsControl(character))
+            {
+                builder.Append(' ');
+            }
+            else
+            {
+                builder.Append(character);
+            }
+        }
+
+        return builder.ToString();
+    }
+
     public string Generate(ScanResult result)
     {
         var sb = new StringBuilder();
@@ -324,7 +362,7 @@ public sealed class MarkdownReportGenerator : IReportGenerator
                 if (finding.Evidence is not null)
                 {
                     sb.AppendLine();
-                    sb.AppendLine($"**Evidence:** `{SanitizeMarkdown(finding.Evidence)}`");
+                    sb.AppendLine($"**Evidence:** `{SanitizeEvidence(finding.Evidence)}`");
                 }
                 sb.AppendLine();
             }

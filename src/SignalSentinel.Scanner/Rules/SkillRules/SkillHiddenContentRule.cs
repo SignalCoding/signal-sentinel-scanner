@@ -5,6 +5,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using SignalSentinel.Core;
 using SignalSentinel.Core.Models;
@@ -26,6 +28,18 @@ public sealed partial class SkillHiddenContentRule : IRule
         "Detects HTML comments, base64 blocks, encoded payloads, and other hidden " +
         "content in skill markdown that could conceal malicious instructions.";
     public bool EnabledByDefault => true;
+
+    /// <summary>
+    /// v3.0.1 (F3): the markup checks (HTML comment, dangerous tag, meta refresh, data
+    /// URI) evaluate prose, raw HTML and frontmatter only. A <c>&lt;script src=...&gt;</c>
+    /// or <c>&lt;!-- ... --&gt;</c> inside a ```html documentation fence is an example, not
+    /// concealed content - the v3.0.0 rule scanned <c>RawContent</c> and graded those
+    /// Critical. The two fence-shaped checks (Suspicious Code Block, Large Base64
+    /// Block) keep reading raw content because that is where their signal lives, as
+    /// does the invisible-character check.
+    /// </summary>
+    public SegmentKind ApplicableSegments =>
+        SegmentKind.Prose | SegmentKind.HtmlBlock | SegmentKind.Frontmatter;
 
     [GeneratedRegex(
         @"<!--[\s\S]*?-->",
@@ -74,8 +88,11 @@ public sealed partial class SkillHiddenContentRule : IRule
             cancellationToken.ThrowIfCancellationRequested();
             var content = skill.RawContent;
 
+            // v3.0.1 (F3): markup lives in prose/HTML/frontmatter, never in a code fence.
+            var markup = SegmentFilter.TextFor(skill, ApplicableSegments);
+
             // HTML comments (can contain hidden instructions that agents still process)
-            CheckPattern(findings, skill, HtmlComment(), content,
+            CheckPattern(findings, skill, HtmlComment(), markup,
                 "HTML Comment", Severity.High,
                 "Detected HTML comment in skill markdown. AI agents may still process comment content, " +
                     "making this a vector for hidden instruction injection.",
@@ -88,19 +105,19 @@ public sealed partial class SkillHiddenContentRule : IRule
                 "Remove suspicious code blocks. Use clear, readable content only.");
 
             // Dangerous HTML tags (markdown can contain HTML)
-            CheckPattern(findings, skill, DangerousHtmlTag(), content,
+            CheckPattern(findings, skill, DangerousHtmlTag(), markup,
                 "Dangerous HTML Tag", Severity.Critical,
                 "Detected dangerous HTML tag (script, iframe, object, embed, form) in skill markdown.",
                 "Remove dangerous HTML tags from skill markdown.");
 
             // <meta http-equiv> (redirect/refresh vectors) - see DangerousMetaRefresh().
-            CheckPattern(findings, skill, DangerousMetaRefresh(), content,
+            CheckPattern(findings, skill, DangerousMetaRefresh(), markup,
                 "Meta Refresh/Redirect Tag", Severity.Critical,
                 "Detected a <meta http-equiv> tag, commonly used for hidden page redirects (meta refresh).",
                 "Remove meta http-equiv redirect tags from skill markdown.");
 
             // Data URIs with base64 payloads
-            CheckPattern(findings, skill, DataUri(), content,
+            CheckPattern(findings, skill, DataUri(), markup,
                 "Data URI Payload", Severity.High,
                 "Detected data URI with base64-encoded payload that could contain hidden content.",
                 "Remove data URIs from skill content.");
@@ -131,8 +148,14 @@ public sealed partial class SkillHiddenContentRule : IRule
                 }
             }
 
-            // Zero-width characters (from shared patterns in InjectionPatterns)
-            if (InjectionPatterns.SafeIsMatch(InjectionPatterns.HiddenContent(), content))
+            // v3.0.1 (F2): invisible characters only. This finding used to test
+            // InjectionPatterns.HiddenContent(), whose alternation also matches
+            // "<!-- ... -->", so it fired High "Zero-Width Characters" on three
+            // real skills that contain no invisible character at all. It now uses the
+            // zero-width cluster / BiDi override / NUL patterns, and reports the code
+            // points rather than the (invisible, copy-paste-hostile) characters.
+            var invisibleEvidence = InvisibleCharacterEvidence(content);
+            if (invisibleEvidence is not null)
             {
                 findings.Add(new Finding
                 {
@@ -144,6 +167,7 @@ public sealed partial class SkillHiddenContentRule : IRule
                         "that could hide malicious instructions.",
                     Remediation = "Remove all zero-width and invisible Unicode characters from skill content.",
                     ServerName = skill.Name,
+                    Evidence = TruncateEvidence(invisibleEvidence),
                     Confidence = 0.9,
                     Source = FindingSource.Skill,
                     SkillFilePath = skill.FilePath
@@ -182,6 +206,64 @@ public sealed partial class SkillHiddenContentRule : IRule
             Source = FindingSource.Skill,
             SkillFilePath = skill.FilePath
         });
+    }
+
+    /// <summary>
+    /// v3.0.1 (F2): the code points of every invisible character in the content -
+    /// clusters of two or more zero-width characters, BiDi overrides, and NUL - in the
+    /// form <c>U+200B x3</c>. Returns <see langword="null"/> when the content carries
+    /// none. A lone U+200D (emoji ZWJ sequence) is not a cluster and is not reported.
+    /// </summary>
+    private static string? InvisibleCharacterEvidence(string content)
+    {
+        var counts = new SortedDictionary<int, int>();
+
+        foreach (var match in SafeMatches(ObfuscationPatterns.ZeroWidthCharClusters(), content))
+        {
+            CountCharacters(counts, match.Value);
+        }
+
+        foreach (var match in SafeMatches(ObfuscationPatterns.BidiOverrides(), content))
+        {
+            CountCharacters(counts, match.Value);
+        }
+
+        foreach (var character in content)
+        {
+            if (character == '\0')
+            {
+                counts[0] = counts.TryGetValue(0, out var nulls) ? nulls + 1 : 1;
+            }
+        }
+
+        if (counts.Count == 0)
+        {
+            return null;
+        }
+
+        var builder = new StringBuilder();
+        foreach (var (codePoint, count) in counts)
+        {
+            if (builder.Length > 0)
+            {
+                builder.Append(", ");
+            }
+
+            builder.Append("U+")
+                .Append(codePoint.ToString("X4", CultureInfo.InvariantCulture))
+                .Append(" x")
+                .Append(count.ToString(CultureInfo.InvariantCulture));
+        }
+
+        return builder.ToString();
+    }
+
+    private static void CountCharacters(SortedDictionary<int, int> counts, string value)
+    {
+        foreach (var character in value)
+        {
+            counts[character] = counts.TryGetValue(character, out var existing) ? existing + 1 : 1;
+        }
     }
 
     private static bool SafeIsMatch(Regex pattern, string? input)
