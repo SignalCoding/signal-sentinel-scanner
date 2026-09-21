@@ -82,6 +82,46 @@ positives on skill documents.
 - Report `RubricVersion` moves from `1.0` to `2.0.0`.
 - Test-only dependencies pinned to exact versions; dead strong-naming block removed
   from `Directory.Build.props`.
+- **Grade `Inconclusive` when nothing was assessed**: a scan where no server
+  connected (HTTP 401, transport failure, legacy SSE endpoint) and no skills were
+  scanned now grades Inconclusive / 0 instead of A / 100. Findings that were still
+  produced (SS-020, SS-INFO-*) are retained.
+- **`--remote http(s)://` is reported as `StreamableHttp`** rather than the legacy
+  `Http` transport, matching what the client actually speaks.
+- **Argument and policy rejections exit 2** (was 0 with the full help text). Covers
+  every `ParseArguments` error path, including the `--remote` private-address
+  refusal without `--allow-private`.
+
+### Fixed
+
+Pre-tag smoke test against live MCP servers and the DVMCP lab
+(`_docs/ai/completed/2026-09-20_v3.0.0-smoke-test.md`) surfaced the following:
+
+- **`initialize` requested `2024-11-05`** so every server echoed it back and
+  SS-INFO-004 "negotiated legacy version" fired on all of them. The client now
+  requests the current protocol version, retries once with `2025-06-18` on a
+  protocol-level rejection, and records the server's actual ceiling.
+- **`notifications/initialized` was sent without `Mcp-Session-Id`**, so stateful
+  Streamable HTTP servers rejected `tools/list` with "Session not initialized".
+  Notifications now use the same request builder as requests.
+- **Legacy HTTP+SSE endpoints (`GET /sse`) were reported as "Non-MCP" and graded
+  A / 100.** The client now detects `text/event-stream` on GET after a 405/404 on
+  POST and reports SS-INFO-004 Medium "Legacy HTTP+SSE Endpoint Not Scanned" with
+  an Inconclusive grade. Full legacy SSE transport is not implemented in 3.0.0.
+- **SS-001 (INJECTION-001) matched defensive prose** such as "never returns
+  credential values": the modal-verb alternative now requires a word boundary.
+- **SS-008 Credential/PII Access false positives** on clean public servers (Hugging
+  Face `hf_whoami`, Chainflip swap tools, Learn `microsoft_docs_search`). The rule
+  is now sentence-scoped: explicit negation ("never returns credentials") suppresses
+  it, a disclosure verb next to a credential noun is Critical, "API key is
+  optional"-style consumption context is skipped, and PII requires a person word
+  and a store word in the same sentence. `query`, `read`, `user` and `account` were
+  dropped as bare keywords. Live `tools/list` captures from four public servers are
+  kept as regression fixtures.
+- **SS-031 ignored resources that advertise credentials** by name, URI or
+  description (`internal://credentials`, "DO NOT SHARE"). New High "Resource
+  Advertises Credential Material" and Medium "Resource Marked Confidential or
+  Restricted" findings; DVMCP challenges 1, 3, 4 and 10 are now flagged.
 
 ### Security
 

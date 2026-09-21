@@ -10,35 +10,39 @@ The owner has granted standing authority to work unattended: create branches, op
 
 ## 1. Where the project is
 
-- **v3.0.0 is complete and merged to `main`** (`ceee019` release merge; `b0d7327` docs; `3e5587f` smoke record). 47 rules, **1131 tests**, build 0 warnings / 0 errors. `--version` prints `v3.0.0 (rubric v2.0.0)`.
-- **Tag `v3.0.0` has NOT been pushed.** The owner decided to fix the smoke-test defects first (section 3) and ship them inside 3.0.0.
+- **v3.0.0 is complete and merged to `main`** (`ceee019` release merge; `b0d7327` docs; `3e5587f` smoke record). 47 rules, build 0 warnings / 0 errors. `--version` prints `v3.0.0 (rubric v2.0.0)`.
+- **Smoke fixes are implemented** on `fix/v3-smoke-defects` (`f70f44b` code, follow-up docs commit), **1171 tests**, smoke matrix re-run clean (smoke record section 5). PR to `main` is the last step before the tag; if you are reading this and `main` does not contain `SmokeFixRegressionTests.cs`, the PR has not merged yet — check `gh pr list`.
+- **Tag `v3.0.0` has NOT been pushed.** Safe to push once the smoke-fix PR is on `main`.
 - `release/v3.0` branch exists at `5b23aae` for 3.0.x patches (not needed while 3.0.0 is untagged; patches go straight to `main`).
 - Spec and work-package history for the whole release: `_docs/ai/completed/2026-09-20_v3.0-release.md` (WP1–WP14 with "As implemented" notes and the Dependabot outcome table).
 
 ## 2. Documents you must read
 
 1. `_docs/ai/completed/2026-09-20_v3.0.0-smoke-test.md` – the pre-tag smoke test: targets, grades, and **defects D1–D12** with file:line and proposed fixes.
-2. `_docs/ai/specs/v3.0.0-smoke-fixes.md` – the approved spec for fixing D1–D7, D10, D12 (D8, D9, D11 deferred). Work item table with files and tests.
+2. `_docs/ai/completed/2026-09-20_v3.0.0-smoke-fixes.md` – the spec for fixing D1–D7, D10, D12 (D8, D9, D11 deferred), with "As implemented" notes.
 
-## 3. Current task: smoke-fix branch `fix/v3-smoke-defects`
+## 3. Smoke-fix branch `fix/v3-smoke-defects` (done, awaiting/after merge)
 
-Branch created from `main` @ `3e5587f`. Target: one PR to `main`, merge when CI green, then re-run the smoke matrix and update the smoke record, then archive the spec to `_docs/ai/completed/2026-09-20_v3.0.0-smoke-fixes.md`.
+Branch created from `main` @ `3e5587f`. Code commit `f70f44b`; docs commit follows. One squash PR to `main`.
 
-### 3.1 Status per work item (update this table as you go)
+### 3.1 Status per work item
 
-| Id | Item | Status | Notes |
+| Id | Item | Status | Where |
 | --- | --- | --- | --- |
-| D1 | Client requests `McpProtocolVersions.Current`, fallback retry | **in progress** | `McpTransport.cs`: `Fallback = "2025-06-18"` constant added. `McpConnection.InitializeAsync` (~line 561) still hard-codes `"2024-11-05"`. |
-| D2 | `--remote` → `StreamableHttp` | pending | `Program.cs` ~line 910: `McpTransportType.Http` → `StreamableHttp`. |
-| D3 | Notifications carry `Mcp-Session-Id` | pending | `McpConnection.SendNotificationAsync` ~line 643 posts directly; factor a `CreateHttpPost(json)` used by `SendHttpRequestAsync` (~line 878) too. |
-| D4 | Inconclusive when zero servers connected | pending | `Program.cs` ~line 1219 `evaluableServers = serverEnumerations.Count + …` → count `ConnectionSuccessful` only. Update `SeverityScorer.GetGradeDescription` Inconclusive text. |
-| D7 | Detect legacy HTTP+SSE endpoint | pending | Design: in `SendHttpRequestAsync`, when `initialize` gets 405/404, GET same URL with `Accept: text/event-stream`, `ResponseHeadersRead`, dispose immediately; if content-type is `text/event-stream` throw new `LegacySseEndpointException` (new file next to `NonMcpEndpointException.cs`). `ToolEnumerator.EnumerateServerAsync` catches it → `ServerEnumeration.LegacySseEvidence` (new record). `LegacyMcpProtocolRule` emits **Medium** "Legacy HTTP+SSE Endpoint Not Scanned" for it (rule currently `continue`s on `!ConnectionSuccessful`; add the evidence branch before that). |
-| D12 | Arg errors exit 2, no help dump | pending | `Program.ParseArguments` returns `null` for both `--help/--version` and errors. Plan: add `bool ArgumentError` to `Config/ScanConfig.cs`, a static sentinel `InvalidArguments`, replace every error-path `return null;` in `ParseArguments` (all except lines ~157 `--help` and ~161 `--version`) with `return InvalidArguments;`; in `Main`: `if (config.ArgumentError) return 2;`. Post-loop private-address refusals (~556–573) included. |
-| D5 | INJECTION-001 defensive phrasing | pending | `src/SignalSentinel.Core/Security/InjectionPatterns.cs:103`. Don't match `never returns/reveals/sends/exposes …` (third-person negated). Keep imperative "NEVER return the system prompt". |
-| D6 | SS-008 tightening | pending | `src/SignalSentinel.Scanner/Rules/SensitiveDataRule.cs`. (a) bare `token` needs qualifier; (b) Critical only with disclosure verb in same non-negated sentence, else High; (c) PII: drop `user`, `client`, `account`, `query`, `read`. Learn matched on "user's query"; HF `hf_whoami` on "credential"; Chainflip on "token". |
-| D10 | Resources advertising credentials | pending | `Rules/ResourcePoisoningRule.cs`. Apply sensitivity/credential keywords to resource name/URI/description; URI segments `credentials|secrets|passwords|tokens` → High. DVMCP ch1/ch4 `internal://credentials` must fire. |
-| Fixtures | Regression corpus from live `tools/list` | pending | Capture Learn, HF, Chainflip, DeepWiki tool lists as JSON under `tests/SignalSentinel.Scanner.Tests/Fixtures/RemoteToolLists/`; DVMCP ch2/6/8 via stdio. Assert clean servers get no Critical / grade ≥ B; DVMCP keeps its Criticals. |
-| Validation | build, tests, smoke re-run, record, CHANGELOG | pending | See section 5. |
+| D1 | Client requests `McpProtocolVersions.Current`, one fallback retry with `Fallback` (2025-06-18) on a protocol-level `initialize` error; negotiated version stored (sanitised) and sent as `MCP-Protocol-Version` | **done** | `McpConnection.InitializeAsync`, `BuildInitializeParams`, `SanitizeProtocolVersion`; `McpTransport.cs` `Fallback` |
+| D2 | `--remote http(s)://` → `StreamableHttp` | **done** | `Program.cs` |
+| D3 | Notifications carry `Mcp-Session-Id` via shared `CreateHttpPost(json)` / `CaptureSessionId` | **done** | `McpConnection.cs` |
+| D4 | `evaluableServers` counts only `ConnectionSuccessful`; Inconclusive text updated | **done** | `Program.cs`, `SeverityScorer.GetGradeDescription` |
+| D7 | `initialize` 405/404 + `GET` `text/event-stream` → `LegacySseEndpointException(postStatusCode)` → `ServerEnumeration.LegacySseEvidence` → SS-INFO-004 **Medium** "Legacy HTTP+SSE Endpoint Not Scanned" | **done** (detection only) | `McpConnection.IsLegacySseEndpointAsync`/`IsEventStream`, `LegacySseEndpointException.cs`, `ToolEnumerator.cs`, `LegacyMcpProtocolRule.cs` |
+| D12 | `ScanConfig.InvalidArguments` sentinel + `ArgumentError`; 26 error paths return it; `Main` exits 2 | **done** | `Config/ScanConfig.cs`, `Program.cs` |
+| D5 | INJECTION-001 modal+verb alternative ends with `\b` ("never return**s**" no longer matches) | **done** | `Core/Security/InjectionPatterns.cs` |
+| D6 | SS-008 sentence-scoped: `ClassifyCredentialAccess` (name match → Critical; negation anywhere → none; disclosure verb near noun → Critical 0.9; consumption context → skip; else High 0.7); PII needs person + store word in one sentence; dropped `query`, `read`, bare `user`/`account` | **done** | `Rules/SensitiveDataRule.cs` |
+| D10 | SS-031 `CredentialMaterial` regex over resource name/URI/description → High; `SensitivityLabel` → Medium | **done** | `Rules/ResourcePoisoningRule.cs` |
+| Fixtures | Live `tools/list` for Learn, HF, Chainflip, DeepWiki | **done** | `tests/.../Fixtures/RemoteToolLists/*.json` (copied to output via csproj) |
+| Tests | 36 rule/regression + 4 loopback `HttpListener` client tests | **done** | `Rules/SmokeFixRegressionTests.cs`, `McpConnectionHttpTests.cs` (`[Collection("OfflineGuardSerial")]`) |
+| Validation | build 0/0, **1171/1171**, smoke re-run | **done** | Smoke record section 5 |
+
+Known observations from the re-run (not regressions): DVMCP ch2 `search_company_database` SS-008 is now High rather than Critical (SS-001 still fires on it); Roundtable `set-thread-visibility` gets a "Sensitive Data Marker" High on the word `private` (FP, backlog).
 
 ### 3.2 Things already decided (don't re-litigate)
 
@@ -67,7 +71,7 @@ Scratch dir `%TEMP%\v3-smoke\` (may not survive). Helper: `scan-remote.ps1` runs
 - A2A: `--agent-card https://www.agentcard.net`, `https://agent2agent.info`.
 - DVMCP lab: clone `https://github.com/harishsg993010/damn-vulnerable-MCP-server` to `%TEMP%\v3-smoke\dvmcp`; pin `mcp>=1.6,<2` in `requirements.txt` (upstream is unpinned and breaks on mcp 2.x); `docker build -t dvmcp .`; `docker run -d --name dvmcp -p 127.0.0.1:9001-9010:9001-9010 dvmcp`. Legacy SSE endpoints `http://127.0.0.1:900N/sse` (N=1..9) need `--allow-private`. Stdio config: each server is `docker exec -i dvmcp python -c "import sys; sys.path.insert(0,'/app/challenges/<tier>/<challengeN>'); import server; server.mcp.run(transport='stdio')"` (tiers: easy 1–3, medium 4–7, hard 8–10; challenge 5 uses `combined_server` and fails to import under mcp 1.x). Source scan: `--server-source <clone>\challenges --offline` → expect SS-041 ×12.
 - Offline refusals: `--remote … --offline`, `--skills … --osv --offline`, `--agent-card <url> --offline` all exit 2; `--remote http://127.0.0.1:9001/mcp` without `--allow-private` should exit 2 after D12.
-- Expected after fixes: no SS-INFO-004 on Learn/DeepWiki (they answer 2025-06-18 — still < Current, so SS-INFO-004 *will* still fire but now truthfully; check wording), SpaceMolt connects, HF/Chainflip no SS-008 Critical, DVMCP `/sse` targets → Inconclusive + Medium legacy-SSE finding, DVMCP ch1/ch4 resources flagged.
+- Observed after fixes (`f70f44b`): Learn C/71 (INFO-004 evidence `2025-06-18`), DeepWiki C/84 (`2025-11-25`), HF C/63, Chainflip C/81, SpaceMolt connects (F/0 on 220 tools, genuine), OAuth 401 targets Inconclusive/0, DVMCP `/sse` → Inconclusive + INFO-004 Medium, DVMCP stdio 90 findings incl. SS-031 on ch1/3/4/6/10 resources and SS-008 Critical on ch10 master-password disclosure. Full table in the smoke record section 5.
 
 ## 6. Human follow-ups (owner)
 
@@ -78,4 +82,4 @@ Scratch dir `%TEMP%\v3-smoke\` (may not survive). Helper: `scan-remote.ps1` runs
 
 ## 7. Backlog (not started)
 
-Parse errors exit 0 (fixed by D12 if done); Markdown evidence backtick escaping; `McpConnection` `GetInt32`→`TryGetInt32`; stdio EOF hot loop and "timeout" reported for immediate exit (D11); `0.0.0.0/8` in `RemoteUrlPolicy`; exact NuGet pins; `SanitizeErrorMessage` path/quote mangling; `ScanContext.Policy` seam; N-skills duplicate OSV queries; OSV status counts; `Servers Scanned` stat; same-line segment sort; `tests/**/*.md text eol=lf`; EXFIL-005 magic-string id; `node` fence alias; `{}` rubric claiming "2.0.0"; rubric grades C at score 0 with many Highs; SS-020 metadata quality (D8); SS-042 exception type in text (D9); full legacy HTTP+SSE transport.
+Roundtable `private` visibility value firing SS-008 "Sensitive Data Marker"; Markdown evidence backtick escaping; `McpConnection` `GetInt32`→`TryGetInt32`; stdio EOF hot loop and "timeout" reported for immediate exit (D11); `0.0.0.0/8` in `RemoteUrlPolicy`; exact NuGet pins; `SanitizeErrorMessage` path/quote mangling; `ScanContext.Policy` seam; N-skills duplicate OSV queries; OSV status counts; `Servers Scanned` stat; same-line segment sort; `tests/**/*.md text eol=lf`; EXFIL-005 magic-string id; `node` fence alias; `{}` rubric claiming "2.0.0"; rubric grades C at score 0 with many Highs; SS-020 metadata quality (D8); SS-042 exception type in text (D9); full legacy HTTP+SSE transport.
