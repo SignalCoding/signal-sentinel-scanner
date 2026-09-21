@@ -10,14 +10,25 @@ public sealed record ScanConfig
     /// <summary>
     /// v3.0.0 (D12): sentinel returned by argument parsing when an option was rejected.
     /// Distinguishes "exit 2, error already printed" from the <see langword="null"/>
-    /// result that means "--help/--version handled, exit 0".
+    /// result that means "--help handled, print usage, exit 0".
     /// </summary>
     public static readonly ScanConfig InvalidArguments = new() { ArgumentError = true };
+
+    /// <summary>
+    /// Sentinel returned by argument parsing for <c>--version</c>: the version line has
+    /// already been written and nothing else (in particular not the usage text) should follow.
+    /// </summary>
+    public static readonly ScanConfig VersionPrinted = new() { ExitSilently = true };
 
     /// <summary>
     /// True only on <see cref="InvalidArguments"/>.
     /// </summary>
     public bool ArgumentError { get; init; }
+
+    /// <summary>
+    /// True only on <see cref="VersionPrinted"/>.
+    /// </summary>
+    public bool ExitSilently { get; init; }
 
     /// <summary>
     /// Path to MCP configuration file (e.g., claude_desktop_config.json).

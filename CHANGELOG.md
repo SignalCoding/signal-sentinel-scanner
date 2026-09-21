@@ -90,7 +90,10 @@ positives on skill documents.
   `Http` transport, matching what the client actually speaks.
 - **Argument and policy rejections exit 2** (was 0 with the full help text). Covers
   every `ParseArguments` error path, including the `--remote` private-address
-  refusal without `--allow-private`.
+  refusal without `--allow-private`. `--format` with an unknown value is now one of
+  those rejections rather than a silent fall-back to Markdown.
+- **`--version` prints the version line only** (it used to be followed by the full
+  usage text).
 
 ### Fixed
 
