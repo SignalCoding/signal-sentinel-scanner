@@ -19,6 +19,7 @@ public sealed class McpConnection : IAsyncDisposable
     private Process? _process;
     private HttpClient? _httpClient;
     private string? _mcpSessionId;
+    private string? _negotiatedProtocolVersion;
     private ClientWebSocket? _webSocket;
     private int _requestId;
     private bool _disposed;
@@ -560,24 +561,56 @@ public sealed class McpConnection : IAsyncDisposable
 
     private async Task<McpInitializeResult> InitializeAsync(CancellationToken cancellationToken)
     {
-        var initParams = new
+        // v3.0.0: request the current spec revision. A compliant server that does not
+        // support it answers with its own highest version, which is exactly the ceiling
+        // SS-INFO-004 wants to report. Requesting an old version instead (as pre-3.0
+        // builds did with 2024-11-05) made every server look legacy, because servers
+        // simply echo a version they support.
+        McpInitializeResult? result;
+        try
         {
-            protocolVersion = "2024-11-05",
-            capabilities = new { },
-            clientInfo = new
-            {
-                name = "SignalSentinel.Scanner",
-                version = typeof(McpConnection).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"
-            }
-        };
+            result = await SendRequestAsync<McpInitializeResult>(
+                "initialize", BuildInitializeParams(McpProtocolVersions.Current), cancellationToken);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.StartsWith("MCP error:", StringComparison.Ordinal))
+        {
+            // Some servers reject an unknown protocolVersion with a JSON-RPC error
+            // instead of negotiating down. Retry once with the newest revision whose
+            // handshake this client implements in full.
+            result = await SendRequestAsync<McpInitializeResult>(
+                "initialize", BuildInitializeParams(McpProtocolVersions.Fallback), cancellationToken);
+        }
 
-        var result = await SendRequestAsync<McpInitializeResult>("initialize", initParams, cancellationToken) ?? throw new InvalidOperationException($"Failed to initialize MCP server '{_config.Name}'");
+        if (result is null)
+        {
+            throw new InvalidOperationException($"Failed to initialize MCP server '{_config.Name}'");
+        }
+
+        _negotiatedProtocolVersion = SanitizeProtocolVersion(result.ProtocolVersion);
 
         // Send initialized notification
         await SendNotificationAsync("notifications/initialized", null, cancellationToken);
 
         return result;
     }
+
+    internal static object BuildInitializeParams(string protocolVersion) => new
+    {
+        protocolVersion,
+        capabilities = new { },
+        clientInfo = new
+        {
+            name = "SignalSentinel.Scanner",
+            version = typeof(McpConnection).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"
+        }
+    };
+
+    /// <summary>
+    /// Accepts only the ISO-date shape the spec uses, so a hostile server cannot
+    /// inject header content via the echoed protocol version.
+    /// </summary>
+    private static string? SanitizeProtocolVersion(string? version) =>
+        version is { Length: 10 } && version.All(c => char.IsAsciiDigit(c) || c == '-') ? version : null;
 
     private async Task<TResult?> SendRequestAsync<TResult>(
         string method,
@@ -642,8 +675,92 @@ public sealed class McpConnection : IAsyncDisposable
         }
         else if (_httpClient is not null && _config.Url is not null)
         {
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            await _httpClient.PostAsync(new Uri(_config.Url), content, cancellationToken);
+            // Must carry Mcp-Session-Id like every other post-initialize message;
+            // a sessionless notifications/initialized makes stateful servers reject
+            // the following tools/list with "Session not initialized".
+            using var request = CreateHttpPost(json);
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            CaptureSessionId(response);
+        }
+    }
+
+    /// <summary>
+    /// Builds a JSON-RPC POST for the Streamable HTTP transport, attaching the
+    /// session id and negotiated protocol version once they are known.
+    /// </summary>
+    private HttpRequestMessage CreateHttpPost(string json)
+    {
+        if (!Uri.TryCreate(_config.Url, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != "http" && uri.Scheme != "https"))
+        {
+            throw new InvalidOperationException($"Invalid URL: {_config.Url}");
+        }
+
+        var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        // MCP 2025-06-18 Streamable HTTP transport: once the server has issued
+        // an Mcp-Session-Id during initialize, every subsequent request must
+        // carry it; otherwise the server answers 400 Bad Request.
+        if (!string.IsNullOrEmpty(_mcpSessionId))
+        {
+            request.Headers.TryAddWithoutValidation("Mcp-Session-Id", _mcpSessionId);
+        }
+
+        if (!string.IsNullOrEmpty(_negotiatedProtocolVersion))
+        {
+            request.Headers.TryAddWithoutValidation("MCP-Protocol-Version", _negotiatedProtocolVersion);
+        }
+
+        return request;
+    }
+
+    /// <summary>
+    /// Opens a GET to the endpoint with <c>Accept: text/event-stream</c>, reads the
+    /// headers only, and closes the stream. True when the server answers with an SSE
+    /// stream, which is how the legacy HTTP+SSE transport (pre-2025-03-26) begins.
+    /// Never throws: any failure means "not a legacy SSE endpoint".
+    /// </summary>
+    private async Task<bool> IsLegacySseEndpointAsync(Uri uri, CancellationToken cancellationToken)
+    {
+        if (_httpClient is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            using var probe = new HttpRequestMessage(HttpMethod.Get, uri);
+            probe.Headers.Accept.Clear();
+            probe.Headers.Accept.ParseAdd("text/event-stream");
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(5));
+
+            using var response = await _httpClient.SendAsync(probe, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+            return response.IsSuccessStatusCode && IsEventStream(response.Content.Headers.ContentType?.MediaType);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+    }
+
+    internal static bool IsEventStream(string? mediaType) =>
+        !string.IsNullOrEmpty(mediaType) &&
+        mediaType.Contains("text/event-stream", StringComparison.OrdinalIgnoreCase);
+
+    private void CaptureSessionId(HttpResponseMessage response)
+    {
+        if (response.Headers.TryGetValues("Mcp-Session-Id", out var sidValues))
+        {
+            var sid = sidValues.FirstOrDefault();
+            if (!string.IsNullOrEmpty(sid) && sid.Length <= 256 && !sid.Any(char.IsControl))
+            {
+                _mcpSessionId = sid;
+            }
         }
     }
 
@@ -868,36 +985,21 @@ public sealed class McpConnection : IAsyncDisposable
             throw new InvalidOperationException("HTTP client not configured");
         }
 
-        // Security: Validate URL
-        if (!Uri.TryCreate(_config.Url, UriKind.Absolute, out var uri) ||
-            (uri.Scheme != "http" && uri.Scheme != "https"))
-        {
-            throw new InvalidOperationException($"Invalid URL: {_config.Url}");
-        }
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, uri)
-        {
-            Content = new StringContent(requestJson, Encoding.UTF8, "application/json")
-        };
-
-        // MCP 2025-06-18 Streamable HTTP transport: once the server has issued
-        // an Mcp-Session-Id during initialize, every subsequent request must
-        // carry it; otherwise the server answers 400 Bad Request.
-        if (!string.IsNullOrEmpty(_mcpSessionId))
-        {
-            request.Headers.TryAddWithoutValidation("Mcp-Session-Id", _mcpSessionId);
-        }
-
+        using var request = CreateHttpPost(requestJson);
         using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
         // Capture any session id issued by this response (initialize, or server-refreshed).
-        if (response.Headers.TryGetValues("Mcp-Session-Id", out var sidValues))
+        CaptureSessionId(response);
+
+        // v3.0.0 (D7): a legacy HTTP+SSE server answers POST on its /sse endpoint with
+        // 405 (or 404). Before writing the target off as non-MCP, look for the SSE
+        // stream a GET would open; if it is there, the endpoint is MCP but on a
+        // transport this client does not speak, which is a different finding.
+        if (method == "initialize" &&
+            response.StatusCode is System.Net.HttpStatusCode.MethodNotAllowed or System.Net.HttpStatusCode.NotFound &&
+            await IsLegacySseEndpointAsync(request.RequestUri!, cancellationToken))
         {
-            var sid = sidValues.FirstOrDefault();
-            if (!string.IsNullOrEmpty(sid) && sid.Length <= 256 && !sid.Any(char.IsControl))
-            {
-                _mcpSessionId = sid;
-            }
+            throw new LegacySseEndpointException((int)response.StatusCode);
         }
 
         var frames = await ReadAndInspectHttpFramesAsync(response, MaxResponseSizeBytes, cancellationToken);

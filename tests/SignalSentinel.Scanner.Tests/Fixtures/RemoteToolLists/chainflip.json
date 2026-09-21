@@ -1,0 +1,269 @@
+{
+  "tools": [
+    {
+      "name": "get_quotes",
+      "title": "Get Quotes",
+      "description": "Get swap quotes for exchanging one crypto asset to another. Returns available quotes with exchange rates, fees, and estimated output amounts. API key is optional.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sourceAsset": {
+            "description": "Source asset identifier (e.g., 'btc.btc', 'eth.eth', 'usdc.eth')",
+            "type": "string"
+          },
+          "destinationAsset": {
+            "description": "Destination asset identifier (e.g., 'eth.eth', 'btc.btc', 'sol.sol')",
+            "type": "string"
+          },
+          "amount": {
+            "description": "Amount to swap in human-readable format (e.g., 1.5 for 1.5 BTC)",
+            "type": "number"
+          },
+          "apiKey": {
+            "description": "Optional partner API key.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "sourceAsset",
+          "destinationAsset",
+          "amount"
+        ]
+      },
+      "annotations": {
+        "title": "Get Quotes",
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "optional"
+      }
+    },
+    {
+      "name": "start_dca_swap",
+      "title": "Start DCA Swap",
+      "description": "Start a DCA (Dollar Cost Averaging) cross-chain swap that splits into multiple sub-swaps over time. Returns the deposit address. API key is optional.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sourceAsset": {
+            "description": "Source asset identifier (e.g., 'btc.btc', 'eth.eth', 'usdc.eth')",
+            "type": "string"
+          },
+          "destinationAsset": {
+            "description": "Destination asset identifier (e.g., 'eth.eth', 'btc.btc', 'sol.sol')",
+            "type": "string"
+          },
+          "destinationAddress": {
+            "description": "Destination address on the target chain",
+            "type": "string"
+          },
+          "refundAddress": {
+            "description": "Refund address on the source chain, used if minimum price cannot be met",
+            "type": "string"
+          },
+          "numberOfChunks": {
+            "description": "Number of sub-swaps for DCA (Dollar Cost Averaging). Must be >= 1.",
+            "type": "integer"
+          },
+          "chunkIntervalBlocks": {
+            "description": "Optional delay between DCA sub-swaps in state-chain blocks (1 block = 6 seconds). Defaults to 2 blocks (12 seconds).",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "default": null
+          },
+          "minimumPrice": {
+            "description": "Optional minimum accepted price as a destination-per-source ratio (e.g., for a btc.btc to eth.eth swap, 28.5 means 1 BTC gets at least 28.5 ETH). When omitted, automatically calculated from current pool prices with 2% slippage tolerance. Set to 0 to accept any price.",
+            "type": [
+              "number",
+              "null"
+            ],
+            "default": null
+          },
+          "apiKey": {
+            "description": "Optional partner API key.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "sourceAsset",
+          "destinationAsset",
+          "destinationAddress",
+          "refundAddress",
+          "numberOfChunks"
+        ]
+      },
+      "annotations": {
+        "title": "Start DCA Swap",
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
+      "execution": {
+        "taskSupport": "optional"
+      }
+    },
+    {
+      "name": "check_status",
+      "title": "Check Status",
+      "description": "Check the status of a swap by its ID. Returns the current swap state including deposit detection, swap progress, and egress information.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "swapId": {
+            "description": "The swap ID returned by start_swap or start_dca_swap",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "swapId"
+        ]
+      },
+      "annotations": {
+        "title": "Check Status",
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "optional"
+      }
+    },
+    {
+      "name": "list_assets",
+      "title": "List Assets",
+      "description": "List all available swap assets and their details including ticker, network, direction, decimals, minimum amounts, and current USD prices.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "title": "List Assets",
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "optional"
+      }
+    },
+    {
+      "name": "start_swap",
+      "title": "Start Swap",
+      "description": "Start a cross-chain swap. Returns the deposit address where you should send your source asset. API key is optional.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sourceAsset": {
+            "description": "Source asset identifier (e.g., 'btc.btc', 'eth.eth', 'usdc.eth')",
+            "type": "string"
+          },
+          "destinationAsset": {
+            "description": "Destination asset identifier (e.g., 'eth.eth', 'btc.btc', 'sol.sol')",
+            "type": "string"
+          },
+          "destinationAddress": {
+            "description": "Destination address on the target chain",
+            "type": "string"
+          },
+          "refundAddress": {
+            "description": "Refund address on the source chain, used if minimum price cannot be met",
+            "type": "string"
+          },
+          "minimumPrice": {
+            "description": "Optional minimum accepted price as a destination-per-source ratio (e.g., for a btc.btc to eth.eth swap, 28.5 means 1 BTC gets at least 28.5 ETH). When omitted, automatically calculated from current pool prices with 2% slippage tolerance. Set to 0 to accept any price.",
+            "type": [
+              "number",
+              "null"
+            ],
+            "default": null
+          },
+          "apiKey": {
+            "description": "Optional partner API key.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "sourceAsset",
+          "destinationAsset",
+          "destinationAddress",
+          "refundAddress"
+        ]
+      },
+      "annotations": {
+        "title": "Start Swap",
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
+      "execution": {
+        "taskSupport": "optional"
+      }
+    },
+    {
+      "name": "get_native_quotes",
+      "title": "Get Native Quotes",
+      "description": "Get swap quotes for exchanging one crypto asset to another using native (smallest unit) amounts. Returns available quotes with exchange rates, fees, and estimated output amounts. Use this when you have amounts in native units (e.g., satoshis for BTC, wei for ETH). API key is optional.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sourceAsset": {
+            "description": "Source asset identifier (e.g., 'btc.btc', 'eth.eth', 'usdc.eth')",
+            "type": "string"
+          },
+          "destinationAsset": {
+            "description": "Destination asset identifier (e.g., 'eth.eth', 'btc.btc', 'sol.sol')",
+            "type": "string"
+          },
+          "amount": {
+            "description": "Amount to swap in native units (e.g., '100000000' for 1 BTC in satoshis)",
+            "type": "string"
+          },
+          "apiKey": {
+            "description": "Optional partner API key.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "sourceAsset",
+          "destinationAsset",
+          "amount"
+        ]
+      },
+      "annotations": {
+        "title": "Get Native Quotes",
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "optional"
+      }
+    }
+  ]
+}

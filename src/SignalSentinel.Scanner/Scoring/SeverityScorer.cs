@@ -146,7 +146,7 @@ public static class SeverityScorer
         SecurityGrade.C => "Fair - Some high severity findings present. Review and remediation recommended.",
         SecurityGrade.D => "Poor - Critical findings detected. Immediate remediation required.",
         SecurityGrade.F => "Failing - Multiple critical findings or attack paths. Do not use in production.",
-        SecurityGrade.Inconclusive => "Scan produced no evaluable surface - zero servers and zero skills were scanned. Check your --config/--remote/--skills arguments; this is not a security posture result.",
+        SecurityGrade.Inconclusive => "Scan produced no evaluable surface - no server connected and no skills were scanned. Check the connection errors and informational findings in this report and your --config/--remote/--skills arguments; this is not a security posture result.",
         _ => "Unknown grade"
     };
 

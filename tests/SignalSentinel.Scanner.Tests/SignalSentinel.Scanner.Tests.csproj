@@ -37,4 +37,10 @@
     <PackageReference Include="FsCheck.Xunit" Version="3.3.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- v3.0.0 (smoke fixes): tools/list captured from live public MCP servers; the
+         real-world false-positive regression corpus. -->
+    <None Include="Fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

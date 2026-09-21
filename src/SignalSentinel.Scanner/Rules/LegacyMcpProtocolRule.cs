@@ -49,6 +49,36 @@ public sealed class LegacyMcpProtocolRule : IRule
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            // v3.0.0 (D7): the endpoint is MCP but on the retired HTTP+SSE transport,
+            // which this scanner does not enumerate. Nothing behind it was evaluated,
+            // so this is Medium, not Info: an operator must not read the accompanying
+            // Inconclusive grade as a pass.
+            if (server.LegacySseEvidence is not null)
+            {
+                findings.Add(new Finding
+                {
+                    RuleId = Id,
+                    OwaspCode = OwaspCode,
+                    AstCodes = AstCodes,
+                    Severity = Severity.Medium,
+                    Title = $"Legacy HTTP+SSE Endpoint Not Scanned ({server.ServerName})",
+                    Description = $"Server '{server.ServerName}' rejected the JSON-RPC POST " +
+                        $"(HTTP {server.LegacySseEvidence.PostStatusCode}) but opened a text/event-stream " +
+                        "on GET, which identifies the legacy HTTP+SSE transport retired by the MCP " +
+                        "2025-03-26 specification. This scanner speaks Streamable HTTP only, so no " +
+                        "tools, resources or prompts were enumerated and no MCP-protocol rule was " +
+                        "evaluated for this target.",
+                    Remediation = "Upgrade the server to Streamable HTTP (single /mcp endpoint " +
+                        "accepting POST) and rescan. If the server also exposes a stdio entry point, " +
+                        "scan that with --config in the meantime.",
+                    ServerName = server.ServerName,
+                    Evidence = $"transport: {server.Transport}; POST status: {server.LegacySseEvidence.PostStatusCode}; GET content-type: text/event-stream",
+                    Confidence = 0.9,
+                    Source = FindingSource.Mcp
+                });
+                continue;
+            }
+
             if (!server.ConnectionSuccessful)
             {
                 continue;

@@ -197,6 +197,19 @@ public sealed class ToolEnumerator(TimeSpan timeout, bool verbose = false, Actio
                 }
             };
         }
+        catch (LegacySseEndpointException ex)
+        {
+            // v3.0.0 (D7): the target is MCP, but on the retired HTTP+SSE transport. Do
+            // not let it fall through to Non-MCP (which grades A/100); SS-INFO-004
+            // reports it as detected-but-not-scanned.
+            Log($"  Legacy HTTP+SSE endpoint (POST {ex.PostStatusCode}); not enumerated");
+            result = result with
+            {
+                ConnectionSuccessful = false,
+                ConnectionError = "Legacy HTTP+SSE transport detected - not scanned",
+                LegacySseEvidence = new LegacySseEvidence { PostStatusCode = ex.PostStatusCode }
+            };
+        }
         catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {
             // Security: Differentiate between user cancellation and timeout
@@ -497,6 +510,13 @@ public sealed record ServerEnumeration
     public NonMcpEndpointEvidence? NonMcpEvidence { get; init; }
 
     /// <summary>
+    /// v3.0.0 (D7): populated when the endpoint rejected the JSON-RPC POST but opened an
+    /// SSE stream on GET, i.e. an MCP server on the legacy HTTP+SSE transport that this
+    /// client cannot enumerate. Powers the Medium variant of <c>SS-INFO-004</c>.
+    /// </summary>
+    public LegacySseEvidence? LegacySseEvidence { get; init; }
+
+    /// <summary>
     /// v2.4.0 (A2): populated for HTTP / Streamable-HTTP / WebSocket transports when
     /// the scanner has sent a deliberate unauthenticated probe to the target to
     /// determine whether the server enforces authentication. <see langword="null"/>
@@ -599,4 +619,17 @@ public sealed record TlsErrorEvidence
     /// Sanitised message from the underlying <see cref="System.Security.Authentication.AuthenticationException"/>.
     /// </summary>
     public string? RawMessage { get; init; }
+}
+
+/// <summary>
+/// v3.0.0 (D7): evidence captured when an endpoint is an MCP server on the legacy
+/// HTTP+SSE transport (GET opens <c>text/event-stream</c>, POST is rejected), which
+/// this client does not enumerate. Powers the Medium variant of <c>SS-INFO-004</c>.
+/// </summary>
+public sealed record LegacySseEvidence
+{
+    /// <summary>
+    /// HTTP status the endpoint returned for the JSON-RPC <c>initialize</c> POST.
+    /// </summary>
+    public int PostStatusCode { get; init; }
 }
