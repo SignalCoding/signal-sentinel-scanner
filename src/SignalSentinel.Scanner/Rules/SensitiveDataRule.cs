@@ -41,14 +41,172 @@ public sealed partial class SensitiveDataRule : IRule
         matchTimeoutMilliseconds: 500)]
     private static partial Regex CredentialKeywords();
 
-    [GeneratedRegex(@"\b(user|customer|patient|employee|member|client|account|profile|identity)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
+    // v3.0.0 (D6): "user", "client" and "account" removed. Almost every tool
+    // description says "the user's query" or "client request"; those are the
+    // agent's user, not a data subject. "user" survives only when it directly
+    // qualifies a data noun ("user records", "user profiles").
+    [GeneratedRegex(@"\b(customer|patient|employee|member|profile|identity|user\s+(?:data|records?|information|details|profiles?|emails?|accounts?))\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex PersonKeywords();
 
-    [GeneratedRegex(@"\b(database|db|sql|query|table|record|row|column|field)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
+    // v3.0.0 (D6): "query" removed - it is what every search tool does.
+    [GeneratedRegex(@"\b(database|db|sql|table|record|row|column|field)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex DatabaseKeywords();
 
-    [GeneratedRegex(@"\b(file|document|attachment|upload|download|read|write|storage|blob)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
+    // v3.0.0 (D6): "read" removed - "read-only" is a safety statement, not file access.
+    [GeneratedRegex(@"\b(file|document|attachment|upload|download|write|storage|blob)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
     private static partial Regex FileKeywords();
+
+    // v3.0.0 (D6): a credential noun alone is not disclosure. "API key is optional"
+    // means the tool *accepts* one; "never returns credential values" is a safety
+    // statement. Only a disclosure verb next to the noun, in a sentence that is not
+    // negated, means the tool hands credentials to the agent.
+    [GeneratedRegex(@"\b(?:return(?:s|ed|ing)?|expos(?:e|es|ed|ing)|reveal(?:s|ed|ing)?|print(?:s|ed|ing)?|display(?:s|ed|ing)?|dump(?:s|ed|ing)?|leak(?:s|ed|ing)?|list(?:s|ed|ing)?|show(?:s|ed|n|ing)?|get(?:s|ting)?|fetch(?:es|ed|ing)?|retriev(?:e|es|ed|ing)|read(?:s|ing)?|export(?:s|ed|ing)?|output(?:s|ting)?|includ(?:e|es|ed|ing)|obtain(?:s|ed|ing)?|view(?:s|ed|ing)?|decrypt(?:s|ed|ing)?|extract(?:s|ed|ing)?)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
+    private static partial Regex DisclosureVerbs();
+
+    [GeneratedRegex(@"\b(?:never|not|no|without|redact(?:s|ed|ing)?|mask(?:s|ed|ing)?|omit(?:s|ted|ting)?|exclud(?:e|es|ed|ing)|strip(?:s|ped|ping)?|hid(?:e|es|den|ing)|don'?t|doesn'?t|won'?t|cannot|can'?t)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
+    private static partial Regex Negation();
+
+    [GeneratedRegex(@"\b(?:optional|required|requires?|authenticat\w*|authoriz\w*|header|parameter|param|supply|supplied|provide|pass(?:ed)?|your|configured?|set)\b", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
+    private static partial Regex ConsumptionContext();
+
+    [GeneratedRegex(@"[.!?;\n]+", RegexOptions.None, matchTimeoutMilliseconds: 500)]
+    private static partial Regex SentenceBreak();
+
+    // Words allowed between a disclosure verb and the credential noun it governs.
+    private const int VerbBeforeNounWindow = 5;
+    private const int VerbAfterNounWindow = 3;
+    private const int NegationWindow = 4;
+
+    /// <summary>
+    /// Classifies a tool's credential handling from its name and description.
+    /// <see cref="Severity.Critical"/>: the name is a credential identifier
+    /// (<c>get_api_key</c>) or a sentence discloses the noun. <see cref="Severity.High"/>:
+    /// the noun is mentioned in a way that is neither disclosure, consumption nor
+    /// negated. <see langword="null"/>: no credential handling worth reporting.
+    /// </summary>
+    internal static (Severity Severity, string Evidence)? ClassifyCredentialAccess(string name, string description)
+    {
+        // Identifiers use '_' and '-' as separators, which \b does not treat as
+        // boundaries; "get_api_key" must read as "get api key".
+        var nameMatch = CredentialKeywords().Match(name.Replace('_', ' ').Replace('-', ' '));
+        if (nameMatch.Success)
+        {
+            return (Severity.Critical, nameMatch.Value);
+        }
+
+        var sentences = SentenceBreak().Split(description)
+            .Select(s => s.Trim())
+            .Where(s => s.Length > 0)
+            .ToList();
+
+        // An explicit denial ("never returns credential values", "passwords are not
+        // exposed") is the author telling us the answer. Take it; a poisoned description
+        // that lies here could equally have omitted the word.
+        if (sentences.Any(s => CredentialKeywords().Match(s) is { Success: true } n && IsNegatedNear(s, n.Index)))
+        {
+            return null;
+        }
+
+        (Severity Severity, string Evidence)? best = null;
+        foreach (var sentence in sentences)
+        {
+            var noun = CredentialKeywords().Match(sentence);
+            if (!noun.Success)
+            {
+                continue;
+            }
+
+            var disclosed = false;
+            foreach (Match verb in DisclosureVerbs().Matches(sentence))
+            {
+                if (IsNegatedNear(sentence, verb.Index))
+                {
+                    continue;
+                }
+
+                var before = verb.Index < noun.Index &&
+                    WordsBetween(sentence, verb.Index + verb.Length, noun.Index) <= VerbBeforeNounWindow;
+                var after = verb.Index > noun.Index &&
+                    WordsBetween(sentence, noun.Index + noun.Length, verb.Index) <= VerbAfterNounWindow;
+                if (before || after)
+                {
+                    disclosed = true;
+                    break;
+                }
+            }
+
+            if (disclosed)
+            {
+                return (Severity.Critical, Truncate(sentence));
+            }
+
+            if (ConsumptionContext().IsMatch(sentence))
+            {
+                continue;
+            }
+
+            best ??= (Severity.High, Truncate(sentence));
+        }
+
+        return best;
+    }
+
+    private static bool IsNegatedNear(string sentence, int index)
+    {
+        foreach (Match neg in Negation().Matches(sentence))
+        {
+            // "never returns credentials" (negation before) and "credentials are not
+            // exposed" (negation after) are both denials.
+            var before = neg.Index < index && WordsBetween(sentence, neg.Index + neg.Length, index) <= NegationWindow;
+            var after = neg.Index > index && WordsBetween(sentence, index, neg.Index) <= NegationWindow;
+            if (before || after)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static int WordsBetween(string text, int start, int end)
+    {
+        if (end <= start)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        var inWord = false;
+        for (var i = start; i < end; i++)
+        {
+            var isWord = char.IsLetterOrDigit(text[i]) || text[i] == '_' || text[i] == '\'';
+            if (isWord && !inWord)
+            {
+                count++;
+            }
+
+            inWord = isWord;
+        }
+
+        return count;
+    }
+
+    private static string Truncate(string value) =>
+        value.Length <= 160 ? value : value[..157] + "...";
+
+    private static bool AnySentenceMatches(string text, Regex first, Regex second, Regex? alternativeSecond = null)
+    {
+        foreach (var sentence in SentenceBreak().Split(text))
+        {
+            if (first.IsMatch(sentence) &&
+                (second.IsMatch(sentence) || (alternativeSecond?.IsMatch(sentence) ?? false)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     public Task<IEnumerable<Finding>> EvaluateAsync(ScanContext context, CancellationToken cancellationToken = default)
     {
@@ -68,25 +226,30 @@ public sealed partial class SensitiveDataRule : IRule
                 var combined = $"{name} {description}";
 
                 // Check for credential access
-                if (CredentialKeywords().IsMatch(combined))
+                var credential = ClassifyCredentialAccess(name, description);
+                if (credential is not null)
                 {
                     findings.Add(new Finding
                     {
                         RuleId = Id,
                         OwaspCode = OwaspCode,
-                        Severity = Severity.Critical,
+                        Severity = credential.Value.Severity,
                         Title = "Credential Access Detected",
-                        Description = $"Tool '{name}' appears to handle credentials, secrets, or authentication tokens. These could be leaked in agent responses.",
+                        Description = credential.Value.Severity == Severity.Critical
+                            ? $"Tool '{name}' appears to return credentials, secrets, or authentication tokens to the agent. These could be leaked in agent responses."
+                            : $"Tool '{name}' mentions credentials, secrets, or authentication tokens without stating whether it exposes them. Confirm what the tool returns.",
                         Remediation = "Never expose raw credentials through MCP tools. Use secret references or vault lookups instead. Implement credential masking in all responses.",
                         ServerName = server.ServerName,
                         ToolName = name,
-                        Confidence = 0.9
+                        Evidence = credential.Value.Evidence,
+                        Confidence = credential.Value.Severity == Severity.Critical ? 0.9 : 0.7
                     });
                 }
 
-                // Check for PII access
-                if (PersonKeywords().IsMatch(combined) &&
-                    (DatabaseKeywords().IsMatch(combined) || FileKeywords().IsMatch(combined)))
+                // Check for PII access (v3.0.0 D6: the person word and the data-store
+                // word must share a sentence; "a user's query" across a description
+                // that elsewhere says "file" is not PII access).
+                if (AnySentenceMatches(combined, PersonKeywords(), DatabaseKeywords(), FileKeywords()))
                 {
                     findings.Add(new Finding
                     {

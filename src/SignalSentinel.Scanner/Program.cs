@@ -56,6 +56,13 @@ public static class Program
                 return 0;
             }
 
+            // v3.0.0 (D12): a rejected option has already printed its error; do not
+            // follow it with the usage text and a success exit code.
+            if (config.ArgumentError)
+            {
+                return 2;
+            }
+
             // v3.0.0 (WP7): resolve --policy after CLI parsing so explicit flags win.
             Policy.ResolvedPolicy? policy = null;
             if (config.PolicyArg is not null)
@@ -148,7 +155,7 @@ public static class Program
             if (arg.Length > MaxPathLength)
             {
                 Console.Error.WriteLine("Error: Argument too long");
-                return null;
+                return ScanConfig.InvalidArguments;
             }
 
             switch (arg)
@@ -167,7 +174,7 @@ public static class Program
                         if (!ValidatePath(path, ".json"))
                         {
                             Console.Error.WriteLine("Error: Invalid config path");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                         config = config with { ConfigPath = path };
                     }
@@ -182,7 +189,7 @@ public static class Program
                         if (!RemoteUrlPolicy.IsValidSyntax(url))
                         {
                             Console.Error.WriteLine("Error: Invalid URL");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                         config = config with { RemoteUrl = url };
                     }
@@ -219,7 +226,7 @@ public static class Program
                         if (!ValidatePath(path, ".json"))
                         {
                             Console.Error.WriteLine("Error: Invalid baseline path");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                         config = config with { BaselinePath = path };
                     }
@@ -240,7 +247,7 @@ public static class Program
                         if (!ValidatePath(path))
                         {
                             Console.Error.WriteLine("Error: Invalid sigma-rules path");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                         config = config with { SigmaRulesPath = path };
                     }
@@ -253,7 +260,7 @@ public static class Program
                         if (!ValidatePath(path, ".json"))
                         {
                             Console.Error.WriteLine("Error: Invalid suppressions path");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                         config = config with { SuppressionsPath = path };
                     }
@@ -269,7 +276,7 @@ public static class Program
                             if (!Regex.IsMatch(id, @"^SS-(INFO-)?\d{3}$", RegexOptions.None, TimeSpan.FromMilliseconds(100)))
                             {
                                 Console.Error.WriteLine($"Error: Invalid rule id: {SanitizeForDisplay(id)}");
-                                return null;
+                                return ScanConfig.InvalidArguments;
                             }
                         }
                         config = config with { IgnoredRules = ids };
@@ -292,7 +299,7 @@ public static class Program
                         if (severity is null)
                         {
                             Console.Error.WriteLine("Error: --fail-on expects one of: critical, high, medium, low, info");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                         config = config with { FailOn = severity };
                     }
@@ -305,7 +312,7 @@ public static class Program
                             || conf is < 0 or > 1)
                         {
                             Console.Error.WriteLine("Error: --min-confidence expects a value in [0, 1]");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                         config = config with { MinConfidence = conf };
                     }
@@ -315,7 +322,7 @@ public static class Program
                     if (i + 1 >= args.Length)
                     {
                         Console.Error.WriteLine("Error: --policy expects a preset name (default, strict, defence) or a path to a JSON file.");
-                        return null;
+                        return ScanConfig.InvalidArguments;
                     }
                     config = config with { PolicyArg = args[++i] };
                     break;
@@ -324,13 +331,13 @@ public static class Program
                     if (i + 1 >= args.Length || args[i + 1].StartsWith('-'))
                     {
                         Console.Error.WriteLine("Error: --rubric requires a path to a scoring rubric JSON file.");
-                        return null;
+                        return ScanConfig.InvalidArguments;
                     }
                     var rubricPath = args[++i];
                     if (!ValidatePath(rubricPath) || !File.Exists(rubricPath))
                     {
                         Console.Error.WriteLine("Error: --rubric file not found or invalid.");
-                        return null;
+                        return ScanConfig.InvalidArguments;
                     }
                     config = config with { RubricPath = rubricPath };
                     break;
@@ -343,13 +350,13 @@ public static class Program
                     if (i + 1 >= args.Length || args[i + 1].StartsWith('-'))
                     {
                         Console.Error.WriteLine("Error: --server-source requires a directory path.");
-                        return null;
+                        return ScanConfig.InvalidArguments;
                     }
                     var sourceDir = args[++i];
                     if (!ValidatePath(sourceDir) || !Directory.Exists(sourceDir))
                     {
                         Console.Error.WriteLine("Error: --server-source directory not found or invalid.");
-                        return null;
+                        return ScanConfig.InvalidArguments;
                     }
                     config = config with { ServerSourcePath = sourceDir };
                     break;
@@ -358,7 +365,7 @@ public static class Program
                     if (i + 1 >= args.Length || args[i + 1].StartsWith('-'))
                     {
                         Console.Error.WriteLine("Error: --agent-card requires a URL or file path.");
-                        return null;
+                        return ScanConfig.InvalidArguments;
                     }
                     var cardTarget = args[++i];
                     if (AgentCard.AgentCardReader.IsUrl(cardTarget))
@@ -368,13 +375,13 @@ public static class Program
                         if (!RemoteUrlPolicy.IsValidSyntax(cardTarget))
                         {
                             Console.Error.WriteLine("Error: Invalid --agent-card URL");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                     }
                     else if (!ValidatePath(cardTarget, ".json"))
                     {
                         Console.Error.WriteLine("Error: --agent-card must be an http(s) URL or a .json file path.");
-                        return null;
+                        return ScanConfig.InvalidArguments;
                     }
                     config = config with { AgentCard = cardTarget };
                     break;
@@ -394,7 +401,7 @@ public static class Program
                         if (!Regex.IsMatch(env, @"^[A-Za-z0-9_\-]{1,32}$", RegexOptions.None, TimeSpan.FromMilliseconds(100)))
                         {
                             Console.Error.WriteLine("Error: --environment must be alphanumeric (max 32 chars)");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                         config = config with { Environment = env };
                     }
@@ -417,7 +424,7 @@ public static class Program
                         if (!ValidatePath(scopePath, ".json"))
                         {
                             Console.Error.WriteLine("Error: Invalid scope path");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                         config = config with { ScopePath = scopePath };
                     }
@@ -471,14 +478,14 @@ public static class Program
                         if (!ValidatePath(baselinePath, ".json") || !ValidatePath(currentPath, ".json"))
                         {
                             Console.Error.WriteLine("Error: --diff requires two valid .json scan report paths");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                         config = config with { DiffBaselinePath = baselinePath, DiffCurrentPath = currentPath };
                     }
                     else
                     {
                         Console.Error.WriteLine("Error: --diff requires <baseline.json> <current.json>");
-                        return null;
+                        return ScanConfig.InvalidArguments;
                     }
                     break;
 
@@ -489,7 +496,7 @@ public static class Program
                         if (!ValidateOutputPath(path))
                         {
                             Console.Error.WriteLine("Error: Invalid output path");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                         config = config with { OutputPath = path };
                     }
@@ -516,7 +523,7 @@ public static class Program
                         else
                         {
                             Console.Error.WriteLine("Error: Invalid skills path");
-                            return null;
+                            return ScanConfig.InvalidArguments;
                         }
                     }
                     break;
@@ -538,7 +545,7 @@ public static class Program
                     if (arg.StartsWith('-'))
                     {
                         Console.Error.WriteLine($"Error: Unknown option: {SanitizeForDisplay(arg)}");
-                        return null;
+                        return ScanConfig.InvalidArguments;
                     }
                     break;
             }
@@ -559,7 +566,7 @@ public static class Program
             Console.Error.WriteLine(
                 "Error: --remote target resolves to a loopback, private, or link-local address. " +
                 "Pass --allow-private to scan it anyway.");
-            return null;
+            return ScanConfig.InvalidArguments;
         }
 
         // v3.0.0 (WP9): the same SSRF policy applies to an Agent Card URL.
@@ -570,7 +577,7 @@ public static class Program
             Console.Error.WriteLine(
                 "Error: --agent-card target resolves to a loopback, private, or link-local address. " +
                 "Pass --allow-private to fetch it anyway.");
-            return null;
+            return ScanConfig.InvalidArguments;
         }
 
         return config;
@@ -907,9 +914,12 @@ public static class Program
             if (config.RemoteUrl is not null)
             {
                 var uri = new Uri(config.RemoteUrl);
+                // The HTTP client speaks Streamable HTTP (POST + SSE-framed responses),
+                // so label it as such; Http means the retired HTTP+SSE transport and
+                // would make SS-INFO-004 fire on every remote target.
                 var transport = uri.Scheme is "ws" or "wss"
                     ? Core.McpProtocol.McpTransportType.WebSocket
-                    : Core.McpProtocol.McpTransportType.Http;
+                    : Core.McpProtocol.McpTransportType.StreamableHttp;
 
                 configFiles.Add(new Core.McpProtocol.McpConfigFile
                 {
@@ -1216,7 +1226,11 @@ public static class Program
             // scannable surface at all reports Inconclusive instead of a misleading
             // Grade A. v3.0.0 (WP9): a server-source tree or an Agent Card is an
             // evaluable surface too, so each counts as one server-equivalent here.
-            var evaluableServers = serverEnumerations.Count
+            // v3.0.0 (D4): only servers that actually connected count. A refused
+            // connection, 401, non-MCP or legacy-SSE target exposed no tool surface,
+            // so grading it A on zero findings was misleading; the findings those
+            // outcomes produce (SS-020, SS-INFO-001/004) stay in the report.
+            var evaluableServers = serverEnumerations.Count(s => s.ConnectionSuccessful)
                 + (serverSource is null ? 0 : 1)
                 + (agentCard is null ? 0 : 1);
             var (grade, score) = SeverityScorer.CalculateGrade(

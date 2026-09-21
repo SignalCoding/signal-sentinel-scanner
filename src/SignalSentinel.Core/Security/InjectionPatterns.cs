@@ -90,7 +90,9 @@ public static partial class InjectionPatterns
     /// <item>an <c>IMPORTANT:</c> label, OR</item>
     /// <item>an override verb (ignore/disregard/forget) targeting prior instructions, OR</item>
     /// <item>a bypass verb (override/bypass/disable) targeting safety/rules/filters, OR</item>
-    /// <item>a modal (ALWAYS/NEVER/MUST) followed by an override-intent verb, OR</item>
+    /// <item>a modal (ALWAYS/NEVER/MUST) followed by an override-intent verb in its
+    ///       bare imperative form (v3.0.0: <c>never returns credential values</c> is a
+    ///       third-person safety statement, not an instruction, and no longer matches), OR</item>
     /// <item>a role-hijack phrase (<c>you are now a/an/...</c>), OR</item>
     /// <item>a system-prompt reveal (<c>SYSTEM PROMPT:</c>).</item>
     /// </list>
@@ -100,7 +102,7 @@ public static partial class InjectionPatterns
     // is strictly about overriding / disregarding INSTRUCTIONS / RULES / GUIDELINES
     // / PROMPTS (pattern discipline: each finding must have a single canonical owner).
     [GeneratedRegex(
-        @"(?:IMPORTANT\s*:|\b(?:ignore|disregard|forget)\s+(?:all|any)?\s*(?:previous|prior|your|the|any)\s+(?:instructions?|prompts?|rules?|guidelines?|messages?|context)|\boverride\s+(?:all\s+)?(?:your|the|any)?\s*(?:rule|instruction|guideline|restriction|previous)|\b(?:ALWAYS|NEVER|MUST)\s+(?:execute|override|return|ignore|send|include|reveal|print|output|share|skip|leak|forward|upload|post|transmit|exfiltrate)|\bSYSTEM\s*PROMPT\s*:|\byou\s+are\s+now\s+(?:a|an|the|my))",
+        @"(?:IMPORTANT\s*:|\b(?:ignore|disregard|forget)\s+(?:all|any)?\s*(?:previous|prior|your|the|any)\s+(?:instructions?|prompts?|rules?|guidelines?|messages?|context)|\boverride\s+(?:all\s+)?(?:your|the|any)?\s*(?:rule|instruction|guideline|restriction|previous)|\b(?:ALWAYS|NEVER|MUST)\s+(?:execute|override|return|ignore|send|include|reveal|print|output|share|skip|leak|forward|upload|post|transmit|exfiltrate)\b|\bSYSTEM\s*PROMPT\s*:|\byou\s+are\s+now\s+(?:a|an|the|my))",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex InstructionInjection();

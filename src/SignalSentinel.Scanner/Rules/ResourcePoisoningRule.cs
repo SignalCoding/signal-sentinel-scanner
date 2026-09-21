@@ -65,6 +65,22 @@ public sealed partial class ResourcePoisoningRule : IRule
     [GeneratedRegex(@"^(javascript|vbscript|jar|ms-|shell|cmd|powershell|exec):", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 100)]
     private static partial Regex ExecutableScheme();
 
+    // v3.0.0 (D10): a resource that calls itself "credentials" is handing secrets to
+    // the model whatever scheme it uses; the file:// check above only saw local paths.
+    [GeneratedRegex(
+        @"\b(credentials?|secrets?|passwords?|passphrases?|api[\s\-_]?keys?|private[\s\-_]?keys?|(?:access|bearer|refresh|session)[\s\-_]?tokens?|ssh[\s\-_]?keys?)\b",
+        RegexOptions.IgnoreCase,
+        matchTimeoutMilliseconds: 500)]
+    private static partial Regex CredentialMaterial();
+
+    // Explicit classification labels. Deliberately narrower than SS-008's marker list
+    // ("private", "personal" describe ordinary repositories and profiles).
+    [GeneratedRegex(
+        @"\b(confidential|classified|restricted(?:\s+access)?|internal[\s\-]only|do\s+not\s+share)\b",
+        RegexOptions.IgnoreCase,
+        matchTimeoutMilliseconds: 500)]
+    private static partial Regex SensitivityLabel();
+
     /// <inheritdoc />
     public Task<IEnumerable<Finding>> EvaluateAsync(
         ScanContext context,
@@ -128,10 +144,61 @@ public sealed partial class ResourcePoisoningRule : IRule
                 {
                     findings.Add(uriFinding);
                 }
+
+                var materialFinding = EvaluateAdvertisedMaterial(server.ServerName, resource.Name, resource.Uri, resource.Description);
+                if (materialFinding is not null)
+                {
+                    findings.Add(materialFinding);
+                }
             }
         }
 
         return Task.FromResult<IEnumerable<Finding>>(findings);
+    }
+
+    /// <summary>
+    /// v3.0.0 (D10): flags resources whose name, URI or description announce that they
+    /// hold credential material (High) or carry an explicit confidentiality label
+    /// (Medium). Either way the server is offering the model content it says should
+    /// not leave the system.
+    /// </summary>
+    private Finding? EvaluateAdvertisedMaterial(string serverName, string resourceName, string uri, string? description)
+    {
+        var surface = string.Join(' ', resourceName, Uri.UnescapeDataString(uri ?? string.Empty), description ?? string.Empty);
+
+        var credential = SafeFirstMatch(CredentialMaterial(), surface);
+        if (credential is not null)
+        {
+            return Create(serverName, resourceName, credential, Severity.High,
+                "Resource Advertises Credential Material",
+                "Resource name, URI or description states that it contains credentials, keys, passwords or tokens. " +
+                "Any client that reads this resource hands the secret to the model and, through it, to whatever the model talks to.",
+                "Do not expose secrets as MCP resources. Keep them in a vault and expose references or capabilities instead.");
+        }
+
+        var label = SafeFirstMatch(SensitivityLabel(), surface);
+        if (label is not null)
+        {
+            return Create(serverName, resourceName, label, Severity.Medium,
+                "Resource Marked Confidential or Restricted",
+                "Resource is labelled as confidential, classified or restricted, yet it is listed to every connected client.",
+                "Remove restricted content from the resource list or enforce authorisation on resources/read.");
+        }
+
+        return null;
+    }
+
+    private static string? SafeFirstMatch(Regex regex, string input)
+    {
+        try
+        {
+            var match = regex.Match(input);
+            return match.Success ? match.Value : null;
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            return null;
+        }
     }
 
     private Finding? EvaluateUri(string serverName, string resourceName, string uri)
