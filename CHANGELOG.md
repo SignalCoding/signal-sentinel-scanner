@@ -5,7 +5,7 @@ All notable changes to Signal Sentinel Scanner are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.1] - Unreleased
+## [3.0.1] - 2026-09-22
 
 False-positive harvest from the 2026-09-21 scan of Anthropic's public skills
 repository (`anthropics/skills` @ `34040c9`, 19 skills). v3.0.0 graded that corpus
@@ -299,6 +299,7 @@ genuine-intent counterpart.
   `permissions.deny_write` recognition on `SS-028`.
 - Fixed dotted-key frontmatter parsing (`network.allow`, `permissions.deny_write`).
 
+[3.0.1]: https://github.com/SignalCoding/signal-sentinel-scanner/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/SignalCoding/signal-sentinel-scanner/compare/v2.5.1...v3.0.0
 [2.5.1]: https://github.com/SignalCoding/signal-sentinel-scanner/compare/v2.5.0...v2.5.1
 [2.5.0]: https://github.com/SignalCoding/signal-sentinel-scanner/releases/tag/v2.5.0

@@ -78,6 +78,10 @@ verification. See [CHANGELOG.md](CHANGELOG.md) for release history and
 
 ### Scanner
 - 47 security rules across MCP server and Agent Skill scanning (41 detection + 6 informational)
+- **v3.0.1** skill-rule accuracy pass:
+  - Skill rules validated against a real-world third-party corpus (Anthropic's public skills repo) and its false-positive class fixed as a whole: YAML block-scalar descriptions parse, SS-018 uses document segmentation, SS-011/SS-014/SS-015/SS-016 patterns are shaped (access verb, destination, object, tool noun) rather than keyword-matched; every narrowing has a migration note in CHANGELOG.md.
+  - Regex engine guard: shipped patterns are tested for agreement between the source-generated and interpreted .NET engines after a .NET SDK 10.0.401 miscompile of lazy bounded group loops was found and removed.
+  - Markdown report evidence is escaped (newlines, backticks) so script content cannot break out of a code span.
 - **v3.0.0** accuracy and coverage reset:
   - Markdown-aware segmentation: skill rules evaluate frontmatter, prose, fenced code, inline code and link segments separately, eliminating whole classes of v2.x false positives; see [docs/MIGRATION_V3.md](docs/MIGRATION_V3.md).
   - Keyword-level triggers pruned and documented in [docs/keyword-rules.md](docs/keyword-rules.md); `fetch(` exfiltration detection is scoped to js/ts fenced code and bundled scripts.

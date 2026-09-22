@@ -9,9 +9,9 @@
     <AnalysisLevel>latest-all</AnalysisLevel>
     
     <!-- Package metadata -->
-    <!-- Single source of truth for the package/assembly version (v3.0.0). The
+    <!-- Single source of truth for the package/assembly version (v3.0.1). The
          release workflow overrides this from the git tag at pack time. -->
-    <Version>3.0.0</Version>
+    <Version>3.0.1</Version>
     <Authors>Signal Coding Limited</Authors>
     <Company>Signal Coding Limited</Company>
     <Copyright>Copyright 2026 Signal Coding Limited. All rights reserved.</Copyright>
