@@ -143,3 +143,6 @@ scan-results/
 # Local scan artefacts from ad-hoc runs
 openclaw-*
 
+
+# AGENTS.md section 8: _docs/ai/logs are governance artefacts and are version-controlled
+!_docs/ai/logs/

@@ -22,8 +22,12 @@ public static partial class ExfiltrationPatterns
     // v2.4.0 tightened: the v2.3.x pattern fired on any "POST to"/"PUT to"/"upload to"
     // which matched legitimate API-calling skills. Outbound HTTP verbs now require a
     // data-object before "to" (POST the response to..., PUT credentials to..., etc.).
+    // v3.0.1 (F4): every verb alternative now starts with \b. Without it, "PUT" matched
+    // inside "input" and "output", so ordinary prose such as
+    // "Failed to copy input file to output location" graded Critical EXFIL-001 on a
+    // real skill's error string.
     [GeneratedRegex(
-        @"(?:(?:POST|PUT|PATCH)\s+(?:(?:the|all|any|your|user'?s?|this|it)\s+)?(?:data|credentials?|secrets?|tokens?|content|contents|response|history|transcript|logs?|keys?|passwords?|input|prompt|conversation|results?|files?|env(?:ironment)?|variables?|it|them|this|everything)\s+(?:to|via|through)|(?:POST|PUT|PATCH|upload|forward|send|transmit|exfiltrate|push)\s+(?:to|via)\s+https?://|send\s+(?:data|response|output|result|secrets?|credentials?|tokens?|keys?|passwords?|history|transcript|conversation)\s+(?:to|via)|upload\s+(?:the\s+|all\s+|it\s+)?(?:data|response|results?|file|logs?|transcript|history)\s+(?:to|via)|transmit\s+(?:to|via)|exfiltrate\s+(?:to|via)|forward\s+(?:data|response|secrets?|credentials?|history)\s+(?:to|via))",
+        @"(?:\b(?:POST|PUT|PATCH)\s+(?:(?:the|all|any|your|user'?s?|this|it)\s+)?(?:data|credentials?|secrets?|tokens?|content|contents|response|history|transcript|logs?|keys?|passwords?|input|prompt|conversation|results?|files?|env(?:ironment)?|variables?|it|them|this|everything)\s+(?:to|via|through)|\b(?:POST|PUT|PATCH|upload|forward|send|transmit|exfiltrate|push)\s+(?:to|via)\s+https?://|\bsend\s+(?:data|response|output|result|secrets?|credentials?|tokens?|keys?|passwords?|history|transcript|conversation)\s+(?:to|via)|\bupload\s+(?:the\s+|all\s+|it\s+)?(?:data|response|results?|file|logs?|transcript|history)\s+(?:to|via)|\btransmit\s+(?:to|via)|\bexfiltrate\s+(?:to|via)|\bforward\s+(?:data|response|secrets?|credentials?|history)\s+(?:to|via))",
         RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 500)]
     public static partial Regex HttpDataSend();

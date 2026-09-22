@@ -40,7 +40,12 @@
   <ItemGroup>
     <!-- v3.0.0 (smoke fixes): tools/list captured from live public MCP servers; the
          real-world false-positive regression corpus. -->
+    <!-- v3.0.1 (F14): the real-world skill corpus is markdown plus bundled scripts,
+         so the fixture copy set covers *.md/*.py/*.js alongside the MCP captures. -->
     <None Include="Fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\**\*.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\**\*.py" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\**\*.js" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
