@@ -19,6 +19,18 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- <PackageIcon>icon.png</PackageIcon> -->
     <PackageReleaseNotes>
+v3.0.1 - Skill Rules False-Positive Harvest, YAML Block Scalars, .NET 10.0.401 Regex Guard
+- FIXED: Frontmatter parser now understands YAML block scalars (folded `&gt;`, `&gt;-`, `&gt;+` and literal `|`, `|-`, `|+` blocks); previously `description: &gt;` parsed to `"&gt;"` instead of the intended multi-line value, causing SS-012 and others to fire on the indicator instead of the actual description.
+- FIXED: SS-018 no longer fires on HTML comments (it was sharing a regex with the HTML-comment check) and now reports code points as evidence.
+- FIXED: SS-018 document segmentation - HTML tags, meta-refreshes and data URIs now evaluate prose, raw HTML and frontmatter, not raw file, so `&lt;script&gt;` inside a code fence no longer grades Critical.
+- FIXED: SS-014 (Exfiltration) word boundaries - every outbound verb now requires `\b` prefix; "Failed to copy input file to output location" no longer fires.
+- FIXED: SS-015 (Dynamic Execution) member calls - `regex.exec()` and `child_process.exec()` no longer fire; bare Python `exec()` and `Invoke-Expression` unchanged.
+- FIXED: .NET 10.0.401 lazy bounded-loop regex miscompilation (`(?:X){n,m}?`) now uses explicit optional groups; four patterns in `InjectionPatterns` rewritten; fabricated INJECTION-002 evidence possible in v3.0.0 scans.
+- FIXED: Markdown report evidence escaping (CWE-116) - newlines and backticks now render safely inside code spans.
+- CHANGED (migration notes in CHANGELOG): SS-011 credential tokens need an access shape, exfil verbs need a destination, ALWAYS/NEVER/MUST need an object, IMPORTANT: needs a dangerous verb, quoted jailbreak phrases are mentions, `then use` needs a tool-shaped object; SS-015 decode/reverse need an execution sink; SS-016 drops /tmp,/var,/usr,%TEMP% from traversal and grades literal fixed commands Medium.
+- QUALITY: 47 total rules (unchanged); 1390 tests; 0 warnings, 0 errors.
+- See CHANGELOG.md for the full harvest details.
+
 v3.0.0 - Research-Report Buildout, Theme 1 Accuracy, Versioned Rubric
 - NEW RULES (22): SS-030 prompt description injection, SS-031 resource injection + URI heuristics, SS-032 server instructions injection/shadowing, SS-033 unsolicited server-initiated requests, SS-INFO-005 capability summary, SS-034 SHA256SUMS checksum verification, SS-035 file-artefact forensics (magic-byte/extension mismatch, hidden binaries, archives), SS-036 homoglyph/confusable identifiers (UTS #39-style), SS-037 cross-skill description overlap, SS-038 fetch-to-exec pipeline taint, SS-039 OSV dependency vulnerabilities (--osv), SS-INFO-006 unchecked dependency surface, SS-040 error-channel injection, SS-041 server-source dangerous sinks (--server-source), SS-042 A2A agent card findings (--agent-card).
 - NEW FLAGS: --policy (default|strict|defence|path), --rubric &lt;path&gt; (custom scoring rubric; invalid fails closed), --osv, --server-source &lt;dir&gt;, --agent-card &lt;url|path&gt;, --allow-private (SSRF override for loopback/RFC1918 targets).
