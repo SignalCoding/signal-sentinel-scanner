@@ -116,3 +116,52 @@ Scratch dir `%TEMP%\v3-smoke\` (contains `final-*.json` from the 2026-09-21 re-t
 3. A scan that connects to nothing must not grade A. "Inconclusive" needs to be a first-class outcome in every output format.
 4. Verify release artefacts after every tag; the workflow tick is not proof (v2.5.1 failed silently; GHCR has been private all along).
 5. Test the CLI's first-run surface (`--version`, `--help`, bad args) explicitly; nobody had, and `--version` dumped 130 lines for several releases.
+
+---
+
+## Update 2026-09-22 (Claude Code session, appended; sections above describe the 2026-09-21 state)
+
+**v3.0.1 is released.** Tag `v3.0.1` -> `8432246`. Release run `35762771277` succeeded in all four jobs. Verified:
+GitHub Release published with both `.nupkg`; NuGet `SignalSentinel.Scanner` and `SignalSentinel.Core` 3.0.1 live;
+global tool updated (`sentinel-scan --version` -> v3.0.1). GHCR `:3.0.1` pushed but the package is still private
+(5.1 item 1 unchanged). 47 rules, **1390 tests**, 0 warnings.
+
+| Step | PR / commit | Result |
+| --- | --- | --- |
+| Post-release validation of v3.0.0 | none (record `_docs/ai/completed/2026-09-21_v3.0.0-skill-corpus-smoke.md`) | MCP matrix matched the baseline exactly; Anthropic public skills corpus (19 skills) graded F/0 with 4 Critical, all false positives |
+| Skill-rule false-positive fix (F1-F15) | #64 `7bdf018` | corpus F/0 -> C, 0 Critical; YAML block scalars; SS-018 segmentation; SS-011/014/015/016 shaped; real-world skill fixtures + `RealWorldSkillCorpusTests`; +207 tests |
+| .NET 10.0.401 regex miscompile | in #64 | `(?:X){n,m}?` makes Compiled/GeneratedRegex return fabricated matches (interpreted engine: none) and `Matches()` never advances; four patterns rewritten, `RegexEngineIntegrityTests` guard; INJECTION-002's instance had shipped in 3.0.0 |
+| Security review of #64 | `_docs/ai/logs/v3.0.1-skill-false-positives_security-report.md` | PASS WITH NOTES; all three Medium items fixed in-branch (IMPORTANT: newline bypass, Markdown evidence escaping, F8 docs) |
+| Version bump | #65 `8432246` | ten locations, drift grep empty, spec `_docs/ai/completed/2026-09-22_v3.0.1-release.md` |
+| `.gitignore` | in #64 | `!_docs/ai/logs/` so governance logs are tracked (5.2 item done) |
+
+**Lesson recorded:** `_docs/ai/lessons/2026-09-21_skill-rules-need-real-world-corpus.md` (context-blind rules fixed
+token-by-token against one corpus; no real-world skill fixture existed; plus the engine-bug addendum).
+
+### Open items after this update
+
+For the owner:
+1. **GHCR visibility** (unchanged, 5.1 item 1).
+2. **Trivy SARIF upload warning** (5.2 row 1) still present in run `35762771277`. The fix is ready but was blocked by
+   the Claude Code permission classifier as a CI permission grant: in `.github/workflows/release.yml` job
+   `publish-docker`, add `security-events: write` under `permissions:`, and bump
+   `github/codeql-action/upload-sarif` to v4 at commit `1c5b675653bb5c22dbe9b12b556ec555138e09fd` (the `v4` tag,
+   dereferenced 2026-09-22). Apply by hand or allow the edit.
+3. **Upstream bug report** to `dotnet/runtime` for the regex miscompile; minimal repro in the security report addendum.
+4. **Jon's corpus re-run** is now meaningful (3.0.1); ask for the corpus as fixtures under `Fixtures/RealWorldSkills/`.
+5. Dependabot PRs and PR #36 as listed in 5.1 (unchanged).
+
+Engineering backlog additions (3.0.x / 3.1):
+- SS-012 scope-violation noise on real skills (11 Medium on the Anthropic corpus): body mentions of `http`/`api`/`web`
+  count as "network access"; consider Prose-only + verb-shaped capability detection.
+- Rubric: the corpus grades C at score 0 (5.2 last row applies).
+- `SkillScriptPayloadRuleTests.Evaluate_WithProcessExecution_ReturnsHigh` is misnamed (asserts title only; literal
+  commands are now Medium).
+- SS-024 "no signature" x19 Medium on every unsigned corpus; consider Info until signing is common.
+- F11 blind spot: decode in one script, dynamic exec in another script of the same skill is not linked.
+
+### Conventions confirmed this session
+- Commit trailer is now `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` plus a `Claude-Session:` line.
+- Delegation ran in `auto` mode under the standing authority above; every decision is in
+  `_docs/ai/logs/*_delegation.md`. Merges of #64/#65 and the `v3.0.1` tag were explicit owner instructions.
+- `_docs/ai/logs/.gitkeep` is untracked and harmless; ignore or delete.
