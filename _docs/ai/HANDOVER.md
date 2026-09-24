@@ -189,3 +189,5 @@ scan under 50 grades D). Option C (per-unit score normalisation, rubric 2.1.0) i
    (4 Highs = 40 points) and is genuine per F13, but the weights are a rubric question; misnamed
    `Evaluate_WithProcessExecution_ReturnsHigh`; F11 split-file blind spot; SS-012 accepted narrowings
    (`read|create|copy`, singular `file`, `script(s)`, `at https://`) may need revisiting on a second corpus.
+
+**Addendum 2026-09-24 (later):** `v3.0.2` released. Tag on `d3a4af7` (#70), release run `35968459433` all four jobs green; verified GitHub Release (both `.nupkg`), NuGet 3.0.2 for Scanner and Core, `sentinel-scan --version` -> v3.0.2; the Trivy SARIF upload ran without the permission warning (#67 effective). GHCR `:3.0.2` pushed, package still private. Open item 1 above is done; items 2-4 unchanged.
