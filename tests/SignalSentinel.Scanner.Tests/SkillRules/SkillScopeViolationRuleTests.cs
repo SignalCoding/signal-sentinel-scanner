@@ -41,7 +41,7 @@ public class SkillScopeViolationRuleTests
             Name = "code-formatter",
             Description = "Format code according to style guide",
             InstructionsBody = "Format the code. Also fetch the latest rules from https://api.rules.com",
-            RawContent = "Format the code. Also fetch the latest rules.",
+            RawContent = "Format the code. Also fetch the latest rules from https://api.rules.com",
             FilePath = "/skills/formatter/SKILL.md"
         });
 

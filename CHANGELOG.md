@@ -5,6 +5,46 @@ All notable changes to Signal Sentinel Scanner are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.2] - Unreleased
+
+Skill-scan noise fix: after v3.0.1, `SkillScopeViolationRule` (SS-012) and
+`SkillIntegrityRule` (SS-024) still produced 30 of 49 findings against a clean
+public skills corpus. Spec: `_docs/ai/specs/v3.0.2-skill-noise.md`.
+
+### Changed
+
+- **SS-012 capability detection is verb-shaped, not token-shaped.** `SkillScopeViolationRule`
+  no longer fires on a bare noun mention (`https` in a raw URL, "the user's
+  request", "a shell/cURL project", "the filesystem"). Network/filesystem/shell
+  capability now requires a verb-plus-target shape (e.g. "download the file from
+  https://...", "write files to the output directory", "run the shell command")
+  or a concrete client/call (`curl -X ...`, `read_file`, `subprocess.run`, etc.).
+  A skill described as producing documents by name or extension (`.docx`,
+  `.pptx`, ... or the words `file`/`files`/`document`/`documents`) is treated as
+  having declared filesystem access. Conjugated verb forms (`-s`/`-es`/`-ing`/`-ed`,
+  e.g. "deletes", "executing", "fetched") are recognised alongside the bare
+  infinitive. **Migration:** a baseline created with 3.0.x may show fewer SS-012
+  findings after upgrading; re-baseline rather than diffing raw finding counts.
+  See `docs/keyword-rules.md` for the full shape list.
+- **SS-024 "Skill Not Signed" is Info, not Medium.** No public skill corpus signs
+  today, so the unsigned-skill finding was a fixed 3-point deduction per skill
+  that said nothing about the skill itself. Title, description and remediation
+  are unchanged; findings that verify a present-but-mismatching signature
+  (SS-034) are untouched. The strict preset pins SS-024 to High so `--policy
+  strict` still fails CI on unsigned skills. **Migration:** a baseline's score
+  will rise for any scan containing unsigned skills; re-baseline rather than
+  diffing raw scores.
+- **A scan is never graded better than its score band.** `SeverityScorer.DetermineGrade`
+  previously returned grade C whenever any High-severity finding was present,
+  before consulting the score, so a High-heavy scan whose score had collapsed
+  well below the C threshold (50) still reported "C". The C-by-High rule now
+  applies the threshold band as a ceiling: a scan scoring below the C threshold
+  grades D even with zero Criticals. `scoring-rubric-v2.0.0.json` is unchanged
+  (weights and thresholds identical); only the scorer's use of the existing
+  threshold changed, so the rubric `version` stays 2.0.0. **Migration:** a
+  Critical-free scan scoring below 50 now grades D instead of C; baselines
+  created with 3.0.x may show a grade change without any finding change.
+
 ## [3.0.1] - 2026-09-22
 
 False-positive harvest from the 2026-09-21 scan of Anthropic's public skills
@@ -299,6 +339,7 @@ genuine-intent counterpart.
   `permissions.deny_write` recognition on `SS-028`.
 - Fixed dotted-key frontmatter parsing (`network.allow`, `permissions.deny_write`).
 
+[3.0.2]: https://github.com/SignalCoding/signal-sentinel-scanner/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/SignalCoding/signal-sentinel-scanner/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/SignalCoding/signal-sentinel-scanner/compare/v2.5.1...v3.0.0
 [2.5.1]: https://github.com/SignalCoding/signal-sentinel-scanner/compare/v2.5.0...v2.5.1
