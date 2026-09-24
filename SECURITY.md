@@ -78,6 +78,10 @@ verification. See [CHANGELOG.md](CHANGELOG.md) for release history and
 
 ### Scanner
 - 47 security rules across MCP server and Agent Skill scanning (41 detection + 6 informational)
+- **v3.0.2** skill-scan noise pass:
+  - SS-012 (Skill Scope Violation) now detects verb-shaped capability mentions (e.g. "download the file from https://...", "write files to..."), not bare nouns (`https` in a URL, "the filesystem"); conjugated verbs and tool-call shapes are recognised; skill descriptions with declared file/document production are trusted.
+  - SS-024 (Skill Not Signed) reclassified to Informational; the strict preset pins it to High so `--policy strict` still gates on unsigned skills.
+  - Scanner no longer grades better than its score band: a High-heavy scan scoring below the C threshold (50) now grades D, not C; the scoring rubric v2.0.0 is unchanged (weights and thresholds identical).
 - **v3.0.1** skill-rule accuracy pass:
   - Skill rules validated against a real-world third-party corpus (Anthropic's public skills repo) and its false-positive class fixed as a whole: YAML block-scalar descriptions parse, SS-018 uses document segmentation, SS-011/SS-014/SS-015/SS-016 patterns are shaped (access verb, destination, object, tool noun) rather than keyword-matched; every narrowing has a migration note in CHANGELOG.md.
   - Regex engine guard: shipped patterns are tested for agreement between the source-generated and interpreted .NET engines after a .NET SDK 10.0.401 miscompile of lazy bounded group loops was found and removed.

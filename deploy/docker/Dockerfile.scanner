@@ -87,7 +87,7 @@ CMD ["--help"]
 # OCI Image Labels (https://github.com/opencontainers/image-spec/blob/main/annotations.md)
 # Version comes from the release workflow (--build-arg VERSION=<git tag>); the default
 # below only applies to local manual builds.
-ARG VERSION=3.0.1
+ARG VERSION=3.0.2
 LABEL org.opencontainers.image.title="Signal Sentinel Scanner" \
       org.opencontainers.image.description="MCP Security Audit Tool - OWASP Agentic AI Top 10 Compliant" \
       org.opencontainers.image.vendor="Signal Coding Limited" \

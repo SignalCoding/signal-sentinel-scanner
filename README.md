@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![OWASP](https://img.shields.io/badge/OWASP-ASI%20Top%2010-green.svg)](https://owasp.org/www-project-agentic-ai-top-10/)
-[![Version](https://img.shields.io/badge/version-3.0.1-blue.svg)](https://github.com/SignalCoding/signal-sentinel-scanner/releases)
+[![Version](https://img.shields.io/badge/version-3.0.2-blue.svg)](https://github.com/SignalCoding/signal-sentinel-scanner/releases)
 [![SARIF](https://img.shields.io/badge/SARIF-v2.1.0-orange.svg)](https://docs.oasis-open.org/sarif/sarif/v2.1.0/)
 
 **Signal Sentinel** is a security-first MCP (Model Context Protocol) and Agent Skill security product family, designed to address the critical security gap in the agentic AI ecosystem.
@@ -72,8 +72,8 @@ False-positive remediation patch for the skill-scanning rules, informed by a rea
 dotnet tool install -g SignalSentinel.Scanner
 
 # Or run via Docker
-docker pull ghcr.io/signalcoding/signal-sentinel-scanner:3.0.1
-docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:3.0.1 --help
+docker pull ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2
+docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2 --help
 ```
 
 ### Quick Start
