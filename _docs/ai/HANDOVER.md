@@ -165,3 +165,27 @@ Engineering backlog additions (3.0.x / 3.1):
 - Delegation ran in `auto` mode under the standing authority above; every decision is in
   `_docs/ai/logs/*_delegation.md`. Merges of #64/#65 and the `v3.0.1` tag were explicit owner instructions.
 - `_docs/ai/logs/.gitkeep` is untracked and harmless; ignore or delete.
+
+---
+
+## Update 2026-09-24 (Claude Code session, appended)
+
+**`main` carries unreleased 3.0.2 changes** (version literals still 3.0.1; no tag). Suite **1424 tests**, 0 warnings.
+
+| Step | PR / commit | Result |
+| --- | --- | --- |
+| Trivy SARIF upload permission + `upload-sarif` v4 pin | #67 `855dcfc` | 5.2 row 1 done; takes effect on the next tag push |
+| SS-012 verb+target shapes, SS-024 -> Info, grade honours score band | #68 `22e0f1f` | Anthropic corpus C/0 (49) -> **D/29 (38, 23 Info)**, zero SS-012; spec `_docs/ai/completed/2026-09-24_v3.0.2-skill-noise.md` |
+| Security review of #68 | `_docs/ai/logs/v3.0.2-skill-noise_security-report.md` | PASS WITH NOTES; both findings fixed in-branch: `strict` preset now pins SS-024 to High via `severityOverrides` (overrides replace bumps, they do not chain); SS-012 shapes accept verb conjugations |
+
+**Owner rulings recorded:** grade/score consistency = option B (grade never better than score band; a Critical-free
+scan under 50 grades D). Option C (per-unit score normalisation, rubric 2.1.0) is the first 3.1 design item.
+
+### Open items after this update
+1. **Tag 3.0.2** when ready: bump the ten version locations (precedent #65), then tag; verify artefacts afterwards.
+2. **GHCR visibility** (unchanged, owner UI action).
+3. Upstream dotnet/runtime regex report; Jon's corpus as fixtures; Dependabot queue; PR #36 decision (all unchanged).
+4. Backlog: rubric option C; SS-016 High on `subprocess.run(cmd)` dynamic calls is the corpus's remaining grade driver
+   (4 Highs = 40 points) and is genuine per F13, but the weights are a rubric question; misnamed
+   `Evaluate_WithProcessExecution_ReturnsHigh`; F11 split-file blind spot; SS-012 accepted narrowings
+   (`read|create|copy`, singular `file`, `script(s)`, `at https://`) may need revisiting on a second corpus.
