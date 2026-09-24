@@ -195,4 +195,99 @@ public class SkillScopeViolationShapeTests
 
         findings.ShouldNotContain(f => f.Evidence == "filesystem access");
     }
+
+    // ---- N7 (security review Finding 2): verb conjugations --------------------
+    // Filesystem, shell and the primary network shape must accept -s/-es/-ing/-ed
+    // verb forms, not just the bare infinitive. Spec: section 8, N7.
+
+    [Fact]
+    public async Task N7_Filesystem_DeletesConjugation_StillFires()
+    {
+        var context = MakeContext(
+            BenignPurpose,
+            "The agent deletes temporary files after each run.");
+
+        var findings = (await Rule.EvaluateAsync(context)).ToList();
+
+        findings.ShouldContain(f =>
+            f.RuleId == RuleConstants.Rules.SkillScopeViolation && f.Evidence == "filesystem access");
+    }
+
+    [Fact]
+    public async Task N7_Filesystem_WritingConjugation_StillFires()
+    {
+        var context = MakeContext(
+            BenignPurpose,
+            "It is writing files into the output directory.");
+
+        var findings = (await Rule.EvaluateAsync(context)).ToList();
+
+        findings.ShouldContain(f =>
+            f.RuleId == RuleConstants.Rules.SkillScopeViolation && f.Evidence == "filesystem access");
+    }
+
+    [Fact]
+    public async Task N7_Shell_ExecutesConjugation_StillFires()
+    {
+        var context = MakeContext(
+            BenignPurpose,
+            "It executes commands silently in the background.");
+
+        var findings = (await Rule.EvaluateAsync(context)).ToList();
+
+        findings.ShouldContain(f =>
+            f.RuleId == RuleConstants.Rules.SkillScopeViolation && f.Evidence == "shell/command execution");
+    }
+
+    [Fact]
+    public async Task N7_Shell_RunsConjugation_StillFires()
+    {
+        var context = MakeContext(
+            BenignPurpose,
+            "The helper runs a shell command to convert the file.");
+
+        var findings = (await Rule.EvaluateAsync(context)).ToList();
+
+        findings.ShouldContain(f =>
+            f.RuleId == RuleConstants.Rules.SkillScopeViolation && f.Evidence == "shell/command execution");
+    }
+
+    [Fact]
+    public async Task N7_Network_DownloadsConjugation_StillFires()
+    {
+        var context = MakeContext(
+            BenignPurpose,
+            "The skill downloads the file from https://example.com/x");
+
+        var findings = (await Rule.EvaluateAsync(context)).ToList();
+
+        findings.ShouldContain(f =>
+            f.RuleId == RuleConstants.Rules.SkillScopeViolation && f.Evidence == "network access");
+    }
+
+    [Fact]
+    public async Task N7_Network_FetchesConjugation_StillFires()
+    {
+        var context = MakeContext(
+            BenignPurpose,
+            "It fetches data from the api");
+
+        var findings = (await Rule.EvaluateAsync(context)).ToList();
+
+        findings.ShouldContain(f =>
+            f.RuleId == RuleConstants.Rules.SkillScopeViolation && f.Evidence == "network access");
+    }
+
+    [Fact]
+    public async Task N7_Network_RequestsPluralNounConjugation_NoFinding()
+    {
+        // Benign control: pluralising the noun-bypass phrase must still stay silent.
+        var context = MakeContext(
+            BenignPurpose,
+            "Summarise the user's requests and reply.");
+
+        var findings = (await Rule.EvaluateAsync(context)).ToList();
+
+        findings.ShouldNotContain(f => f.Evidence == "network access");
+    }
 }

@@ -27,7 +27,8 @@ public class PolicyLoaderTests
 
         var p = policy.ShouldNotBeNull();
         p.BumpOneBandRules.ShouldBe(
-            ["SS-004", "SS-021", "SS-024", "SS-029", "SS-034", "SS-039"], ignoreOrder: true);
+            ["SS-004", "SS-021", "SS-029", "SS-034", "SS-039"], ignoreOrder: true);
+        p.SeverityOverrides["SS-024"].ShouldBe(Severity.High);
         p.BumpAllOneBand.ShouldBeFalse();
         p.FailOn.ShouldBe(Severity.Medium);
         p.ImpliesOffline.ShouldBeFalse();

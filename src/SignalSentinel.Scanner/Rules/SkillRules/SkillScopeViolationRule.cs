@@ -150,8 +150,13 @@ public sealed partial class SkillScopeViolationRule : IRule
     //    latest rules.", no URL - InstructionsBody's URL is a different field the
     //    rule does not read), so no network shape can reach a target here until
     //    RawContent is aligned with the URL-bearing InstructionsBody.
+    // Correction round 2 (2026-09-24, spec section 8, N7): verb alternations gain
+    // explicit -s/-es/-ing/-ed conjugations (e.g. "deletes"/"deleting"/"deleted"),
+    // not just the bare infinitive, so "The agent deletes temporary files" fires.
+    // Checked against every SKILL.md in the fixture corpus with the same gap/target
+    // shape - zero new matches, N3 unaffected.
     [GeneratedRegex(
-        @"\b(?:write|delete|remove|overwrite|modify|edit|save|move|list)\b(?:\s+\S+)?(?:\s+\S+)?(?:\s+\S+)?\s+(?:files|directory|directories|folders?)\b" +
+        @"\b(?:write|writes|writing|written|delete|deletes|deleting|deleted|remove|removes|removing|removed|overwrite|overwrites|overwriting|overwritten|modify|modifies|modifying|modified|edit|edits|editing|edited|save|saves|saving|saved|move|moves|moving|moved|list|lists|listing|listed)\b(?:\s+\S+)?(?:\s+\S+)?(?:\s+\S+)?\s+(?:files|directory|directories|folders?)\b" +
         @"|\b(?:read_file|write_file|readFile|writeFile|fs\.\w+|mkdir|rmdir|rm\s+-rf)\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]
@@ -177,8 +182,15 @@ public sealed partial class SkillScopeViolationRule : IRule
     //    unlike "from"/"to" which read as an action's source/destination.
     //  - an explicit request/call statement ("Runs http requests", "Issues ...
     //    https requests", "makes API calls").
+    // Correction round 2 (2026-09-24, spec section 8, N7): the primary (verb+target)
+    // network shape gains explicit -s/-es/-ing/-ed conjugations ("fetches"/
+    // "downloading"/"fetched"). The concrete-client alternatives and the two round-1
+    // shapes (preposition+URL, explicit request statement) are unchanged - they
+    // already key off nouns/prepositions, not verb conjugation. Checked against the
+    // fixture corpus - all new matches fall on claude-api, already protected by its
+    // "api" purpose declaration.
     [GeneratedRegex(
-        @"\b(?:fetch|download|retrieve|pull|call|query|post|send|upload|get|hit)\b(?:\s+\S+)?(?:\s+\S+)?(?:\s+\S+)?\s+(?:https?://|(?:the\s+)?(?:api|endpoint|webhook|server|url)\b)" +
+        @"\b(?:fetch|fetches|fetching|fetched|download|downloads|downloading|downloaded|retrieve|retrieves|retrieving|retrieved|pull|pulls|pulling|pulled|call|calls|calling|called|query|queries|querying|queried|post|posts|posting|posted|send|sends|sending|sent|upload|uploads|uploading|uploaded|get|gets|getting|got|hit|hits|hitting)\b(?:\s+\S+)?(?:\s+\S+)?(?:\s+\S+)?\s+(?:https?://|(?:the\s+)?(?:api|endpoint|webhook|server|url)\b)" +
         @"|(?-i:curl\s|wget\s)|Invoke-WebRequest|Invoke-RestMethod|requests\.(?:get|post|put)|httpx\.|urllib|fetch\(|axios\.|http\.(?:get|post)" +
         @"|\b(?:from|to)\s+https?://" +
         @"|\b(?:make|makes|making|run|runs|running|issue|issues|issuing|send|sends|perform|performs)\b(?:\s+\S+)?(?:\s+\S+)?\s+(?:https?|network|api|web|rest)\s+(?:requests?|calls?)\b",
@@ -186,8 +198,11 @@ public sealed partial class SkillScopeViolationRule : IRule
         matchTimeoutMilliseconds: 500)]
     private static partial Regex NetworkCapability();
 
+    // Correction round 2 (2026-09-24, spec section 8, N7): verb alternations gain
+    // explicit -s/-es/-ing/-ed conjugations ("executes"/"executing"/"executed",
+    // "runs"/"running"/"ran"). Checked against the fixture corpus - zero new matches.
     [GeneratedRegex(
-        @"\b(?:run|execute|invoke|launch|spawn)\b(?:\s+\S+)?(?:\s+\S+)?(?:\s+\S+)?\s+(?:commands?|shell|subprocess|terminal|process)\b" +
+        @"\b(?:run|runs|running|ran|execute|executes|executing|executed|invoke|invokes|invoking|invoked|launch|launches|launching|launched|spawn|spawns|spawning|spawned)\b(?:\s+\S+)?(?:\s+\S+)?(?:\s+\S+)?\s+(?:commands?|shell|subprocess|terminal|process)\b" +
         @"|subprocess\.\w+|child_process|os\.system|Process\.Start|popen|(?:sh|bash|cmd|powershell)\s+-c",
         RegexOptions.IgnoreCase | RegexOptions.Compiled,
         matchTimeoutMilliseconds: 500)]

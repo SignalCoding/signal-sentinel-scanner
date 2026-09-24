@@ -76,6 +76,8 @@ Correction round 1 (2026-09-24) added two further network shapes to `NetworkCapa
 - Preposition immediately before a URL: `from`/`to` + `https?://` (e.g. "download the file from https://..."). `at` was dropped after implementation: it regressed the "See the documentation at https://..." false-positive pin - "at" commonly introduces a passive/descriptive URL reference, unlike "from"/"to" which read as an action's source/destination.
 - Explicit request/call statement: `make(s|ing)`/`run(s|ning)`/`issue(s|ing)`/`send(s)`/`perform(s)` + up to two words + `https`/`http`/`network`/`api`/`web`/`rest` + `request(s)`/`call(s)` (e.g. "Runs http requests", "Issues ... https requests", "makes API calls").
 
+Correction round 2 (2026-09-24, spec section 8, N7): the filesystem, shell and primary network verb alternations each gained explicit `-s`/`-es`/`-ing`/`-ed` conjugations (e.g. `delete|deletes|deleting|deleted`, `execute|executes|executing|executed`, `fetch|fetches|fetching|fetched`) so a conjugated form ("deletes temporary files", "executes commands", "fetches data from the api") fires the same as the bare infinitive; checked against the real Anthropic and fixture corpora with zero new matches outside skills already protected by a declared purpose.
+
 ## Industry reference and its current status
 
 ROADMAP v3.0 (T1.3) originally targeted alignment with the token set from

@@ -21,15 +21,19 @@ public skills corpus. Spec: `_docs/ai/specs/v3.0.2-skill-noise.md`.
   or a concrete client/call (`curl -X ...`, `read_file`, `subprocess.run`, etc.).
   A skill described as producing documents by name or extension (`.docx`,
   `.pptx`, ... or the words `file`/`files`/`document`/`documents`) is treated as
-  having declared filesystem access. **Migration:** a baseline created with
-  3.0.x may show fewer SS-012 findings after upgrading; re-baseline rather than
-  diffing raw finding counts. See `docs/keyword-rules.md` for the full shape list.
+  having declared filesystem access. Conjugated verb forms (`-s`/`-es`/`-ing`/`-ed`,
+  e.g. "deletes", "executing", "fetched") are recognised alongside the bare
+  infinitive. **Migration:** a baseline created with 3.0.x may show fewer SS-012
+  findings after upgrading; re-baseline rather than diffing raw finding counts.
+  See `docs/keyword-rules.md` for the full shape list.
 - **SS-024 "Skill Not Signed" is Info, not Medium.** No public skill corpus signs
   today, so the unsigned-skill finding was a fixed 3-point deduction per skill
   that said nothing about the skill itself. Title, description and remediation
   are unchanged; findings that verify a present-but-mismatching signature
-  (SS-034) are untouched. **Migration:** a baseline's score will rise for any
-  scan containing unsigned skills; re-baseline rather than diffing raw scores.
+  (SS-034) are untouched. The strict preset pins SS-024 to High so `--policy
+  strict` still fails CI on unsigned skills. **Migration:** a baseline's score
+  will rise for any scan containing unsigned skills; re-baseline rather than
+  diffing raw scores.
 - **A scan is never graded better than its score band.** `SeverityScorer.DetermineGrade`
   previously returned grade C whenever any High-severity finding was present,
   before consulting the score, so a High-heavy scan whose score had collapsed
