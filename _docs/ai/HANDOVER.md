@@ -191,3 +191,5 @@ scan under 50 grades D). Option C (per-unit score normalisation, rubric 2.1.0) i
    (`read|create|copy`, singular `file`, `script(s)`, `at https://`) may need revisiting on a second corpus.
 
 **Addendum 2026-09-24 (later):** `v3.0.2` released. Tag on `d3a4af7` (#70), release run `35968459433` all four jobs green; verified GitHub Release (both `.nupkg`), NuGet 3.0.2 for Scanner and Core, `sentinel-scan --version` -> v3.0.2; the Trivy SARIF upload ran without the permission warning (#67 effective). GHCR `:3.0.2` pushed, package still private. Open item 1 above is done; items 2-4 unchanged.
+
+**Addendum 2026-09-24 (GHCR):** package is now public. Root cause of 5.1 item 1 was the organisation policy (Settings -> Packages -> Package creation had only Private ticked), which greys out Public in the package dialog; the owner enabled Public at org level, then the package visibility was switched to Public. Verified anonymously: manifests for 3.0.2, latest, 3.0.1 (4 platforms each), `docker pull` + `--version` run. Open owner items: upstream regex bug report, Jon corpus, Dependabot queue, PR #36.
