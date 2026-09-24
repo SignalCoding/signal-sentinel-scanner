@@ -1,0 +1,284 @@
+Test run for C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\bin\Release\net10.0\SignalSentinel.Scanner.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:02.20]     SignalSentinel.Scanner.Tests.Scoring.GradeBandCeilingTests.N5_OneHighPlusTwentyMedium_ScoreBelowCThreshold_GradesD [FAIL]
+[xUnit.net 00:00:02.21]     SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Filesystem_FilesystemAsNoun_NoFinding [FAIL]
+[xUnit.net 00:00:02.21]     SignalSentinel.Scanner.Tests.SkillRules.SkillIntegritySeverityTests.N2_Evaluate_SkillWithoutSignature_ReturnsInfoSeverity [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Scoring.GradeBandCeilingTests.N5_OneHighPlusTwentyMedium_ScoreBelowCThreshold_GradesD [254 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : grade
+    should be
+SecurityGrade.D
+    but was
+SecurityGrade.C
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Scoring.GradeBandCeilingTests.N5_OneHighPlusTwentyMedium_ScoreBelowCThreshold_GradesD() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Scoring\GradeBandCeilingTests.cs:line 66
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Filesystem_FilesystemAsNoun_NoFinding [723 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should not contain an element satisfying the condition
+(f.Evidence == "filesystem access")
+    but does
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Filesystem_FilesystemAsNoun_NoFinding() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillScopeViolationShapeTests.cs:line 128
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillIntegritySeverityTests.N2_Evaluate_SkillWithoutSignature_ReturnsInfoSeverity [132 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings[0].Severity
+    should be
+Severity.Info
+    but was
+Severity.Medium
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillIntegritySeverityTests.N2_Evaluate_SkillWithoutSignature_ReturnsInfoSeverity() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillIntegritySeverityTests.cs:line 51
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:02.22]     SignalSentinel.Scanner.Tests.Scoring.GradeBandCeilingTests.N5_GradeDescription_ForD_MentionsScoreBelowCThreshold [FAIL]
+[xUnit.net 00:00:02.22]     SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Network_RequestAsNoun_NoFinding [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Scoring.GradeBandCeilingTests.N5_GradeDescription_ForD_MentionsScoreBelowCThreshold [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : description
+    should contain (case insensitive comparison)
+"score fell below the C threshold"
+    but was actually
+"Poor - Critical findings detected. Immediate remediation required."
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Scoring.GradeBandCeilingTests.N5_GradeDescription_ForD_MentionsScoreBelowCThreshold() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Scoring\GradeBandCeilingTests.cs:line 123
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Network_RequestAsNoun_NoFinding [3 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should not contain an element satisfying the condition
+(f.Evidence == "network access")
+    but does
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Network_RequestAsNoun_NoFinding() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillScopeViolationShapeTests.cs:line 73
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:02.23]     SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Shell_ShellAndExecAsBareWords_NoFinding [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Shell_ShellAndExecAsBareWords_NoFinding [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should not contain an element satisfying the condition
+(f.Evidence == "shell/command execution")
+    but does
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Shell_ShellAndExecAsBareWords_NoFinding() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillScopeViolationShapeTests.cs:line 100
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:02.23]     SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Network_WebhookAsNoun_NoFinding [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Network_WebhookAsNoun_NoFinding [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should not contain an element satisfying the condition
+(f.Evidence == "network access")
+    but does
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Network_WebhookAsNoun_NoFinding() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillScopeViolationShapeTests.cs:line 86
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:02.25]     SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_PurposeDeclaration_DocxAndDocumentsMentionInDescription_DeclaresFilesystemAccess [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_PurposeDeclaration_DocxAndDocumentsMentionInDescription_DeclaresFilesystemAccess [3 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should not contain an element satisfying the condition
+(f.Evidence == "filesystem access")
+    but does
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_PurposeDeclaration_DocxAndDocumentsMentionInDescription_DeclaresFilesystemAccess() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillScopeViolationShapeTests.cs:line 196
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:02.25]     SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Filesystem_GenuineWriteFilesShape_StillFires [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Filesystem_GenuineWriteFilesShape_StillFires [3 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should contain an element satisfying the condition
+((f.RuleId == "SS-012") && (f.Evidence == "filesystem access"))
+    but does not
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Filesystem_GenuineWriteFilesShape_StillFires() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillScopeViolationShapeTests.cs:line 181
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:02.26]     SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Network_BareUrlAndFetchAsVerbWithoutTarget_NoFinding [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Network_BareUrlAndFetchAsVerbWithoutTarget_NoFinding [4 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should not contain an element satisfying the condition
+(f.Evidence == "network access")
+    but does
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_Network_BareUrlAndFetchAsVerbWithoutTarget_NoFinding() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillScopeViolationShapeTests.cs:line 59
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:02.26]     SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_ShellAndFilesystem_SpawnSubagentAndSaveToFilesystem_NoFinding [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_ShellAndFilesystem_SpawnSubagentAndSaveToFilesystem_NoFinding [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should not contain an element satisfying the condition
+(f.Evidence == "shell/command execution")
+    but does
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillScopeViolationShapeTests.N1_ShellAndFilesystem_SpawnSubagentAndSaveToFilesystem_NoFinding() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillScopeViolationShapeTests.cs:line 114
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:02.28]     SignalSentinel.Scanner.Tests.Scoring.GradeBandCeilingTests.N5_Grade_NeverBetterThanScoreBand [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Scoring.GradeBandCeilingTests.N5_Grade_NeverBetterThanScoreBand [187 ms]
+  Error Message:
+   FsCheck.Xunit.PropertyFailedException : 
+Falsifiable, after 48 tests (8 shrinks) (2599674243142713083,16546120562519510601). 
+Last step was invoked with size of 25 and seed of (8197872644537589391,16102634278615184233).
+Replay directly at failing step with (8197872644537589391,16102634278615184233,25).
+Original:
+[|Low; High; Info; Medium; Medium; Medium; Info; Info; Info; Info; High; Info;
+  Medium; Medium; Low; Info; Medium; Info; High; Low|]
+Shrunk:
+[|Low; High; Medium; Medium; Medium; High; Medium; Medium; Low; Medium; High;
+  Low|]
+
+---- System.Exception : Expected true, got false.
+  Stack Trace:
+  
+----- Inner Stack Trace -----
+
+[xUnit.net 00:00:02.29]     SignalSentinel.Scanner.Tests.SkillRules.RealWorldSkillCorpusTests.N3_Corpus_ProducesNoSkillScopeViolationFindings [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.RealWorldSkillCorpusTests.N3_Corpus_ProducesNoSkillScopeViolationFindings [82 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : offenders
+    should be empty but had
+9
+    items and was
+[Finding { RuleId = SS-012, OwaspCode = ASI02, Severity = Medium, Title = Skill Scope Violation: Undeclared network access, Description = Skill 'academy-guide' is described as 'Stop and check this skill before finishing any reply to a question about how to use Claude or a C...' but its instructions reference network access which is not part of its stated purpose., Remediation = Either update the skill description to include network access, or remove the network access instructions if they are not needed., ServerName = academy-guide, ToolName = , Evidence = network access, Confidence = 0.7, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\academy-guide\SKILL.md, OccurrenceCount = 1, AstCodes = <>z__ReadOnlySingleElementList`1[System.String], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-012, OwaspCode = ASI02, Severity = Medium, Title = Skill Scope Violation: Undeclared filesystem access, Description = Skill 'claude-api' is described as 'Reference for the Claude API / Anthropic SDK — model ids, pricing, params, streaming, tool use, M...' but its instructions reference filesystem access which is not part of its stated purpose., Remediation = Either update the skill description to include filesystem access, or remove the filesystem access instructions if they are not needed., ServerName = claude-api, ToolName = , Evidence = filesystem access, Confidence = 0.7, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\claude-api\SKILL.md, OccurrenceCount = 1, AstCodes = <>z__ReadOnlySingleElementList`1[System.String], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-012, OwaspCode = ASI02, Severity = Medium, Title = Skill Scope Violation: Undeclared shell/command execution, Description = Skill 'claude-api' is described as 'Reference for the Claude API / Anthropic SDK — model ids, pricing, params, streaming, tool use, M...' but its instructions reference shell/command execution which is not part of its stated purpose., Remediation = Either update the skill description to include shell/command execution, or remove the shell/command execution instructions if they are not needed., ServerName = claude-api, ToolName = , Evidence = shell/command execution, Confidence = 0.7, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\claude-api\SKILL.md, OccurrenceCount = 1, AstCodes = <>z__ReadOnlySingleElementList`1[System.String], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-012, OwaspCode = ASI02, Severity = High, Title = Skill Scope Violation: Undeclared filesystem access, Description = Skill 'office-helper' is described as 'Convert office documents to PDF and build simple styled reports. Use when the user asks for a doc...' but its instructions reference filesystem access which is not part of its stated purpose., Remediation = Either update the skill description to include filesystem access, or remove the filesystem access instructions if they are not needed., ServerName = office-helper, ToolName = , Evidence = filesystem access, Confidence = 0.85, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\office-helper\SKILL.md, OccurrenceCount = 1, AstCodes = <>z__ReadOnlySingleElementList`1[System.String], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-012, OwaspCode = ASI02, Severity = High, Title = Skill Scope Violation: Undeclared network access, Description = Skill 'office-helper' is described as 'Convert office documents to PDF and build simple styled reports. Use when the user asks for a doc...' but its instructions reference network access which is not part of its stated purpose., Remediation = Either update the skill description to include network access, or remove the network access instructions if they are not needed., ServerName = office-helper, ToolName = , Evidence = network access, Confidence = 0.85, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\office-helper\SKILL.md, OccurrenceCount = 1, AstCodes = <>z__ReadOnlySingleElementList`1[System.String], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-012, OwaspCode = ASI02, Severity = Critical, Title = Skill Scope Violation: Undeclared shell/command execution, Description = Skill 'office-helper' is described as 'Convert office documents to PDF and build simple styled reports. Use when the user asks for a doc...' but its instructions reference shell/command execution which is not part of its stated purpose., Remediation = Either update the skill description to include shell/command execution, or remove the shell/command execution instructions if they are not needed., ServerName = office-helper, ToolName = , Evidence = shell/command execution, Confidence = 0.85, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\office-helper\SKILL.md, OccurrenceCount = 1, AstCodes = <>z__ReadOnlySingleElementList`1[System.String], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-012, OwaspCode = ASI02, Severity = Medium, Title = Skill Scope Violation: Undeclared filesystem access, Description = Skill 'skill-creator' is described as 'Create new skills, modify and improve existing skills, and measure skill performance. Use when us...' but its instructions reference filesystem access which is not part of its stated purpose., Remediation = Either update the skill description to include filesystem access, or remove the filesystem access instructions if they are not needed., ServerName = skill-creator, ToolName = , Evidence = filesystem access, Confidence = 0.7, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\skill-creator\SKILL.md, OccurrenceCount = 1, AstCodes = <>z__ReadOnlySingleElementList`1[System.String], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-012, OwaspCode = ASI02, Severity = Medium, Title = Skill Scope Violation: Undeclared network access, Description = Skill 'skill-creator' is described as 'Create new skills, modify and improve existing skills, and measure skill performance. Use when us...' but its instructions reference network access which is not part of its stated purpose., Remediation = Either update the skill description to include network access, or remove the network access instructions if they are not needed., ServerName = skill-creator, ToolName = , Evidence = network access, Confidence = 0.7, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\skill-creator\SKILL.md, OccurrenceCount = 1, AstCodes = <>z__ReadOnlySingleElementList`1[System.String], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-012, OwaspCode = ASI02, Severity = Medium, Title = Skill Scope Violation: Undeclared shell/command execution, Description = Skill 'skill-creator' is described as 'Create new skills, modify and improve existing skills, and measure skill performance. Use when us...' but its instructions reference shell/command execution which is not part of its stated purpose., Remediation = Either update the skill description to include shell/command execution, or remove the shell/command execution instructions if they are not needed., ServerName = skill-creator, ToolName = , Evidence = shell/command execution, Confidence = 0.7, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\skill-creator\SKILL.md, OccurrenceCount = 1, AstCodes = <>z__ReadOnlySingleElementList`1[System.String], Suppression = , Scope = , CanonicalSkillName =  }]
+
+Additional Info:
+    Offending findings (ruleId severity skill | title | evidence):
+  SS-012 Medium academy-guide | Skill Scope Violation: Undeclared network access | network access
+  SS-012 Medium claude-api | Skill Scope Violation: Undeclared filesystem access | filesystem access
+  SS-012 Medium claude-api | Skill Scope Violation: Undeclared shell/command execution | shell/command execution
+  SS-012 Medium skill-creator | Skill Scope Violation: Undeclared filesystem access | filesystem access
+  SS-012 Medium skill-creator | Skill Scope Violation: Undeclared network access | network access
+  SS-012 Medium skill-creator | Skill Scope Violation: Undeclared shell/command execution | shell/command execution
+  SS-012 High office-helper | Skill Scope Violation: Undeclared filesystem access | filesystem access
+  SS-012 High office-helper | Skill Scope Violation: Undeclared network access | network access
+  SS-012 Critical office-helper | Skill Scope Violation: Undeclared shell/command execution | shell/command execution
+
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.RealWorldSkillCorpusTests.N3_Corpus_ProducesNoSkillScopeViolationFindings() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\RealWorldSkillCorpusTests.cs:line 220
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:03.26]     SignalSentinel.Scanner.Tests.SkillRules.RealWorldSkillCorpusTests.N3_Corpus_EverySkillIntegrityFindingIsInfo [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.RealWorldSkillCorpusTests.N3_Corpus_EverySkillIntegrityFindingIsInfo [68 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : integrityFindings
+    should satisfy the condition
+(f.Severity == 0)
+    but
+[Finding { RuleId = SS-024, OwaspCode = ASI04, Severity = Medium, Title = Skill Not Signed: academy-guide, Description = Skill 'academy-guide' does not ship with an integrity artefact (.sentinel-sig, SHA256SUMS, cosign.sig, or similar). Without a signature or checksum, tampering cannot be detected., Remediation = Publish skills with a signature file generated by cosign/sigstore, or at minimum a SHA256SUMS file. Current content hash (for your records): sha256:102ce9bf7624e88cf29b80b18fe5c6e1959dc58b1d66915acf808cca1704f610, ServerName = academy-guide, ToolName = , Evidence = sha256:102ce9bf7624e88cf29b80b18fe5c6e1959dc58b1d66915acf808cca1704f610, Confidence = 0.95, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\academy-guide\SKILL.md, OccurrenceCount = 1, AstCodes = System.String[], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-024, OwaspCode = ASI04, Severity = Medium, Title = Skill Not Signed: algorithmic-art, Description = Skill 'algorithmic-art' does not ship with an integrity artefact (.sentinel-sig, SHA256SUMS, cosign.sig, or similar). Without a signature or checksum, tampering cannot be detected., Remediation = Publish skills with a signature file generated by cosign/sigstore, or at minimum a SHA256SUMS file. Current content hash (for your records): sha256:6688fc81bb2051d3f234385b50ce160834eb0b0510ed8a5816cc412c1d28c352, ServerName = algorithmic-art, ToolName = , Evidence = sha256:6688fc81bb2051d3f234385b50ce160834eb0b0510ed8a5816cc412c1d28c352, Confidence = 0.95, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\algorithmic-art\SKILL.md, OccurrenceCount = 1, AstCodes = System.String[], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-024, OwaspCode = ASI04, Severity = Medium, Title = Skill Not Signed: claude-api, Description = Skill 'claude-api' does not ship with an integrity artefact (.sentinel-sig, SHA256SUMS, cosign.sig, or similar). Without a signature or checksum, tampering cannot be detected., Remediation = Publish skills with a signature file generated by cosign/sigstore, or at minimum a SHA256SUMS file. Current content hash (for your records): sha256:6bedbf75e06354b8d46c416cb8e490aa9bcf22ec6cda7be0a0ff6b64417d66fa, ServerName = claude-api, ToolName = , Evidence = sha256:6bedbf75e06354b8d46c416cb8e490aa9bcf22ec6cda7be0a0ff6b64417d66fa, Confidence = 0.95, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\claude-api\SKILL.md, OccurrenceCount = 1, AstCodes = System.String[], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-024, OwaspCode = ASI04, Severity = Medium, Title = Skill Not Signed: coauthor, Description = Skill 'coauthor' does not ship with an integrity artefact (.sentinel-sig, SHA256SUMS, cosign.sig, or similar). Without a signature or checksum, tampering cannot be detected., Remediation = Publish skills with a signature file generated by cosign/sigstore, or at minimum a SHA256SUMS file. Current content hash (for your records): sha256:d17e5bbe7b1a6ea9a96e0034fef349df18e9f5e1307a565e823eef6cfd3ab364, ServerName = coauthor, ToolName = , Evidence = sha256:d17e5bbe7b1a6ea9a96e0034fef349df18e9f5e1307a565e823eef6cfd3ab364, Confidence = 0.95, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\coauthor\SKILL.md, OccurrenceCount = 1, AstCodes = System.String[], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-024, OwaspCode = ASI04, Severity = Medium, Title = Skill Not Signed: mcp-builder, Description = Skill 'mcp-builder' does not ship with an integrity artefact (.sentinel-sig, SHA256SUMS, cosign.sig, or similar). Without a signature or checksum, tampering cannot be detected., Remediation = Publish skills with a signature file generated by cosign/sigstore, or at minimum a SHA256SUMS file. Current content hash (for your records): sha256:57231330040e18e033dad8b2fdc0340a6185034c32b42b7d3448f444a6af6cf2, ServerName = mcp-builder, ToolName = , Evidence = sha256:57231330040e18e033dad8b2fdc0340a6185034c32b42b7d3448f444a6af6cf2, Confidence = 0.95, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\mcp-builder\SKILL.md, OccurrenceCount = 1, AstCodes = System.String[], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-024, OwaspCode = ASI04, Severity = Medium, Title = Skill Not Signed: office-helper, Description = Skill 'office-helper' does not ship with an integrity artefact (.sentinel-sig, SHA256SUMS, cosign.sig, or similar). Without a signature or checksum, tampering cannot be detected., Remediation = Publish skills with a signature file generated by cosign/sigstore, or at minimum a SHA256SUMS file. Current content hash (for your records): sha256:b1a4b09171a1114d3532ba1159e021b94c2be05819a65d811d6b59cbfca2cbaf, ServerName = office-helper, ToolName = , Evidence = sha256:b1a4b09171a1114d3532ba1159e021b94c2be05819a65d811d6b59cbfca2cbaf, Confidence = 0.95, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\office-helper\SKILL.md, OccurrenceCount = 1, AstCodes = System.String[], Suppression = , Scope = , CanonicalSkillName =  }, Finding { RuleId = SS-024, OwaspCode = ASI04, Severity = Medium, Title = Skill Not Signed: skill-creator, Description = Skill 'skill-creator' does not ship with an integrity artefact (.sentinel-sig, SHA256SUMS, cosign.sig, or similar). Without a signature or checksum, tampering cannot be detected., Remediation = Publish skills with a signature file generated by cosign/sigstore, or at minimum a SHA256SUMS file. Current content hash (for your records): sha256:e030e7685e26283b4a76f5202aa3ae8516fb41dde799be5ae8ea6393ec009fe9, ServerName = skill-creator, ToolName = , Evidence = sha256:e030e7685e26283b4a76f5202aa3ae8516fb41dde799be5ae8ea6393ec009fe9, Confidence = 0.95, McpCode = , Source = Skill, SkillFilePath = C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Fixtures\RealWorldSkills\skill-creator\SKILL.md, OccurrenceCount = 1, AstCodes = System.String[], Suppression = , Scope = , CanonicalSkillName =  }]
+    do not
+
+Additional Info:
+    Offending findings (ruleId severity skill | title | evidence):
+  SS-024 Medium academy-guide | Skill Not Signed: academy-guide | sha256:102ce9bf7624e88cf29b80b18fe5c6e1959dc58b1d66915acf808cca1704f610
+  SS-024 Medium algorithmic-art | Skill Not Signed: algorithmic-art | sha256:6688fc81bb2051d3f234385b50ce160834eb0b0510ed8a5816cc412c1d28c352
+  SS-024 Medium claude-api | Skill Not Signed: claude-api | sha256:6bedbf75e06354b8d46c416cb8e490aa9bcf22ec6cda7be0a0ff6b64417d66fa
+  SS-024 Medium coauthor | Skill Not Signed: coauthor | sha256:d17e5bbe7b1a6ea9a96e0034fef349df18e9f5e1307a565e823eef6cfd3ab364
+  SS-024 Medium mcp-builder | Skill Not Signed: mcp-builder | sha256:57231330040e18e033dad8b2fdc0340a6185034c32b42b7d3448f444a6af6cf2
+  SS-024 Medium office-helper | Skill Not Signed: office-helper | sha256:b1a4b09171a1114d3532ba1159e021b94c2be05819a65d811d6b59cbfca2cbaf
+  SS-024 Medium skill-creator | Skill Not Signed: skill-creator | sha256:e030e7685e26283b4a76f5202aa3ae8516fb41dde799be5ae8ea6393ec009fe9
+
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.RealWorldSkillCorpusTests.N3_Corpus_EverySkillIntegrityFindingIsInfo() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\RealWorldSkillCorpusTests.cs:line 230
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+
+Failed!  - Failed:    14, Passed:  1399, Skipped:     0, Total:  1413, Duration: 2 s - SignalSentinel.Scanner.Tests.dll (net10.0)

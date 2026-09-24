@@ -54,6 +54,28 @@ quotation marks is suppressed exactly as a documentation example is. INJECTION-0
 therefore one signal among several (defence in depth), never a standalone control; the
 instruction-injection, exfiltration and obfuscation patterns cover the same payloads.
 
+## Pruned / reshaped (v3.0.2)
+
+Harvested from the 2026-09-21 scan of `anthropics/skills` @ `34040c9` (30 of 49
+findings were SS-012/SS-024 on skills doing nothing wrong). Spec:
+`_docs/ai/specs/v3.0.2-skill-noise.md` N1.
+
+| # | Token / shape | Rule (pattern) | Rationale |
+|---|---|---|---|
+| N1 | bare `http` / `https` / `request` / `endpoint` / `webhook` / `socket` / `shell` / `exec` / `spawn` / `filesystem` | SS-012 `SkillScopeViolationRule` (`NetworkCapability`, `ShellCapability`, `FileSystemCapability`) | A noun mention ("the user's request", "a webhook", "a shell/cURL project", "the filesystem") is not capability use. Network now needs an outbound-call shape (`fetch/download/retrieve/pull/call/query/post/send/upload/get/hit` + up to three words + a URL or `api`/`endpoint`/`webhook`/`server`/`url`) or a concrete client (`curl`/`wget` case-sensitive lowercase, `Invoke-WebRequest`, `requests.get`, etc.); shell needs `run/execute/invoke/launch/spawn` + up to three words + `command(s)`/`shell`/`subprocess`/`terminal`/`process`, or a concrete process-spawn call; filesystem needs `write/delete/remove/overwrite/modify/edit/save/move/list` + up to three words + `files`/`directory`/`directories`/`folder(s)`, or a concrete file call (`read_file`, `fs.readFile`, `mkdir`, etc.). A skill described as producing documents by name or extension (`.docx`, `.pptx`, `.xlsx`, `.pdf`, `.png`, `.md`, `.json`, `.csv`, or the words `file`/`files`/`document`/`documents`) is treated as having declared filesystem access. |
+
+Accepted deviations from the shapes above (orchestrator-ruled, corpus-verified against the real Anthropic corpus and the fixture corpus, zero SS-012 regressions):
+
+- Filesystem verbs exclude `read`/`create`/`copy` (kept `write/delete/remove/overwrite/modify/edit/save/move/list`) - the real skill-creator SKILL.md genuinely contains "create directories", "read file X" (a quoted example), and "copy to the output directory", structurally identical to the required genuine-fire shape.
+- Filesystem target excludes bare singular `file` (kept plural `files` plus `directory`/`directories`/`folder(s)`) - same skill-creator conflict ("write a standalone HTML file", "Write to a temp file").
+- Shell target excludes `script(s)` (kept `command(s)`/`shell`/`subprocess`/`terminal`/`process`) - skill-creator's "run a script"/"run the aggregation script" is genuine prose with no purpose-declaration route.
+- `curl`/`wget` are matched case-sensitively (exact lowercase only) - the real claude-api fixture and office-helper both say "a shell/cURL project" (mixed case), which a case-insensitive match would wrongly fire on.
+
+Correction round 1 (2026-09-24) added two further network shapes to `NetworkCapability`, checked against every SKILL.md in both corpora with links/fences stripped (zero matches):
+
+- Preposition immediately before a URL: `from`/`to` + `https?://` (e.g. "download the file from https://..."). `at` was dropped after implementation: it regressed the "See the documentation at https://..." false-positive pin - "at" commonly introduces a passive/descriptive URL reference, unlike "from"/"to" which read as an action's source/destination.
+- Explicit request/call statement: `make(s|ing)`/`run(s|ning)`/`issue(s|ing)`/`send(s)`/`perform(s)` + up to two words + `https`/`http`/`network`/`api`/`web`/`rest` + `request(s)`/`call(s)` (e.g. "Runs http requests", "Issues ... https requests", "makes API calls").
+
 ## Industry reference and its current status
 
 ROADMAP v3.0 (T1.3) originally targeted alignment with the token set from

@@ -185,6 +185,51 @@ public class RealWorldSkillCorpusTests
         offenders.ShouldBeEmpty(Describe(offenders));
     }
 
+    // ---- N3 (v3.0.2): SS-012 shape fix and SS-024 severity, on the fixture corpus.
+    // office-helper's SKILL.md prose was extended with the own-words noun shapes from
+    // the v3.0.2 spec's SS-012 table (own-words request/shell/spawn/filesystem/URL
+    // mentions) specifically to pin this regression.
+    // Spec: _docs/ai/specs/v3.0.2-skill-noise.md N3.
+
+    private static IReadOnlyList<IRule> ScopeAndIntegrityRulesUnderTest =>
+    [
+        new SkillScopeViolationRule(),
+        new SkillIntegrityRule()
+    ];
+
+    private static async Task<List<Finding>> ScanCorpusForScopeAndIntegrityAsync()
+    {
+        var skills = await LoadCorpusAsync().ConfigureAwait(false);
+        var context = new ScanContext { Servers = [], Skills = skills };
+
+        var findings = new List<Finding>();
+        foreach (var rule in ScopeAndIntegrityRulesUnderTest)
+        {
+            findings.AddRange(await rule.EvaluateAsync(context).ConfigureAwait(false));
+        }
+
+        return findings;
+    }
+
+    [Fact]
+    public async Task N3_Corpus_ProducesNoSkillScopeViolationFindings()
+    {
+        var findings = await ScanCorpusForScopeAndIntegrityAsync();
+        var offenders = findings.Where(f => f.RuleId == RuleConstants.Rules.SkillScopeViolation).ToList();
+
+        offenders.ShouldBeEmpty(Describe(offenders));
+    }
+
+    [Fact]
+    public async Task N3_Corpus_EverySkillIntegrityFindingIsInfo()
+    {
+        var findings = await ScanCorpusForScopeAndIntegrityAsync();
+        var integrityFindings = findings.Where(f => f.RuleId == RuleConstants.Rules.SkillIntegrityVerification).ToList();
+
+        integrityFindings.ShouldNotBeEmpty("Expected SS-024 findings on the unsigned fixture corpus.");
+        integrityFindings.ShouldAllBe(f => f.Severity == Severity.Info, Describe(integrityFindings));
+    }
+
     // ---- Control: the rule set is still armed --------------------------------
 
     [Fact]

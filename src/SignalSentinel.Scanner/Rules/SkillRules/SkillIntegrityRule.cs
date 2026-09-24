@@ -58,7 +58,11 @@ public sealed class SkillIntegrityRule : IRule
                 {
                     RuleId = Id,
                     OwaspCode = OwaspCode,
-                    Severity = Severity.Medium,
+                    // v3.0.2 (N2): unsigned-skill finding is informational, not a
+                    // deduction - no public skill corpus signs today, so Medium made
+                    // this a fixed per-skill score penalty that said nothing about
+                    // the skill itself.
+                    Severity = Severity.Info,
                     Title = $"Skill Not Signed: {skill.Name}",
                     Description =
                         $"Skill '{skill.Name}' does not ship with an integrity artefact (.sentinel-sig, SHA256SUMS, cosign.sig, or similar). " +

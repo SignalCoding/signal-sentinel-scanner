@@ -11,7 +11,7 @@ public class SkillIntegrityRuleTests
     private readonly SkillIntegrityRule _rule = new();
 
     [Fact]
-    public async Task Evaluate_SkillWithoutSignature_ReturnsMediumFinding()
+    public async Task Evaluate_SkillWithoutSignature_ReturnsInfoFinding()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"skill-integrity-{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDir);
@@ -33,7 +33,7 @@ public class SkillIntegrityRuleTests
 
             findings.Count.ShouldBe(1);
             findings[0].RuleId.ShouldBe("SS-024");
-            findings[0].Severity.ShouldBe(Severity.Medium);
+            findings[0].Severity.ShouldBe(Severity.Info);
             findings[0].Source.ShouldBe(FindingSource.Skill);
         }
         finally

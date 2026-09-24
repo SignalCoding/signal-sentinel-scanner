@@ -114,11 +114,13 @@ public static class SeverityScorer
             return SecurityGrade.D;
         }
 
-        // C: high findings or a high attack path
+        // C: high findings or a high attack path - but never better than the score
+        // band (v3.0.2, N5, owner ruling option B): a High-bearing scan whose score
+        // has collapsed below thresholds.C grades D instead of a flat C.
         if (highCount >= rules.C.HighFindingsAtLeast
             || highAttackPaths >= rules.C.HighAttackPathsAtLeast)
         {
-            return SecurityGrade.C;
+            return score >= thresholds.C ? SecurityGrade.C : SecurityGrade.D;
         }
 
         // B: No critical findings, some issues but score is still decent
@@ -144,7 +146,7 @@ public static class SeverityScorer
         SecurityGrade.A => "Excellent - No critical or high severity findings. MCP configuration follows security best practices.",
         SecurityGrade.B => "Good - No critical findings. Minor improvements recommended.",
         SecurityGrade.C => "Fair - Some high severity findings present. Review and remediation recommended.",
-        SecurityGrade.D => "Poor - Critical findings detected. Immediate remediation required.",
+        SecurityGrade.D => "Poor - Critical findings detected, or the score fell below the C threshold. Immediate remediation required.",
         SecurityGrade.F => "Failing - Multiple critical findings or attack paths. Do not use in production.",
         SecurityGrade.Inconclusive => "Scan produced no evaluable surface - no server connected and no skills were scanned. Check the connection errors and informational findings in this report and your --config/--remote/--skills arguments; this is not a security posture result.",
         _ => "Unknown grade"

@@ -36,3 +36,14 @@ skill; it is shown here so you can copy it into your own report scaffold.
 
 Run `scripts/convert.py` with a source path. The script shells out to the local
 LibreOffice binary and writes the converted file next to the source.
+
+## Notes
+
+This is not a shell/cURL project. Read the user's request carefully before
+choosing a template: you could spawn a subagent to review the draft, and once
+you are happy with it, save it to the filesystem for the user to keep. For
+background reading on the underlying format, see https://example.com/docs.
+
+| Term | Meaning |
+| --- | --- |
+| code exec | Not used by this skill |
