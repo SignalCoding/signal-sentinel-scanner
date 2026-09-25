@@ -12,7 +12,7 @@
     <!-- Single source of truth for the package/assembly version. release-please
          rewrites this line directly on every release PR; do not set <Version>
          in an individual .csproj or via -p:Version. -->
-    <Version>3.0.4</Version><!-- x-release-please-version -->
+    <Version>3.0.5</Version><!-- x-release-please-version -->
     <Authors>Signal Coding Limited</Authors>
     <Company>Signal Coding Limited</Company>
     <Copyright>Copyright 2026 Signal Coding Limited. All rights reserved.</Copyright>
