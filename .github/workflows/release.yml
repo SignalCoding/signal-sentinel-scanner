@@ -17,6 +17,16 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish, e.g. 1.2.3 (re-publish an existing tag)'
+        required: true
+        type: string
+      tag:
+        description: 'Existing git tag, e.g. v1.2.3'
+        required: true
+        type: string
   workflow_call:
     inputs:
       version:
@@ -40,6 +50,8 @@ jobs:
     outputs:
       version: ${{ steps.resolve.outputs.version }}
       tag: ${{ steps.resolve.outputs.tag }}
+      major: ${{ steps.resolve.outputs.major }}
+      minor: ${{ steps.resolve.outputs.minor }}
 
     steps:
       - name: Resolve version and tag
@@ -53,6 +65,9 @@ jobs:
             echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
             echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
           fi
+          V=$(grep '^version=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)
+          echo "major=${V%%.*}" >> "$GITHUB_OUTPUT"
+          echo "minor=${V%.*}" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build & Test
@@ -182,10 +197,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ steps.image.outputs.NAME }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ needs.resolve.outputs.version }}
+            type=raw,value=${{ needs.resolve.outputs.minor }}
+            type=raw,value=${{ needs.resolve.outputs.major }}
+            type=raw,value=latest
 
       - name: Build and push Docker image
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
