@@ -73,6 +73,18 @@ rules that do not affect the grade.
 The version lives in one place: `<Version>` in `Directory.Build.props`. Do not add
 version literals elsewhere; derive them at build time or reference the assembly version.
 
+## Releasing
+
+Versioning and tagging are owned by [release-please](https://github.com/googleapis/release-please),
+driven by Conventional Commit PR titles (squash-merge uses the PR title as the commit
+subject, so the PR title is what matters). On every push to `main`, release-please
+opens or updates a `chore(main): release X.Y.Z` pull request that bumps the version
+everywhere (`Directory.Build.props` and the other `extra-files` in
+`release-please-config.json`) and rewrites `CHANGELOG.md`. Merge that PR to create the
+tag and the GitHub Release, which triggers `.github/workflows/release.yml` to publish
+the NuGet packages and the GHCR Docker image. After a release, verify the NuGet
+listing, the GHCR tag and the GitHub Release artefacts before considering it done.
+
 ## Licence
 
 By contributing you agree that your contributions are licensed under the

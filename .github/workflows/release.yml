@@ -3,7 +3,12 @@
 # Copyright 2026 Signal Coding Limited. All rights reserved.
 # Licensed under the Apache License, Version 2.0.
 # -----------------------------------------------------------------------
-# Triggered on version tags (v*) - publishes to NuGet and GitHub Container Registry
+# Publishes to NuGet and GitHub Container Registry. Two entry points:
+#   1. push: tags 'v*'   - manual/emergency releases (git tag vX.Y.Z && git push --tags).
+#   2. workflow_call     - the normal path, invoked by release-please.yml once it has
+#      created the tag and a draft release. version/tag inputs are used because a
+#      workflow_call run's triggering ref is the branch release-please pushed to
+#      (main), not the tag itself.
 # All actions pinned to SHA hashes for supply chain security.
 
 name: Release
@@ -12,6 +17,16 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version without the leading v, e.g. 1.2.3'
+        required: true
+        type: string
+      tag:
+        description: 'Full tag name, e.g. v1.2.3'
+        required: true
+        type: string
 
 env:
   DOTNET_VERSION: '10.0.x'
@@ -19,33 +34,53 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  resolve:
+    name: Resolve Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+
+    steps:
+      - name: Resolve version and tag
+        id: resolve
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
     name: Build & Test
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      
+
       - name: Setup .NET
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      
+
       - name: Restore dependencies
         run: dotnet restore
-      
+
       - name: Build
         run: dotnet build --configuration Release --no-restore
-      
+
       - name: Test
         run: dotnet test --configuration Release --no-build --verbosity normal
-      
+
       - name: Check for vulnerabilities
         run: dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerability-report.txt
-      
+
       - name: Fail on vulnerable packages
         run: |
           if grep -q "has the following vulnerable packages" vulnerability-report.txt; then
@@ -55,59 +90,55 @@ jobs:
 
   publish-nuget:
     name: Publish to NuGet
-    needs: build
+    needs: [build, resolve]
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      
+
       - name: Setup .NET
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      
-      - name: Extract version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-      
+
       - name: Pack Scanner
         run: |
           dotnet pack src/SignalSentinel.Scanner/SignalSentinel.Scanner.csproj \
             --configuration Release \
             --output ./artifacts \
-            -p:Version=${{ steps.version.outputs.VERSION }} \
+            -p:Version=${{ needs.resolve.outputs.version }} \
             -p:ContinuousIntegrationBuild=true
-      
+
       - name: Pack Core Library
         run: |
           dotnet pack src/SignalSentinel.Core/SignalSentinel.Core.csproj \
             --configuration Release \
             --output ./artifacts \
-            -p:Version=${{ steps.version.outputs.VERSION }} \
+            -p:Version=${{ needs.resolve.outputs.version }} \
             -p:ContinuousIntegrationBuild=true
-      
+
       - name: Upload NuGet artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: nuget-packages
           path: ./artifacts/*.nupkg
-      
+
       - name: Upload Symbol packages
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: symbol-packages
           path: ./artifacts/*.snupkg
-      
+
       - name: Publish to NuGet.org
         run: |
           dotnet nuget push ./artifacts/*.nupkg \
             --api-key ${{ secrets.NUGET_API_KEY }} \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
-      
+
       - name: Publish symbols to NuGet.org
         run: |
           dotnet nuget push ./artifacts/*.snupkg \
@@ -118,20 +149,16 @@ jobs:
 
   publish-docker:
     name: Publish to GHCR
-    needs: build
+    needs: [build, resolve]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
       security-events: write
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      
-      - name: Extract version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Lowercase image name
         id: image
@@ -141,14 +168,14 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
-      
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Extract metadata for Docker
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
@@ -159,7 +186,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-      
+
       - name: Build and push Docker image
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
@@ -171,20 +198,20 @@ jobs:
           build-args: |
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VCS_REF=${{ github.sha }}
-            VERSION=${{ steps.version.outputs.VERSION }}
+            VERSION=${{ needs.resolve.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
-      
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # master 2026-04-06
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ steps.image.outputs.NAME }}:${{ steps.version.outputs.VERSION }}
+          image-ref: ${{ env.REGISTRY }}/${{ steps.image.outputs.NAME }}:${{ needs.resolve.outputs.version }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
-      
+
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
         if: always()
@@ -194,54 +221,51 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    needs: [publish-nuget, publish-docker]
+    needs: [publish-nuget, publish-docker, resolve]
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      
-      - name: Extract version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-      
+
       - name: Download NuGet artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: nuget-packages
           path: ./artifacts
-      
+
       - name: Create Release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
-          name: Signal Sentinel v${{ steps.version.outputs.VERSION }}
+          tag_name: ${{ needs.resolve.outputs.tag }}
+          name: Signal Sentinel v${{ needs.resolve.outputs.version }}
+          append_body: true
           body: |
-            ## Signal Sentinel Scanner v${{ steps.version.outputs.VERSION }}
-            
+            ## Signal Sentinel Scanner v${{ needs.resolve.outputs.version }}
+
             MCP & Agent Skill Security Scanner - OWASP Agentic AI Top 10 + MCP Top 10 Compliant
-            
+
             ### Installation
-            
+
             **.NET Tool (recommended)**
             ```bash
             dotnet tool install -g SignalSentinel.Scanner
             ```
-            
+
             **Docker**
             ```bash
-            docker pull ghcr.io/signalcoding/signal-sentinel-scanner:${{ steps.version.outputs.VERSION }}
+            docker pull ghcr.io/signalcoding/signal-sentinel-scanner:${{ needs.resolve.outputs.version }}
             ```
-            
+
             ### Links
             - [Documentation](https://github.com/SignalCoding/signal-sentinel-scanner#readme)
             - [NuGet Package](https://www.nuget.org/packages/SignalSentinel.Scanner)
             - [Docker Image](https://ghcr.io/signalcoding/signal-sentinel-scanner)
             - [Website](https://signalcoding.co.uk/products/sentinel-scanner/)
-            
+
           files: |
             ./artifacts/*.nupkg
           draft: false
           prerelease: false
-          generate_release_notes: true

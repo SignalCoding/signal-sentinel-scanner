@@ -5,23 +5,6 @@ All notable changes to Signal Sentinel Scanner are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Dependencies
-
-- Bump `Microsoft.CodeAnalysis.NetAnalyzers` 10.0.201 -> 10.0.401 (Core, Scanner; first-party, quarantine-exempt).
-- Bump `YamlDotNet` 16.3.0 -> 18.1.0 (Core; v18 breaking change affects only `ITypeInspector`
-  implementers, not our `DeserializerBuilder` usage in `SigmaRuleLoader`).
-- Bump `FsCheck.Xunit` 3.3.4 -> 3.4.0 (Tests).
-- Bump `coverlet.collector` 8.0.1 -> 10.0.1 (Tests; test-only).
-- Bump `actions/checkout` v4 -> v7.0.1 (`3d3c42e5aac5ba805825da76410c181273ba90b1`) across ci.yml and release.yml.
-- Bump `docker/metadata-action` v5 -> v6.2.0 (`dc802804100637a589fabce1cb79ff13a1411302`), `docker/login-action`
-  v4.1.0 -> v4.6.0 (`dbcb813823bdd20940b903addbd779551569679f`), `actions/download-artifact` v4 -> v8.0.1
-  (`3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c`), `softprops/action-gh-release` v1 -> v3.0.3
-  (`efb35369e0ad2afab669f228072c1b0d510eae64`) in release.yml.
-- **Deferred:** `Markdig` 0.38.0 -> 1.4.0 (major) is quarantined until 2026-10-04; not part of
-  this batch.
-
 ## [3.0.2] - 2026-09-24
 
 Skill-scan noise fix: after v3.0.1, `SkillScopeViolationRule` (SS-012) and
