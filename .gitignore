@@ -19,6 +19,8 @@ obj/
 # Build results
 [Dd]ebug/
 [Rr]elease/
+# Not a build output directory - the version-drift test lives here.
+!tests/SignalSentinel.Scanner.Tests/Release/
 x64/
 x86/
 [Aa][Rr][Mm]/

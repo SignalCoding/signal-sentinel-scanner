@@ -13,11 +13,39 @@ on:
     branches: [main, 'release/**']
   pull_request:
     branches: [main, 'release/**']
+    types: [opened, edited, synchronize]
 
 env:
   DOTNET_VERSION: '10.0.x'
 
 jobs:
+  pr-title:
+    name: PR Title Lint
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+
+    steps:
+      - name: Check PR title follows Conventional Commits
+        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            deps
+            docs
+            refactor
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+
   build:
     name: Build & Test
     runs-on: ${{ matrix.os }}

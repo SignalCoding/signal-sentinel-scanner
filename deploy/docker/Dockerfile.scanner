@@ -86,8 +86,11 @@ CMD ["--help"]
 
 # OCI Image Labels (https://github.com/opencontainers/image-spec/blob/main/annotations.md)
 # Version comes from the release workflow (--build-arg VERSION=<git tag>); the default
-# below only applies to local manual builds.
+# below only applies to local manual builds. Dockerfiles have no inline comment
+# syntax, so release-please's block markers wrap the ARG line instead.
+# x-release-please-start-version
 ARG VERSION=3.0.2
+# x-release-please-end
 LABEL org.opencontainers.image.title="Signal Sentinel Scanner" \
       org.opencontainers.image.description="MCP Security Audit Tool - OWASP Agentic AI Top 10 Compliant" \
       org.opencontainers.image.vendor="Signal Coding Limited" \
