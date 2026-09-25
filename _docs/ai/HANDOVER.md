@@ -208,3 +208,19 @@ scan under 50 grades D). Option C (per-unit score normalisation, rubric 2.1.0) i
 5. Org setting "Allow GitHub Actions to create and approve pull requests" is now on (org level; the repo-level box is governed by it).
 
 Open: Markdig #60 after 2026-10-04; rubric option C (3.1 design); Jon corpus (email sent 2026-09-25, awaiting reply); dotnet/runtime #134655 (filed).
+
+**Addendum 2026-09-25 (upstream regex bug, triaged):** the area owner for `System.Text.RegularExpressions` replied
+to dotnet/runtime#134655 the same day: our case is fixed by dotnet/runtime#129628, "Fix compiled/source-generated
+lazy loop stack unwinding when giving up at max iteration", which closed dotnet/runtime#129511. Its summary matches
+both symptoms we saw, the `IndexOutOfRangeException` and the incorrect match, when backtracking out of a lazy loop
+that reached its upper bound.
+
+**The fix is .NET 11 only.** It merged to `main` on 2026-06-19 under milestone 11.0-preview6, and there is no
+backport in `release/10.0` (checked every PR into that branch on 2026-09-25). We target `net10.0` and ship on SDK
+10.0.401, so the bug is live for us and for every consumer of the tool and the image.
+
+**Therefore: do not revert the workaround.** The explicit-optional-group rewrites in `InjectionPatterns.cs`, the
+`RegexEngineIntegrityTests` hygiene guard (no `){n,m}?` in any shipped pattern) and its engine-consistency companion
+stay until this project moves to .NET 11, regardless of the upstream issue being closed as a duplicate. A comment
+asking whether the fix will be serviced into .NET 10 is on the issue; if the answer is yes, the guards can relax
+only once the servicing release is the minimum supported SDK.
