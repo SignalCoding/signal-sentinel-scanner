@@ -5,6 +5,14 @@ All notable changes to Signal Sentinel Scanner are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.5](https://github.com/SignalCoding/signal-sentinel-scanner/compare/v3.0.4...v3.0.5) (2026-09-25)
+
+
+### Documentation
+
+* **handover:** record that the upstream regex fix is .NET 11 only ([#85](https://github.com/SignalCoding/signal-sentinel-scanner/issues/85)) ([945be64](https://github.com/SignalCoding/signal-sentinel-scanner/commit/945be64b4577ac1b9b1d1402bce5d1e46c3e1229))
+* **handover:** release pipeline live, operating notes, 3.0.3 and 3.0.4 shipped ([#83](https://github.com/SignalCoding/signal-sentinel-scanner/issues/83)) ([e9bc264](https://github.com/SignalCoding/signal-sentinel-scanner/commit/e9bc2647f37eb9ca75e1fea697504c4176434e4b))
+
 ## [3.0.4](https://github.com/SignalCoding/signal-sentinel-scanner/compare/v3.0.3...v3.0.4) (2026-09-25)
 
 
