@@ -4,7 +4,7 @@
 #
 #   repos:
 #     - repo: https://github.com/SignalCoding/signal-sentinel-scanner
-#       rev: v3.0.3   # x-release-please-version
+#       rev: v3.0.4   # x-release-please-version
 #       hooks:
 #         - id: signal-sentinel
 #

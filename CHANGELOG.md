@@ -5,6 +5,14 @@ All notable changes to Signal Sentinel Scanner are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.4](https://github.com/SignalCoding/signal-sentinel-scanner/compare/v3.0.3...v3.0.4) (2026-09-25)
+
+
+### Bug Fixes
+
+* **release:** derive Docker tags from the resolved version; add workflow_dispatch re-publish ([#80](https://github.com/SignalCoding/signal-sentinel-scanner/issues/80)) ([e09dcf1](https://github.com/SignalCoding/signal-sentinel-scanner/commit/e09dcf196835901748ff007a3fbf081ea86f74a9))
+* **release:** publish the GitHub Release with gh CLI instead of action-gh-release ([#82](https://github.com/SignalCoding/signal-sentinel-scanner/issues/82)) ([67f2de4](https://github.com/SignalCoding/signal-sentinel-scanner/commit/67f2de457cb8e4ff20e29218ca18741f7ba87b1b))
+
 ## [3.0.3](https://github.com/SignalCoding/signal-sentinel-scanner/compare/v3.0.2...v3.0.3) (2026-09-25)
 
 
