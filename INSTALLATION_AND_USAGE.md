@@ -1,6 +1,6 @@
 # Signal Sentinel Scanner - Installation and Usage Guide
 
-**Version:** 3.0.2 <!-- x-release-please-version -->  
+**Version:** 3.0.3 <!-- x-release-please-version -->  
 **Last Updated:** 2026-07-29  
 **Repository:** https://github.com/SignalCoding/signal-sentinel-scanner
 
@@ -53,7 +53,7 @@ sentinel-scan --version
 **Expected output:**
 <!-- x-release-please-start-version -->
 ```
-Signal Sentinel Scanner v3.0.2
+Signal Sentinel Scanner v3.0.3
 ```
 <!-- x-release-please-end -->
 
@@ -88,7 +88,7 @@ dotnet tool uninstall -g SignalSentinel.Scanner
 
 <!-- x-release-please-start-version -->
 ```bash
-docker pull ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2
+docker pull ghcr.io/signalcoding/signal-sentinel-scanner:3.0.3
 ```
 <!-- x-release-please-end -->
 
@@ -96,7 +96,7 @@ docker pull ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2
 
 | Tag | Description |
 |-----|-------------|
-| `3.0.2` <!-- x-release-please-version --> | Specific version (recommended for CI/CD) |
+| `3.0.3` <!-- x-release-please-version --> | Specific version (recommended for CI/CD) |
 | `3.0` | Latest 3.0.x patch version |
 | `3` | Latest 3.x.x version |
 | `latest` | Latest stable release |
@@ -105,7 +105,7 @@ docker pull ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2
 
 <!-- x-release-please-start-version -->
 ```bash
-docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2 --version
+docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:3.0.3 --version
 ```
 <!-- x-release-please-end -->
 
@@ -114,7 +114,7 @@ docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2 --version
 | Property | Value |
 |----------|-------|
 | Registry | GitHub Container Registry (ghcr.io) |
-| Image | `ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2` <!-- x-release-please-version --> |
+| Image | `ghcr.io/signalcoding/signal-sentinel-scanner:3.0.3` <!-- x-release-please-version --> |
 | Base | Alpine Linux (.NET runtime-deps) |
 | Architecture | linux/amd64, linux/arm64 |
 | User | Non-root (sentinel, uid 1000) |
@@ -150,7 +150,7 @@ sentinel-scan --skills ~/.claude/skills/
 docker run --rm \
   -v "$HOME/.cursor:/home/sentinel/.cursor:ro" \
   -v "$HOME/.config:/home/sentinel/.config:ro" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2 --discover --skills
+  ghcr.io/signalcoding/signal-sentinel-scanner:3.0.3 --discover --skills
 ```
 <!-- x-release-please-end -->
 
@@ -160,7 +160,7 @@ docker run --rm \
 docker run --rm `
   -v "$env:USERPROFILE\.cursor:/home/sentinel/.cursor:ro" `
   -v "$env:APPDATA:/home/sentinel/AppData/Roaming:ro" `
-  ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2 --discover --skills
+  ghcr.io/signalcoding/signal-sentinel-scanner:3.0.3 --discover --skills
 ```
 <!-- x-release-please-end -->
 
@@ -176,7 +176,7 @@ sentinel-scan --config ~/.cursor/mcp.json
 ```bash
 docker run --rm \
   -v "$HOME/.cursor/mcp.json:/config/mcp.json:ro" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2 --config /config/mcp.json
+  ghcr.io/signalcoding/signal-sentinel-scanner:3.0.3 --config /config/mcp.json
 ```
 <!-- x-release-please-end -->
 
@@ -190,7 +190,7 @@ sentinel-scan --remote https://mcp.example.com/sse
 **Docker:**
 <!-- x-release-please-start-version -->
 ```bash
-docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2 \
+docker run --rm ghcr.io/signalcoding/signal-sentinel-scanner:3.0.3 \
   --remote https://mcp.example.com/sse
 ```
 <!-- x-release-please-end -->
@@ -266,7 +266,7 @@ sentinel-scan --discover --format html --output security-report.html
 docker run --rm \
   -v "$HOME/.cursor:/home/sentinel/.cursor:ro" \
   -v "$(pwd):/output" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2 \
+  ghcr.io/signalcoding/signal-sentinel-scanner:3.0.3 \
   --discover --skills --format html --output /output/security-report.html
 ```
 <!-- x-release-please-end -->
@@ -315,7 +315,7 @@ sentinel-scan --discover --format json
 ```json
 {
   "scanDate": "2026-07-29T08:00:00Z",
-  "scannerVersion": "3.0.2",
+  "scannerVersion": "3.0.3",
   "grade": "B",
   "score": 85,
   "summary": {
@@ -459,7 +459,7 @@ jobs:
   security-scan:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2 # x-release-please-version
+      image: ghcr.io/signalcoding/signal-sentinel-scanner:3.0.3 # x-release-please-version
     steps:
       - uses: actions/checkout@v4
       
@@ -494,7 +494,7 @@ steps:
 
 ```yaml
 mcp-security-scan:
-  image: ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2 # x-release-please-version
+  image: ghcr.io/signalcoding/signal-sentinel-scanner:3.0.3 # x-release-please-version
   script:
     - sentinel-scan --config ./mcp-config.json --ci --format json --output gl-sast-report.json
   artifacts:
@@ -667,7 +667,7 @@ sentinel-scan --remote https://slow-server.com/mcp --timeout 120
 ```bash
 docker run --rm \
   -v "/path/to/config:/config:ro" \
-  ghcr.io/signalcoding/signal-sentinel-scanner:3.0.2 --config /config/mcp.json
+  ghcr.io/signalcoding/signal-sentinel-scanner:3.0.3 --config /config/mcp.json
 ```
 <!-- x-release-please-end -->
 
@@ -700,4 +700,4 @@ Apache 2.0 - Copyright 2026 Signal Coding Limited
 
 ---
 
-*Document generated for Signal Sentinel Scanner v3.0.2* <!-- x-release-please-version -->
+*Document generated for Signal Sentinel Scanner v3.0.3* <!-- x-release-please-version -->

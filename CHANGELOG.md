@@ -5,6 +5,26 @@ All notable changes to Signal Sentinel Scanner are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.3](https://github.com/SignalCoding/signal-sentinel-scanner/compare/v3.0.2...v3.0.3) (2026-09-25)
+
+
+### Bug Fixes
+
+* **readme:** version badge URL that release-please cannot mangle ([#78](https://github.com/SignalCoding/signal-sentinel-scanner/issues/78)) ([81c7507](https://github.com/SignalCoding/signal-sentinel-scanner/commit/81c7507fdfc635df0290b574ab210ba51d56db13))
+
+
+### Dependencies
+
+* batch 2026-09-24 - NetAnalyzers, YamlDotNet 18, FsCheck.Xunit, coverlet, five action pins ([#73](https://github.com/SignalCoding/signal-sentinel-scanner/issues/73)) ([ff088b5](https://github.com/SignalCoding/signal-sentinel-scanner/commit/ff088b531d8c2873bb7610f1e842866ae1edd5d3))
+
+
+### Documentation
+
+* **handover:** dependency batch merged, Markdig deferred ([#74](https://github.com/SignalCoding/signal-sentinel-scanner/issues/74)) ([8e8486c](https://github.com/SignalCoding/signal-sentinel-scanner/commit/8e8486c02a6fd10a8a18250f44b5f74f7120d57c))
+* **handover:** GHCR package public, root cause recorded ([#72](https://github.com/SignalCoding/signal-sentinel-scanner/issues/72)) ([87f17a9](https://github.com/SignalCoding/signal-sentinel-scanner/commit/87f17a928acfc4aacc41ddbe53aa4cf007c15d1b))
+* **handover:** release-please adopted, PR [#36](https://github.com/SignalCoding/signal-sentinel-scanner/issues/36) closed, upstream issue filed ([#76](https://github.com/SignalCoding/signal-sentinel-scanner/issues/76)) ([de15810](https://github.com/SignalCoding/signal-sentinel-scanner/commit/de15810632e1907a47865e1222f3fabd54b862f7))
+* **handover:** v3.0.2 released and verified ([#71](https://github.com/SignalCoding/signal-sentinel-scanner/issues/71)) ([ae10ed1](https://github.com/SignalCoding/signal-sentinel-scanner/commit/ae10ed1bda7464d5be0731d207c35924fdb8853a))
+
 ## [3.0.2] - 2026-09-24
 
 Skill-scan noise fix: after v3.0.1, `SkillScopeViolationRule` (SS-012) and

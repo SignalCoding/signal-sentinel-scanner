@@ -1,5 +1,5 @@
 {
-  "version": "3.0.2",
+  "version": "3.0.3",
   "rubricVersion": "2.0.0",
   "rules": [
     {
@@ -181,7 +181,9 @@
       "id": "SS-026",
       "name": "Instructional Tool/Skill Description",
       "owaspCode": "ASI01",
-      "astCodes": ["AST04"],
+      "astCodes": [
+        "AST04"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -189,7 +191,9 @@
       "id": "SS-028",
       "name": "Skill Identity/Memory File Write Access",
       "owaspCode": "ASI02",
-      "astCodes": ["AST03"],
+      "astCodes": [
+        "AST03"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -197,7 +201,10 @@
       "id": "SS-029",
       "name": "Skill Unpinned Dependency Reference (SkillJacking)",
       "owaspCode": "ASI04",
-      "astCodes": ["AST02", "AST07"],
+      "astCodes": [
+        "AST02",
+        "AST07"
+      ],
       "enabled": true,
       "severity": "medium"
     },
@@ -205,7 +212,9 @@
       "id": "SS-030",
       "name": "MCP Prompt Poisoning",
       "owaspCode": "ASI01",
-      "astCodes": ["AST04"],
+      "astCodes": [
+        "AST04"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -213,7 +222,9 @@
       "id": "SS-031",
       "name": "MCP Resource Poisoning",
       "owaspCode": "ASI01",
-      "astCodes": ["AST04"],
+      "astCodes": [
+        "AST04"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -221,7 +232,10 @@
       "id": "SS-032",
       "name": "MCP Server Instructions Injection",
       "owaspCode": "ASI01",
-      "astCodes": ["AST04", "AST05"],
+      "astCodes": [
+        "AST04",
+        "AST05"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -229,7 +243,9 @@
       "id": "SS-033",
       "name": "Unsolicited Server-to-Client Request",
       "owaspCode": "ASI07",
-      "astCodes": ["AST08"],
+      "astCodes": [
+        "AST08"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -237,7 +253,10 @@
       "id": "SS-034",
       "name": "Skill Integrity Mismatch",
       "owaspCode": "ASI04",
-      "astCodes": ["AST02", "AST07"],
+      "astCodes": [
+        "AST02",
+        "AST07"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -245,7 +264,10 @@
       "id": "SS-035",
       "name": "Skill Suspicious File Artefact",
       "owaspCode": "ASI04",
-      "astCodes": ["AST01", "AST06"],
+      "astCodes": [
+        "AST01",
+        "AST06"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -253,7 +275,9 @@
       "id": "SS-036",
       "name": "Unicode Confusable Identifier",
       "owaspCode": "ASI01",
-      "astCodes": ["AST04"],
+      "astCodes": [
+        "AST04"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -261,7 +285,9 @@
       "id": "SS-037",
       "name": "Cross-Skill Description Overlap",
       "owaspCode": "ASI01",
-      "astCodes": ["AST04"],
+      "astCodes": [
+        "AST04"
+      ],
       "enabled": true,
       "severity": "medium"
     },
@@ -269,7 +295,10 @@
       "id": "SS-038",
       "name": "Skill Script Pipeline Taint",
       "owaspCode": "ASI05",
-      "astCodes": ["AST01", "AST06"],
+      "astCodes": [
+        "AST01",
+        "AST06"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -277,7 +306,10 @@
       "id": "SS-039",
       "name": "Skill Dependency Known Vulnerability",
       "owaspCode": "ASI04",
-      "astCodes": ["AST02", "AST07"],
+      "astCodes": [
+        "AST02",
+        "AST07"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -285,7 +317,9 @@
       "id": "SS-INFO-006",
       "name": "Skill Dependency Surface (Unchecked)",
       "owaspCode": "ASI04",
-      "astCodes": ["AST02"],
+      "astCodes": [
+        "AST02"
+      ],
       "enabled": true,
       "severity": "info"
     },
@@ -293,7 +327,9 @@
       "id": "SS-040",
       "name": "Error-Channel / Result-Channel Injection",
       "owaspCode": "ASI01",
-      "astCodes": ["AST04"],
+      "astCodes": [
+        "AST04"
+      ],
       "enabled": true,
       "severity": "high"
     },
@@ -301,7 +337,9 @@
       "id": "SS-041",
       "name": "Server Source Dangerous Sink",
       "owaspCode": "ASI05",
-      "astCodes": ["AST06"],
+      "astCodes": [
+        "AST06"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -309,7 +347,9 @@
       "id": "SS-042",
       "name": "A2A Agent Card Findings",
       "owaspCode": "ASI01",
-      "astCodes": ["AST04"],
+      "astCodes": [
+        "AST04"
+      ],
       "enabled": true,
       "severity": "dynamic"
     },
@@ -317,7 +357,9 @@
       "id": "SS-INFO-001",
       "name": "Non-MCP Endpoint Detected",
       "owaspCode": "ASI10",
-      "astCodes": ["AST08"],
+      "astCodes": [
+        "AST08"
+      ],
       "enabled": true,
       "severity": "info"
     },
@@ -332,7 +374,9 @@
       "id": "SS-INFO-003",
       "name": "Untrusted Server Certificate",
       "owaspCode": "ASI10",
-      "astCodes": ["AST08"],
+      "astCodes": [
+        "AST08"
+      ],
       "enabled": true,
       "severity": "info"
     },
@@ -340,7 +384,9 @@
       "id": "SS-INFO-004",
       "name": "Legacy MCP Protocol / Transport",
       "owaspCode": "ASI04",
-      "astCodes": ["AST08"],
+      "astCodes": [
+        "AST08"
+      ],
       "enabled": true,
       "severity": "info"
     },
@@ -348,7 +394,9 @@
       "id": "SS-INFO-005",
       "name": "MCP Capability Surface",
       "owaspCode": "ASI02",
-      "astCodes": ["AST03"],
+      "astCodes": [
+        "AST03"
+      ],
       "enabled": true,
       "severity": "info"
     }
