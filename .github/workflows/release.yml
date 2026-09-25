@@ -252,35 +252,49 @@ jobs:
           path: ./artifacts
 
       - name: Create Release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
-        with:
-          tag_name: ${{ needs.resolve.outputs.tag }}
-          name: Signal Sentinel v${{ needs.resolve.outputs.version }}
-          append_body: true
-          body: |
-            ## Signal Sentinel Scanner v${{ needs.resolve.outputs.version }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
 
-            MCP & Agent Skill Security Scanner - OWASP Agentic AI Top 10 + MCP Top 10 Compliant
+          VERSION="${{ needs.resolve.outputs.version }}"
+          TAG="${{ needs.resolve.outputs.tag }}"
 
-            ### Installation
+          cat > notes-install.md <<'EOF'
+          ## Signal Sentinel Scanner v$VERSION
 
-            **.NET Tool (recommended)**
-            ```bash
-            dotnet tool install -g SignalSentinel.Scanner
-            ```
+          MCP & Agent Skill Security Scanner - OWASP Agentic AI Top 10 + MCP Top 10 Compliant
 
-            **Docker**
-            ```bash
-            docker pull ghcr.io/signalcoding/signal-sentinel-scanner:${{ needs.resolve.outputs.version }}
-            ```
+          ### Installation
 
-            ### Links
-            - [Documentation](https://github.com/SignalCoding/signal-sentinel-scanner#readme)
-            - [NuGet Package](https://www.nuget.org/packages/SignalSentinel.Scanner)
-            - [Docker Image](https://ghcr.io/signalcoding/signal-sentinel-scanner)
-            - [Website](https://signalcoding.co.uk/products/sentinel-scanner/)
+          **.NET Tool (recommended)**
+          ```bash
+          dotnet tool install -g SignalSentinel.Scanner
+          ```
 
-          files: |
-            ./artifacts/*.nupkg
-          draft: false
-          prerelease: false
+          **Docker**
+          ```bash
+          docker pull ghcr.io/signalcoding/signal-sentinel-scanner:$VERSION
+          ```
+
+          ### Links
+          - [Documentation](https://github.com/SignalCoding/signal-sentinel-scanner#readme)
+          - [NuGet Package](https://www.nuget.org/packages/SignalSentinel.Scanner)
+          - [Docker Image](https://ghcr.io/signalcoding/signal-sentinel-scanner)
+          - [Website](https://signalcoding.co.uk/products/sentinel-scanner/)
+          EOF
+          sed -i "s/\$VERSION/$VERSION/g" notes-install.md
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release view "$TAG" --json body --jq .body > notes.md
+            if ! grep -qF "## Signal Sentinel Scanner v$VERSION" notes.md; then
+              printf '\n' >> notes.md
+              cat notes-install.md >> notes.md
+            fi
+            gh release upload "$TAG" ./artifacts/*.nupkg --clobber
+            gh release edit "$TAG" --title "Signal Sentinel v$VERSION" --notes-file notes.md --draft=false --latest
+          else
+            gh release create "$TAG" ./artifacts/*.nupkg --title "Signal Sentinel v$VERSION" --notes-file notes-install.md --latest
+          fi
+
+          echo "Release published: $(gh release view "$TAG" --json url --jq .url)"
