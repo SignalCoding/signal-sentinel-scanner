@@ -89,7 +89,7 @@ CMD ["--help"]
 # below only applies to local manual builds. Dockerfiles have no inline comment
 # syntax, so release-please's block markers wrap the ARG line instead.
 # x-release-please-start-version
-ARG VERSION=3.0.3
+ARG VERSION=3.0.4
 # x-release-please-end
 LABEL org.opencontainers.image.title="Signal Sentinel Scanner" \
       org.opencontainers.image.description="MCP Security Audit Tool - OWASP Agentic AI Top 10 Compliant" \
