@@ -120,13 +120,49 @@ public class SkillExcessivePermRuleAst04Tests
             "Declared 'shell: true' alone should raise the implied floor above L0.");
     }
 
+    // v3.1.1 (R1, ss017-scoped-declarations): superseded by the spec's own
+    // reproduction table. A1 (above) raised the floor from the *presence* of a
+    // declared files.write/network.allow scope; the benchmark run on main
+    // found that this punished an honest, narrow, enumerated allowlist the
+    // same as a wildcard. The floor now rises only for an *unbounded* entry
+    // ("*", "/", "~", ".."/CIDR-all/wildcard-domain - see
+    // DeclaredPermissionScope). These two cases now use an unbounded entry so
+    // they still exercise "declared permission alone raises the floor";
+    // the bounded/narrow counterparts are covered immediately below.
+
     [Fact]
-    public async Task Evaluate_L0WithDeclaredNonEmptyFilesWrite_ReturnsHighMismatchFinding()
+    public async Task Evaluate_L0WithDeclaredUnboundedFilesWrite_ReturnsHighMismatchFinding()
     {
         var context = CreateContext(new SkillDefinition
         {
             Name = "write-understated-skill",
-            Description = "Declares no risk but requests a write scope",
+            Description = "Declares no risk but requests an unbounded write scope",
+            InstructionsBody = "Saves a report.",
+            RawContent = "Saves a report.",
+            FilePath = "/skills/test/SKILL.md",
+            ExtraFrontmatter = new Dictionary<string, string>
+            {
+                ["risk_tier"] = "L0",
+                ["files.write"] = "[*]"
+            }
+        });
+
+        var findings = (await _rule.EvaluateAsync(context)).ToList();
+        findings.ShouldContain(f =>
+            f.Severity == Severity.High &&
+            f.Title.Contains("Risk Tier Understated", StringComparison.Ordinal),
+            "An unbounded declared 'files.write' scope alone should raise the implied floor above L0.");
+    }
+
+    [Fact]
+    public async Task Evaluate_L0WithDeclaredNarrowFilesWrite_DoesNotFireMismatchFinding()
+    {
+        // R1's worked example: an enumerated relative path is a scoped, honest
+        // declaration and must not be treated the same as a wildcard.
+        var context = CreateContext(new SkillDefinition
+        {
+            Name = "write-scoped-skill",
+            Description = "Declares no risk and requests a narrow write scope",
             InstructionsBody = "Saves a report.",
             RawContent = "Saves a report.",
             FilePath = "/skills/test/SKILL.md",
@@ -138,19 +174,44 @@ public class SkillExcessivePermRuleAst04Tests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.ShouldContain(f =>
-            f.Severity == Severity.High &&
-            f.Title.Contains("Risk Tier Understated", StringComparison.Ordinal),
-            "A non-empty declared 'files.write' scope alone should raise the implied floor above L0.");
+        findings.ShouldNotContain(f => f.Title.Contains("Risk Tier", StringComparison.Ordinal),
+            "A single enumerated relative path is a scoped grant and must not raise the implied floor.");
     }
 
     [Fact]
-    public async Task Evaluate_L0WithDeclaredNonEmptyNetworkAllow_ReturnsHighMismatchFinding()
+    public async Task Evaluate_L0WithDeclaredUnboundedNetworkAllow_ReturnsHighMismatchFinding()
     {
         var context = CreateContext(new SkillDefinition
         {
             Name = "network-understated-skill",
-            Description = "Declares no risk but requests network egress",
+            Description = "Declares no risk but requests unbounded network egress",
+            InstructionsBody = "Fetches a forecast.",
+            RawContent = "Fetches a forecast.",
+            FilePath = "/skills/test/SKILL.md",
+            ExtraFrontmatter = new Dictionary<string, string>
+            {
+                ["risk_tier"] = "L0",
+                ["network.allow"] = "[*]"
+            }
+        });
+
+        var findings = (await _rule.EvaluateAsync(context)).ToList();
+        findings.ShouldContain(f =>
+            f.Severity == Severity.High &&
+            f.Title.Contains("Risk Tier Understated", StringComparison.Ordinal),
+            "An unbounded declared 'network.allow' scope alone should raise the implied floor above L0.");
+    }
+
+    [Fact]
+    public async Task Evaluate_L0WithDeclaredNarrowNetworkAllow_DoesNotFireMismatchFinding()
+    {
+        // R1's worked example (spec reproduction table): a single enumerated
+        // host is a scoped, honest declaration and must not be treated the
+        // same as a wildcard.
+        var context = CreateContext(new SkillDefinition
+        {
+            Name = "network-scoped-skill",
+            Description = "Declares no risk and requests a narrow network scope",
             InstructionsBody = "Fetches a forecast.",
             RawContent = "Fetches a forecast.",
             FilePath = "/skills/test/SKILL.md",
@@ -162,10 +223,8 @@ public class SkillExcessivePermRuleAst04Tests
         });
 
         var findings = (await _rule.EvaluateAsync(context)).ToList();
-        findings.ShouldContain(f =>
-            f.Severity == Severity.High &&
-            f.Title.Contains("Risk Tier Understated", StringComparison.Ordinal),
-            "A non-empty declared 'network.allow' scope alone should raise the implied floor above L0.");
+        findings.ShouldNotContain(f => f.Title.Contains("Risk Tier", StringComparison.Ordinal),
+            "A single enumerated host is a scoped grant and must not raise the implied floor.");
     }
 
     [Fact]

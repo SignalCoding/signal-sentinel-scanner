@@ -278,7 +278,7 @@ public sealed partial class SkillScopeViolationRule : IRule
             // bare alias resolves both authoring conventions to a single check.
             var declaredNetworkAllow = skill.ExtraFrontmatter.FirstOrDefault(
                 kvp => string.Equals(kvp.Key, "network.allow", StringComparison.OrdinalIgnoreCase)).Value;
-            if (HasNonEmptyDeclaredScope(declaredNetworkAllow))
+            if (DeclaredPermissionScope.HasNonEmptyDeclaredScope(declaredNetworkAllow))
             {
                 yamlDeclared.Add("network access");
             }
@@ -287,7 +287,8 @@ public sealed partial class SkillScopeViolationRule : IRule
                 kvp => string.Equals(kvp.Key, "files.write", StringComparison.OrdinalIgnoreCase)).Value;
             var declaredFilesRead = skill.ExtraFrontmatter.FirstOrDefault(
                 kvp => string.Equals(kvp.Key, "files.read", StringComparison.OrdinalIgnoreCase)).Value;
-            if (HasNonEmptyDeclaredScope(declaredFilesWrite) || HasNonEmptyDeclaredScope(declaredFilesRead))
+            if (DeclaredPermissionScope.HasNonEmptyDeclaredScope(declaredFilesWrite) ||
+                DeclaredPermissionScope.HasNonEmptyDeclaredScope(declaredFilesRead))
             {
                 yamlDeclared.Add("filesystem access");
             }
@@ -342,21 +343,6 @@ public sealed partial class SkillScopeViolationRule : IRule
         }
 
         return Task.FromResult<IEnumerable<Finding>>(findings);
-    }
-
-    /// <summary>
-    /// v3.1.0 (D1): a declared list-shaped permission scope (e.g. <c>files.write</c>,
-    /// <c>network.allow</c>) counts as a declaration only when it is genuinely
-    /// non-empty once its list punctuation is stripped - an explicitly empty
-    /// declared scope (<c>[]</c>) declares no egress/write access, which is the
-    /// opposite of a grant. Mirrors SkillExcessivePermRule's identically-named
-    /// helper (SS-017, A1) for the same field shape.
-    /// </summary>
-    private static bool HasNonEmptyDeclaredScope(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return false;
-        var trimmed = value.Trim().TrimStart('[').TrimEnd(']').Trim();
-        return trimmed.Length > 0;
     }
 
     private static bool SafeIsMatch(Regex pattern, string? input)
