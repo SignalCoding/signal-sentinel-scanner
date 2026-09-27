@@ -67,7 +67,7 @@ the AST code definitions themselves live in
 | SS-021       | ASI04 | AST02, AST07         | Package provenance.                                     |
 | SS-022       | ASI01 | AST01, AST02         | Rug-pull / schema mutation.                             |
 | SS-023       | ASI01 | AST01                | Shadow tool typosquat.                                  |
-| SS-024       | ASI04 | AST02, AST07, AST09  | Skill integrity verification; an unsigned skill with no integrity artefact is also the absence of change-management made observable (AST09). |
+| SS-024       | ASI04 | AST02, AST07         | Skill integrity verification.                           |
 | SS-025       | ASI06 | AST03                | Excessive tool response size.                           |
 | SS-026       | ASI01 | AST04                | Instructional tool/skill description (hidden agent-directed instructions in metadata). |
 | SS-028       | ASI02 | AST03                | Skill write access to identity/memory files.            |
@@ -99,29 +99,57 @@ reachability notice, not a skill-authoring concern.
 
 ## Coverage statement
 
-As of `owasp-full-coverage.md` (2026-09-27), coverage across the three frameworks
-this project maps to is: **10/10 OWASP Agentic AI Top 10 (ASI)**, **9/10 OWASP
-Agentic Skills Top 10 (AST)**, **10/10 OWASP MCP Top 10 (MCP)**. The rule-registry
-parity audit (`_docs/ai/specs/rule-registry-parity.md`, section 8) originally found
-four categories unmatched and documented them as out of scope; re-examination
-showed the scanner already performed each detection and only the mapping was
-missing, so all four are now claimed:
+As of `2026-09-27_ast-benchmark-and-ast10-decision.md` section 4, coverage across the
+three frameworks this project maps to is: **10/10 OWASP Agentic AI Top 10 (ASI)**,
+**8/10 OWASP Agentic Skills Top 10 (AST)**, **10/10 OWASP MCP Top 10 (MCP)**. The
+rule-registry parity audit (`_docs/ai/specs/rule-registry-parity.md`, section 8)
+originally found four categories unmatched and documented them as out of scope;
+re-examination showed the scanner already performed each detection and only the
+mapping was missing for three of them, so those three are claimed:
 
 | Category | Definition | Claimed by |
 |---|---|---|
 | ASI08 | Cascading Failures - single agent fault propagating via automation | `SS-010` (Cross-Server Attack Path Analysis) - an attack path spanning two servers is a fault propagating via automation. |
-| AST09 | No Governance - no change-management, ownership or review process | `SS-024` (Skill Not Signed) - an unsigned skill with no integrity artefact is the absence of change-management made observable. |
 | MCP04 | Tool Argument Injection - manipulated parameters enabling unintended operations | `SS-041` (Server Source Dangerous Sink) - a dangerous sink reachable from a tool parameter is tool argument injection. |
 | MCP10 | Logging Failures - insufficient audit logging of MCP operations | `SS-INFO-007` (MCP Logging Capability Absent) - a connected server that does not advertise the MCP `logging` capability. |
 
-**The open gap: AST10 Cross-Platform Reuse** ("skill mixes incompatible platform
-semantics unsafely") remains unclaimed. Unlike the four above, it is not closable
-by remapping shipped behaviour - no existing rule detects a skill mixing or
-hard-coding platform-specific conventions while presenting as platform-neutral.
-Closing it would need a new detection designed from scratch, with its own spec,
-fixtures and false-positive analysis; it is recorded here as candidate future work
-rather than forced into a mapping to reach a round number. See
-`_docs/ai/specs/owasp-full-coverage.md` section 5 for the full reasoning.
+**Two documented open categories remain in AST, both named rather than forced into a
+mapping to reach a round number:**
+
+**AST09 No Governance** - no change-management, ownership or review process. A
+mapping from `SS-024` (Skill Not Signed) to AST09 was added in #87 and reverted here.
+An unsigned skill with no integrity artefact evidences one missing control; it does
+not evidence the absence of change-management, ownership or review, which are
+properties of the organisation that produced the skill and are not observable from
+the artefact. A well-governed team that does not sign its skills is indistinguishable
+from an ungoverned one at package level. This reading is corroborated externally: an
+independent implementation of the same OWASP Agentic Skills Top 10 framework
+(`jhkchan/ast10-agent-skills`) shipped eval-backed detectors for eight of the ten
+categories and declined AST09 on the same grounds - no package-level check is
+possible, because every governing scenario lives in the organisation, not the
+artefact. See
+`_docs/ai/completed/2026-09-27_ast-benchmark-and-ast10-decision.md` section 4.
+
+**AST10 Cross-Platform Reuse** - "skill mixes incompatible platform semantics
+unsafely". Not closable by remapping shipped behaviour - no existing rule detects a
+skill mixing or hard-coding platform-specific conventions while presenting as
+platform-neutral. Closing it would need a new detection designed from scratch, with
+its own spec, fixtures and false-positive analysis. A benchmark against the same
+independent corpus found Sentinel already detects that corpus's reading of AST10 (3
+of 3 vulnerable fixtures) using existing obfuscation rules, but the category itself
+admits at least three defensible readings and is not considered closed. See
+`_docs/ai/specs/owasp-full-coverage.md` section 5 and
+`_docs/ai/completed/2026-09-27_ast-benchmark-and-ast10-decision.md` sections 3-4 for
+the full reasoning.
+
+### Suggested website wording
+
+Every finding maps to all three OWASP frameworks this project tracks: Agentic AI,
+Agentic Skills, and MCP. Every category in OWASP Agentic AI Top 10 and OWASP MCP Top
+10 is claimed by at least one rule. In OWASP Agentic Skills Top 10, eight of ten
+categories are claimed; AST09 (No Governance) and AST10 (Cross-Platform Reuse) are
+documented open categories, named with their reasons rather than forced to a round
+number.
 
 ## Using AST codes in CI
 

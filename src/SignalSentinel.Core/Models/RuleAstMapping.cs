@@ -59,10 +59,12 @@ public static class RuleAstMapping
             // v2.2.0 rules (SS-022 to SS-025)
             ["SS-022"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST02],
             ["SS-023"] = [OwaspAstCodes.AST01],
-            // AST09 (No Governance): a skill shipping with no signature/integrity artefact
-            // is the absence of change-management and review made observable, per spec
-            // owasp-full-coverage.md C2. Additive - AST02/AST07 stay.
-            ["SS-024"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07, OwaspAstCodes.AST09],
+            // AST09 (No Governance) mapping reverted: an unsigned skill with no integrity
+            // artefact evidences one missing control, not the absence of change-management,
+            // ownership or review, which are organisational properties not observable from
+            // the artefact. See _docs/ai/completed/2026-09-27_ast-benchmark-and-ast10-decision.md
+            // section 4.
+            ["SS-024"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07],
             ["SS-025"] = [OwaspAstCodes.AST03],
 
             // v2.4.0 rules
