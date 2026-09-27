@@ -144,7 +144,7 @@ sentinel-scan --discover --skills --ci --format json
 
 ### Security Rules
 
-48 security rules (41 detection + 7 informational) across MCP and Agent Skill scanning, aligned with OWASP Agentic AI Top 10 and OWASP MCP Top 10. Every rule also carries an OWASP Agentic Skills Top 10 (AST) code where applicable - see [`docs/owasp-ast-mapping.md`](docs/owasp-ast-mapping.md) for the full dual mapping.
+49 security rules (42 detection + 7 informational) across MCP and Agent Skill scanning, aligned with OWASP Agentic AI Top 10 and OWASP MCP Top 10. Every rule also carries an OWASP Agentic Skills Top 10 (AST) code where applicable - see [`docs/owasp-ast-mapping.md`](docs/owasp-ast-mapping.md) for the full dual mapping.
 
 #### MCP Rules
 
