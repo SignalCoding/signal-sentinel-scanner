@@ -7,10 +7,12 @@
 
 // Spec: _docs/ai/specs/owasp-full-coverage.md.
 //
-// C1/C2/C3 pin the three specific remappings the spec calls for. C5 is the coverage
-// guard: it derives the full ASI/AST/MCP category lists by reflection over the
-// OwaspAsiCodes/OwaspAstCodes/OwaspMcpCodes constant classes (never a hard-coded count
-// of ten), so a newly defined category will fail this test until some rule claims it.
+// C1/C2/C3 pin the three specific remappings the spec calls for. C2 (AST09 via SS-024)
+// was later reverted - see _docs/ai/completed/2026-09-27_ast-benchmark-and-ast10-decision.md
+// section 4 - so the C2 tests below now pin the absence of that mapping instead. C5 is
+// the coverage guard: it derives the full ASI/AST/MCP category lists by reflection over
+// the OwaspAsiCodes/OwaspAstCodes/OwaspMcpCodes constant classes (never a hard-coded
+// count of ten), so a newly defined category will fail this test until some rule claims it.
 //
 // Judgement calls:
 //   - "Claimed by a rule" for ASI codes means either the rule's own singular OwaspCode
@@ -62,23 +64,25 @@ public class OwaspFullCoverageTests
         new CrossServerAttackPathRule().OwaspCode.ShouldBe(OwaspAsiCodes.ASI02);
     }
 
-    // ---------------------------------------------------------------- C2 (AST09 via SS-024)
+    // ---------------------------------------------------------------- C2 (AST09 via SS-024, reverted)
 
     [Fact]
-    public void SkillIntegrityRule_AstMapping_IncludesAst09()
+    public void SkillIntegrityRule_AstMapping_DoesNotClaimAst09()
     {
+        // C2 (#87) mapped SS-024 to AST09 additively; that mapping was reverted per
+        // _docs/ai/completed/2026-09-27_ast-benchmark-and-ast10-decision.md section 4. An
+        // unsigned skill with no integrity artefact evidences one missing control, not the
+        // absence of change-management, ownership or review, which are organisational
+        // properties not observable from the artefact.
         var codes = RuleAstMapping.GetCodes(RuleConstants.Rules.SkillIntegrityVerification);
 
-        codes.ShouldContain(
-            OwaspAstCodes.AST09,
-            "a skill shipping with no signature/integrity artefact is the absence of " +
-            "change-management and review made observable (AST09 No Governance), per spec C2.");
+        codes.ShouldNotContain(OwaspAstCodes.AST09);
     }
 
     [Fact]
     public void SkillIntegrityRule_AstMapping_RemainsAdditive()
     {
-        // C2 must not remove the existing AST02/AST07 claims.
+        // The AST09 reversion must not remove the existing AST02/AST07 claims.
         var codes = RuleAstMapping.GetCodes(RuleConstants.Rules.SkillIntegrityVerification);
 
         codes.ShouldContain(OwaspAstCodes.AST02);
@@ -108,32 +112,43 @@ public class OwaspFullCoverageTests
             $"ASI categories claimed by no rule and no attack path: {string.Join(", ", unclaimed)}");
     }
 
-    // Spec owasp-full-coverage.md section 5 (the amendment): AST10 (Cross-Platform
-    // Reuse - "skill mixes incompatible platform semantics unsafely") is a single,
-    // named, documented exception. It cannot be closed by a mapping like the other
-    // four gaps; it would need a new detection designed from scratch, with its own
-    // spec and false-positive analysis. This is the only exception the guard grants,
-    // and it is printed in the failure message below so it stays visible rather than
-    // silently tolerated. Any *other* category that becomes unclaimed still fails.
-    private const string DocumentedAstException = OwaspAstCodes.AST10;
-
-    private const string DocumentedAstExceptionReason =
-        "AST10 (Cross-Platform Reuse) is not detected by any shipped rule and is not " +
-        "closable by remapping, unlike ASI08/AST09/MCP04/MCP10 - see spec " +
-        "owasp-full-coverage.md section 5 for the reasoning and the decision to leave " +
-        "it as a single documented exception rather than force a mapping.";
+    // Two named, documented AST exceptions. Neither is closable by remapping shipped
+    // behaviour; each would need a new detection designed from scratch, with its own
+    // spec and false-positive analysis. These are the only exceptions the guard
+    // grants, and both are printed in the failure message below so they stay visible
+    // rather than silently tolerated. Any *other* category that becomes unclaimed
+    // still fails the guard.
+    private static readonly Dictionary<string, string> DocumentedAstExceptions =
+        new(StringComparer.Ordinal)
+        {
+            [OwaspAstCodes.AST09] =
+                "AST09 (No Governance) mapping (SS-024) was reverted: an unsigned skill " +
+                "with no integrity artefact evidences one missing control, not the absence " +
+                "of change-management, ownership or review, which are organisational " +
+                "properties not observable from the artefact - see " +
+                "_docs/ai/completed/2026-09-27_ast-benchmark-and-ast10-decision.md section 4.",
+            [OwaspAstCodes.AST10] =
+                "AST10 (Cross-Platform Reuse) is not detected by any shipped rule and is not " +
+                "closable by remapping, unlike ASI08/MCP04/MCP10 - see spec " +
+                "owasp-full-coverage.md section 5 for the reasoning and the decision to leave " +
+                "it as a single documented exception rather than force a mapping."
+        };
 
     [Fact]
     public void EveryAstCategory_IsClaimedByAtLeastOneRule()
     {
         var claimed = ClaimedAstCodes();
         var unclaimed = AllAstCodes
-            .Where(c => !claimed.Contains(c) && !string.Equals(c, DocumentedAstException, StringComparison.Ordinal))
+            .Where(c => !claimed.Contains(c) && !DocumentedAstExceptions.ContainsKey(c))
             .ToList();
+
+        var exceptionsDescription = string.Join(
+            "; ",
+            DocumentedAstExceptions.Select(kvp => $"{kvp.Key} - {kvp.Value}"));
 
         unclaimed.ShouldBeEmpty(
             $"AST categories claimed by no rule's RuleAstMapping entry: {string.Join(", ", unclaimed)}. " +
-            $"(Documented exception: {DocumentedAstException} - {DocumentedAstExceptionReason})");
+            $"(Documented exceptions: {exceptionsDescription})");
     }
 
     [Fact]
