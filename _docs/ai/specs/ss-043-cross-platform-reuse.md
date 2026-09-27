@@ -1,5 +1,10 @@
 # Spec: SS-043 Unenforced Cross-Platform Safety Declaration (closes AST10)
 
+> **SUPERSEDED 2026-09-27. Do not implement.** Measurement against a public corpus and a third-party
+> labelled fixture set showed the premise below does not match reality, that a third reading of AST10
+> exists, and that Sentinel already detects 3 of 3 of that reading's vulnerable fixtures with no new
+> code. See `_docs/ai/completed/2026-09-27_ast-benchmark-and-ast10-decision.md` section 3.
+
 **Status:** draft for owner approval. **Recommended sequencing: approve now, build after Jon's corpus arrives** (section 6).
 **Branch (proposed):** `feat/ss-043-cross-platform` from `main` @ `8460eaf`.
 **Closes:** the single documented exception in the coverage guard, `AST10 Cross-Platform Reuse`, left open by `owasp-full-coverage.md` section 5.
