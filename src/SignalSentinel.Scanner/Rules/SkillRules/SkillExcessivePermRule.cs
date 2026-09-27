@@ -85,6 +85,45 @@ public sealed partial class SkillExcessivePermRule : IRule
         matchTimeoutMilliseconds: 500)]
     private static partial Regex UnrestrictedShell();
 
+    // v3.1.1 (R2): bare capability nouns used to look up whether the author has
+    // explicitly closed the corresponding capability elsewhere in the document
+    // (frontmatter or prose) - see CapabilityIsExplicitlyClosed.
+    [GeneratedRegex(@"\bshell\b", RegexOptions.IgnoreCase | RegexOptions.Compiled, matchTimeoutMilliseconds: 500)]
+    private static partial Regex ShellCapabilityNoun();
+
+    [GeneratedRegex(@"\bnetwork\b", RegexOptions.IgnoreCase | RegexOptions.Compiled, matchTimeoutMilliseconds: 500)]
+    private static partial Regex NetworkCapabilityNoun();
+
+    [GeneratedRegex(@"\bfilesystem\b", RegexOptions.IgnoreCase | RegexOptions.Compiled, matchTimeoutMilliseconds: 500)]
+    private static partial Regex FilesystemCapabilityNoun();
+
+    // v3.1.1 (R2): the closed/negated-clause word list from the
+    // ss017-scoped-declarations spec, mirroring SensitiveDataRule's (SS-008)
+    // Negation() shape. A capability noun found inside one of these clauses is
+    // the author's own explicit denial, not a request.
+    [GeneratedRegex(
+        @"\b(?:no|not|never|closed|disabled|false|denied|without)\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled,
+        matchTimeoutMilliseconds: 500)]
+    private static partial Regex ClosingClauseNegation();
+
+    // v3.1.1 (R2): sentence splitter for the negation check. Unlike SS-008's
+    // SentenceBreak, this does not treat a bare newline as a sentence break:
+    // frontmatter YAML folded scalars (`>-`) wrap a single sentence across
+    // several raw lines, so a hard \n split would sever "shell is an" from
+    // "explicit closed declaration" and hide the negation. Whitespace
+    // (including \n) is normalised to a single space before this splits on
+    // sentence-ending punctuation only.
+    [GeneratedRegex(@"[.!?;]+", RegexOptions.Compiled, matchTimeoutMilliseconds: 500)]
+    private static partial Regex NegationSentenceBreak();
+
+    [GeneratedRegex(@"\s+", RegexOptions.Compiled, matchTimeoutMilliseconds: 500)]
+    private static partial Regex WhitespaceRun();
+
+    // Words allowed between a capability noun and a negation word for the
+    // negation to count as governing it. Mirrors SS-008's NegationWindow.
+    private const int NegationWindow = 4;
+
     public Task<IEnumerable<Finding>> EvaluateAsync(
         ScanContext context,
         CancellationToken cancellationToken = default)
@@ -204,30 +243,39 @@ public sealed partial class SkillExcessivePermRule : IRule
             // Check instructions for excessive capability requests
             if (CheckPattern(findings, skill, UnrestrictedFilesystem(), "Unrestricted Filesystem Access",
                 "requests unrestricted filesystem access",
-                "Restrict filesystem access to specific directories needed by the skill."))
+                "Restrict filesystem access to specific directories needed by the skill.",
+                FilesystemCapabilityNoun()))
             {
                 dangerSignals.Add("unrestricted filesystem access");
             }
 
             if (CheckPattern(findings, skill, UnrestrictedNetwork(), "Unrestricted Network Access",
                 "requests unrestricted network access",
-                "Restrict network access to specific endpoints needed by the skill."))
+                "Restrict network access to specific endpoints needed by the skill.",
+                NetworkCapabilityNoun()))
             {
                 dangerSignals.Add("unrestricted network access");
             }
 
             if (CheckPattern(findings, skill, UnrestrictedShell(), "Unrestricted Shell Access",
                 "requests unrestricted shell/command execution",
-                "Avoid requesting arbitrary command execution. Specify the exact commands needed."))
+                "Avoid requesting arbitrary command execution. Specify the exact commands needed.",
+                ShellCapabilityNoun(),
+                matchValue => IsBoundedShellMatch(skill, matchValue)))
             {
                 dangerSignals.Add("unrestricted shell access");
             }
 
-            // v3.1.0 (A1): derive the implied risk floor from declared permissions
-            // independently of observed (prose) capability. A skill that declares
-            // shell access or a non-empty write/network scope but says nothing
-            // dangerous in its body must still raise the floor - this is precisely
-            // the spoofing case the risk-tier check exists to catch.
+            // v3.1.0 (A1), narrowed by v3.1.1 (R1, ss017-scoped-declarations):
+            // derive the implied risk floor from declared permissions
+            // independently of observed (prose) capability - but only when what
+            // is declared is unbounded. A skill that declares shell access, or a
+            // write/network scope with an unbounded entry, but says nothing
+            // dangerous in its body must still raise the floor - this is
+            // precisely the spoofing case the risk-tier check exists to catch.
+            // An enumerated allowlist of concrete hosts or paths is a narrower,
+            // more honest declaration than a boolean grant and must not be
+            // punished the same way (R1).
             var declaredShell = skill.ExtraFrontmatter.FirstOrDefault(
                 kvp => string.Equals(kvp.Key, "shell", StringComparison.OrdinalIgnoreCase)).Value?.Trim();
             if (declaredShell is not null && ShellTruthyValues.Contains(declaredShell))
@@ -237,16 +285,18 @@ public sealed partial class SkillExcessivePermRule : IRule
 
             var declaredFilesWrite = skill.ExtraFrontmatter.FirstOrDefault(
                 kvp => string.Equals(kvp.Key, "files.write", StringComparison.OrdinalIgnoreCase)).Value;
-            if (HasNonEmptyDeclaredScope(declaredFilesWrite))
+            if (DeclaredPermissionScope.HasUnboundedEntry(
+                declaredFilesWrite, DeclaredPermissionScope.IsUnboundedFilesWriteEntry))
             {
-                dangerSignals.Add("declared files.write scope");
+                dangerSignals.Add("declared files.write scope (unbounded)");
             }
 
             var declaredNetworkAllow = skill.ExtraFrontmatter.FirstOrDefault(
                 kvp => string.Equals(kvp.Key, "network.allow", StringComparison.OrdinalIgnoreCase)).Value;
-            if (HasNonEmptyDeclaredScope(declaredNetworkAllow))
+            if (DeclaredPermissionScope.HasUnboundedEntry(
+                declaredNetworkAllow, DeclaredPermissionScope.IsUnboundedNetworkEntry))
             {
-                dangerSignals.Add("declared network.allow scope");
+                dangerSignals.Add("declared network.allow scope (unbounded)");
             }
 
             // v2.5.0 (G15c): cross-check the skill's self-declared risk_tier
@@ -312,14 +362,24 @@ public sealed partial class SkillExcessivePermRule : IRule
         Regex pattern,
         string patternName,
         string verb,
-        string remediation)
+        string remediation,
+        Regex capabilityNoun,
+        Func<string, bool>? isMatchSuppressed = null)
     {
         // v3.0.0 (WP10): permission-seeking instructions live in prose/frontmatter;
         // code examples in fenced blocks are not directives to the agent.
         var documentText = SegmentFilter.TextFor(skill, ApplicableSegments);
         if (!SafeIsMatch(pattern, documentText)) return false;
 
-        var match = SafeMatches(pattern, documentText).FirstOrDefault();
+        // v3.1.1 (R2): a skill that explicitly and closedly declares this
+        // capability elsewhere in the document ("shell is an explicit closed
+        // declaration", "shell: false") has denied it, regardless of how the
+        // triggering phrase itself reads.
+        if (CapabilityIsExplicitlyClosed(documentText, capabilityNoun)) return false;
+
+        var match = SafeMatches(pattern, documentText)
+            .FirstOrDefault(m => isMatchSuppressed is null || !isMatchSuppressed(m.Value));
+        if (match is null) return false;
 
         findings.Add(new Finding
         {
@@ -330,7 +390,7 @@ public sealed partial class SkillExcessivePermRule : IRule
             Description = $"Skill '{skill.Name}' {verb} in its instructions.",
             Remediation = remediation,
             ServerName = skill.Name,
-            Evidence = TruncateEvidence(match?.Value ?? "(matched)"),
+            Evidence = TruncateEvidence(match.Value),
             Confidence = 0.85,
             Source = FindingSource.Skill,
             SkillFilePath = skill.FilePath
@@ -340,16 +400,76 @@ public sealed partial class SkillExcessivePermRule : IRule
     }
 
     /// <summary>
-    /// v3.1.0 (A1): a declared list-shaped scope (e.g. <c>files.write</c>,
-    /// <c>network.allow</c>) counts toward the implied risk floor only when it
-    /// is genuinely non-empty once its list punctuation is stripped - an empty
-    /// declared scope ("[]") is not a grant.
+    /// v3.1.1 (R1 extension, found necessary by the AST06 V3/C4 corpus pair):
+    /// the bare, context-free shell phrases - "sudo", "root access", "admin
+    /// access", "as root" - describe a *means* of shell access rather than an
+    /// inherently unbounded one. When the skill also declares a non-empty,
+    /// concrete <c>shell.commands</c> allow-list (Universal Skill Format's
+    /// <c>permissions.shell.commands</c>), that means is bounded to specific
+    /// executables and this match is suppressed. "unrestricted shell", "full
+    /// shell", "arbitrary command/code" and "run/execute any ..." are never
+    /// suppressed this way - no commands allow-list makes those narrower.
     /// </summary>
-    private static bool HasNonEmptyDeclaredScope(string? value)
+    private static readonly HashSet<string> BoundedEligibleShellPhrases =
+        new(StringComparer.OrdinalIgnoreCase) { "sudo", "root access", "admin access", "as root" };
+
+    private static bool IsBoundedShellMatch(SkillDefinition skill, string matchedValue)
     {
-        if (string.IsNullOrWhiteSpace(value)) return false;
-        var trimmed = value.Trim().TrimStart('[').TrimEnd(']').Trim();
-        return trimmed.Length > 0;
+        if (!BoundedEligibleShellPhrases.Contains(matchedValue)) return false;
+
+        var declaredShellCommands = skill.ExtraFrontmatter.FirstOrDefault(
+            kvp => string.Equals(kvp.Key, "shell.commands", StringComparison.OrdinalIgnoreCase)).Value;
+        return DeclaredPermissionScope.HasNonEmptyDeclaredScope(declaredShellCommands) &&
+            !DeclaredPermissionScope.HasUnboundedEntry(
+                declaredShellCommands, DeclaredPermissionScope.IsUnboundedShellCommandEntry);
+    }
+
+    /// <summary>
+    /// v3.1.1 (R2): true when <paramref name="capabilityNoun"/> (e.g. bare
+    /// "shell") appears in some sentence of <paramref name="documentText"/>
+    /// within <see cref="NegationWindow"/> words of a closing/negation word
+    /// (<c>no</c>, <c>not</c>, <c>never</c>, <c>closed</c>, <c>disabled</c>,
+    /// <c>false</c>, <c>denied</c>, <c>without</c>). Mirrors
+    /// SensitiveDataRule's (SS-008) global pre-check: an explicit denial
+    /// anywhere in the document is the author's own answer and is taken as
+    /// authoritative for every mention of that capability, not just the one
+    /// next to the denial.
+    /// </summary>
+    private static bool CapabilityIsExplicitlyClosed(string documentText, Regex capabilityNoun)
+    {
+        var normalized = WhitespaceRun().Replace(documentText, " ");
+        foreach (var sentence in NegationSentenceBreak().Split(normalized))
+        {
+            var noun = capabilityNoun.Match(sentence);
+            if (!noun.Success) continue;
+
+            foreach (Match negation in ClosingClauseNegation().Matches(sentence))
+            {
+                var before = negation.Index < noun.Index &&
+                    WordsBetween(sentence, negation.Index + negation.Length, noun.Index) <= NegationWindow;
+                var after = negation.Index > noun.Index &&
+                    WordsBetween(sentence, noun.Index + noun.Length, negation.Index) <= NegationWindow;
+                if (before || after) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static int WordsBetween(string text, int start, int end)
+    {
+        if (end <= start) return 0;
+
+        var count = 0;
+        var inWord = false;
+        for (var i = start; i < end; i++)
+        {
+            var isWord = char.IsLetterOrDigit(text[i]) || text[i] == '_' || text[i] == '\'';
+            if (isWord && !inWord) count++;
+            inWord = isWord;
+        }
+
+        return count;
     }
 
     private static bool SafeIsMatch(Regex pattern, string? input)
