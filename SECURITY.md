@@ -77,7 +77,7 @@ verification. See [CHANGELOG.md](CHANGELOG.md) for release history and
 ## Security Features
 
 ### Scanner
-- 47 security rules across MCP server and Agent Skill scanning (41 detection + 6 informational)
+- 48 security rules across MCP server and Agent Skill scanning (41 detection + 7 informational)
 - **v3.0.2** skill-scan noise pass:
   - SS-012 (Skill Scope Violation) now detects verb-shaped capability mentions (e.g. "download the file from https://...", "write files to..."), not bare nouns (`https` in a URL, "the filesystem"); conjugated verbs and tool-call shapes are recognised; skill descriptions with declared file/document production are trusted.
   - SS-024 (Skill Not Signed) reclassified to Informational; the strict preset pins it to High so `--policy strict` still gates on unsigned skills.

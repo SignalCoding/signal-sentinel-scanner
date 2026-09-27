@@ -94,7 +94,11 @@ public sealed partial class CrossServerAttackPathRule : IRule
                         Id = $"AP-{++attackPathId:D3}",
                         Description = "Data Exfiltration: File read capability combined with network access enables reading local files and sending them to external endpoints.",
                         Severity = Severity.Critical,
-                        OwaspCodes = [OwaspAsiCodes.ASI02, OwaspAsiCodes.ASI09],
+                        // ASI08 (Cascading Failures): an attack path spanning two servers is a
+                        // single fault (the file-read capability) propagating via automation
+                        // (the network-send capability) into a second server. Additive per spec
+                        // owasp-full-coverage.md C1 - the rule's own singular OwaspCode stays ASI02.
+                        OwaspCodes = [OwaspAsiCodes.ASI02, OwaspAsiCodes.ASI08, OwaspAsiCodes.ASI09],
                         Steps =
                         [
                             new AttackPathStep

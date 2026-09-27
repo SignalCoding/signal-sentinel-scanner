@@ -1,0 +1,173 @@
+Test run for C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\bin\Release\net10.0\SignalSentinel.Scanner.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:01.39]     SignalSentinel.Scanner.Tests.Rules.McpLoggingCapabilityAbsentRuleTests.LoggingCapabilityAbsent_ConnectedServerWithoutLogging_FiresOnceAtInfo [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.McpLoggingCapabilityAbsentRuleTests.LoggingCapabilityAbsent_ConnectedServerWithoutLogging_FiresOnceAtInfo [141 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-INFO-007 (MCP Logging Capability Absent) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec C4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.McpLoggingCapabilityAbsentRuleTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\McpLoggingCapabilityAbsentRuleTests.cs:line 78
+   at SignalSentinel.Scanner.Tests.Rules.McpLoggingCapabilityAbsentRuleTests.LoggingCapabilityAbsent_ConnectedServerWithoutLogging_FiresOnceAtInfo() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\McpLoggingCapabilityAbsentRuleTests.cs:line 36
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.41]     SignalSentinel.Scanner.Tests.Rules.McpLoggingCapabilityAbsentRuleTests.LoggingCapabilityAbsent_ConnectedServerWithLogging_NoFindings [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.McpLoggingCapabilityAbsentRuleTests.LoggingCapabilityAbsent_ConnectedServerWithLogging_NoFindings [9 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-INFO-007 (MCP Logging Capability Absent) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec C4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.McpLoggingCapabilityAbsentRuleTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\McpLoggingCapabilityAbsentRuleTests.cs:line 78
+   at SignalSentinel.Scanner.Tests.Rules.McpLoggingCapabilityAbsentRuleTests.LoggingCapabilityAbsent_ConnectedServerWithLogging_NoFindings() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\McpLoggingCapabilityAbsentRuleTests.cs:line 49
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.41]     SignalSentinel.Scanner.Tests.Rules.McpLoggingCapabilityAbsentRuleTests.LoggingCapabilityAbsent_ServerFailedToConnect_NoFindings [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.McpLoggingCapabilityAbsentRuleTests.LoggingCapabilityAbsent_ServerFailedToConnect_NoFindings [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-INFO-007 (MCP Logging Capability Absent) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec C4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.McpLoggingCapabilityAbsentRuleTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\McpLoggingCapabilityAbsentRuleTests.cs:line 78
+   at SignalSentinel.Scanner.Tests.Rules.McpLoggingCapabilityAbsentRuleTests.LoggingCapabilityAbsent_ServerFailedToConnect_NoFindings() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\McpLoggingCapabilityAbsentRuleTests.cs:line 60
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.44]     SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.EveryAstCategory_IsClaimedByAtLeastOneRule [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.EveryAstCategory_IsClaimedByAtLeastOneRule [8 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : unclaimed
+    should be empty but had
+2
+    items and was
+["AST09", "AST10"]
+
+Additional Info:
+    AST categories claimed by no rule's RuleAstMapping entry: AST09, AST10
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.EveryAstCategory_IsClaimedByAtLeastOneRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\OwaspFullCoverageTests.cs:line 117
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:01.44]     SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.GetCorrespondingMcpCode_ServerSourceSink_ReturnsMcp04 [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.GetCorrespondingMcpCode_ServerSourceSink_ReturnsMcp04 [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : OwaspMcpCodes.GetCorrespondingMcpCode(RuleConstants.Rules.ServerSourceSink)
+    should be
+"MCP04"
+    but was
+null
+
+Additional Info:
+    a dangerous sink in server source reachable from a tool parameter is tool argument injection (MCP04), per spec C3.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.GetCorrespondingMcpCode_ServerSourceSink_ReturnsMcp04() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\OwaspFullCoverageTests.cs:line 93
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:01.53]     SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.EveryAsiCategory_IsClaimedByAtLeastOneRuleOrAttackPath [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.EveryAsiCategory_IsClaimedByAtLeastOneRuleOrAttackPath [51 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : unclaimed
+    should be empty but had
+1
+    item and was
+["ASI08"]
+
+Additional Info:
+    ASI categories claimed by no rule and no attack path: ASI08
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.EveryAsiCategory_IsClaimedByAtLeastOneRuleOrAttackPath() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\OwaspFullCoverageTests.cs:line 107
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.53]     SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.EveryMcpCategory_IsClaimedByAtLeastOneRule [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.EveryMcpCategory_IsClaimedByAtLeastOneRule [3 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : unclaimed
+    should be empty but had
+2
+    items and was
+["MCP04", "MCP10"]
+
+Additional Info:
+    MCP categories claimed by no rule via GetCorrespondingMcpCode: MCP04, MCP10
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.EveryMcpCategory_IsClaimedByAtLeastOneRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\OwaspFullCoverageTests.cs:line 127
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:01.54]     SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.CrossServerAttackPath_DataExfiltrationPath_IncludesAsi08 [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.CrossServerAttackPath_DataExfiltrationPath_IncludesAsi08 [5 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : exfilPath.OwaspCodes
+    should contain
+"ASI08"
+    but was actually
+["ASI02", "ASI09"]
+
+Additional Info:
+    an attack path spanning two servers is a fault propagating via automation (ASI08 Cascading Failures), per spec owasp-full-coverage.md C1.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.CrossServerAttackPath_DataExfiltrationPath_IncludesAsi08() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\OwaspFullCoverageTests.cs:line 51
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.55]     SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.SkillIntegrityRule_AstMapping_IncludesAst09 [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.SkillIntegrityRule_AstMapping_IncludesAst09 [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : codes
+    should contain
+"AST09"
+    but was actually
+["AST02", "AST07"]
+
+Additional Info:
+    a skill shipping with no signature/integrity artefact is the absence of change-management and review made observable (AST09 No Governance), per spec C2.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.OwaspFullCoverageTests.SkillIntegrityRule_AstMapping_IncludesAst09() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\OwaspFullCoverageTests.cs:line 72
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Failed!  - Failed:     9, Passed:  1766, Skipped:     0, Total:  1775, Duration: 2 s - SignalSentinel.Scanner.Tests.dll (net10.0)

@@ -67,7 +67,7 @@ the AST code definitions themselves live in
 | SS-021       | ASI04 | AST02, AST07         | Package provenance.                                     |
 | SS-022       | ASI01 | AST01, AST02         | Rug-pull / schema mutation.                             |
 | SS-023       | ASI01 | AST01                | Shadow tool typosquat.                                  |
-| SS-024       | ASI04 | AST02, AST07         | Skill integrity verification.                           |
+| SS-024       | ASI04 | AST02, AST07, AST09  | Skill integrity verification; an unsigned skill with no integrity artefact is also the absence of change-management made observable (AST09). |
 | SS-025       | ASI06 | AST03                | Excessive tool response size.                           |
 | SS-026       | ASI01 | AST04                | Instructional tool/skill description (hidden agent-directed instructions in metadata). |
 | SS-028       | ASI02 | AST03                | Skill write access to identity/memory files.            |
@@ -90,35 +90,38 @@ the AST code definitions themselves live in
 | SS-INFO-004  | ASI04 | AST08                | Legacy MCP protocol version / transport (2026-07-28 spec currency). |
 | SS-INFO-005  | ASI02 | AST03                | MCP capability surface, per-server listChanged/experimental/completions summary (v3.0). |
 | SS-INFO-006  | ASI04 | AST02                | Skill dependency surface (unchecked); lists pinned deps when `--osv` is absent, offline, or fails (v3.0). |
+| SS-INFO-007  | ASI10 | AST08                | MCP logging capability absent; server does not advertise `logging` so its operations cannot be audited through the protocol. |
 
 Rules may map to multiple AST categories. Unmapped combinations are intentional
 - e.g. `SS-006` is primarily about availability and is not a supply-chain concern;
 `SS-INFO-002` (non-public target) has no AST mapping because it is an MCP
 reachability notice, not a skill-authoring concern.
 
-## Out-of-scope OWASP categories
+## Coverage statement
 
-Four categories across the three frameworks this project maps to (OWASP Agentic AI
-Top 10 / ASI, OWASP Agentic Skills Top 10 / AST, OWASP MCP Top 10 / MCP) are matched
-by no rule. This is by design, not an oversight: each describes a property that a
-static, first-pass scanner cannot observe. Recorded here per the rule-registry
-parity audit (`_docs/ai/specs/rule-registry-parity.md`, section 8) so the "every
-category this scanner can assess is covered" claim has a documented basis.
+As of `owasp-full-coverage.md` (2026-09-27), coverage across the three frameworks
+this project maps to is: **10/10 OWASP Agentic AI Top 10 (ASI)**, **9/10 OWASP
+Agentic Skills Top 10 (AST)**, **10/10 OWASP MCP Top 10 (MCP)**. The rule-registry
+parity audit (`_docs/ai/specs/rule-registry-parity.md`, section 8) originally found
+four categories unmatched and documented them as out of scope; re-examination
+showed the scanner already performed each detection and only the mapping was
+missing, so all four are now claimed:
 
-| Category | Definition | Why no rule matches |
+| Category | Definition | Claimed by |
 |---|---|---|
-| ASI08 | Cascading Failures - single agent fault propagating via automation | Runtime propagation across a live agent fleet. Not observable from configuration or source. |
-| AST09 | No Governance - no change-management, ownership or review process | An organisational property, not a property of the artefact. **Candidate exception below.** |
-| MCP04 | Tool Argument Injection - manipulated parameters enabling unintended operations | Runtime parameter manipulation. A static scan sees declared schemas, not calls. |
-| MCP10 | Logging Failures - insufficient audit logging of MCP operations | Server-side operational property, not visible to a client that enumerates a server. |
+| ASI08 | Cascading Failures - single agent fault propagating via automation | `SS-010` (Cross-Server Attack Path Analysis) - an attack path spanning two servers is a fault propagating via automation. |
+| AST09 | No Governance - no change-management, ownership or review process | `SS-024` (Skill Not Signed) - an unsigned skill with no integrity artefact is the absence of change-management made observable. |
+| MCP04 | Tool Argument Injection - manipulated parameters enabling unintended operations | `SS-041` (Server Source Dangerous Sink) - a dangerous sink reachable from a tool parameter is tool argument injection. |
+| MCP10 | Logging Failures - insufficient audit logging of MCP operations | `SS-INFO-007` (MCP Logging Capability Absent) - a connected server that does not advertise the MCP `logging` capability. |
 
-**Candidate exception, not yet decided.** `SS-024` (Skill Not Signed) and `SS-034`
-(Skill Integrity Mismatch) are arguably direct evidence of AST09, since an unsigned
-skill with no integrity artefact is the absence of change-management made visible.
-Mapping `SS-024` to AST09 would close that gap and take AST coverage to 10/10. This
-has **not** been done: adding an OWASP mapping is a governance claim about the
-product, and the owner may want to make it deliberately rather than have it made by
-a documentation pass. Open question for the next review.
+**The open gap: AST10 Cross-Platform Reuse** ("skill mixes incompatible platform
+semantics unsafely") remains unclaimed. Unlike the four above, it is not closable
+by remapping shipped behaviour - no existing rule detects a skill mixing or
+hard-coding platform-specific conventions while presenting as platform-neutral.
+Closing it would need a new detection designed from scratch, with its own spec,
+fixtures and false-positive analysis; it is recorded here as candidate future work
+rather than forced into a mapping to reach a round number. See
+`_docs/ai/specs/owasp-full-coverage.md` section 5 for the full reasoning.
 
 ## Using AST codes in CI
 

@@ -839,7 +839,8 @@ public static class Program
                 SS-INFO-004  Legacy MCP Protocol / Transport (ASI04, AST08)
                 SS-INFO-005  MCP Capability Surface (ASI02, AST03)
                 SS-INFO-006  Skill Dependency Surface (Unchecked) (ASI04, AST02)
-            
+                SS-INFO-007  MCP Logging Capability Absent (ASI10, AST08)
+
             For more information: https://github.com/SignalCoding/signal-sentinel-scanner
             Report security issues: security@signalcoding.co.uk
             """);

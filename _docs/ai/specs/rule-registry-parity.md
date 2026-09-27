@@ -179,12 +179,17 @@ the absence of change-management made visible. Mapping `SS-024` to AST09 would c
 AST coverage to 10/10. The orchestrator has **not** made this change, because adding an OWASP mapping is a
 governance claim about the product and the owner may want to make it deliberately. Raise it at the next review.
 
+**Superseded 2026-09-27 by `_docs/ai/specs/owasp-full-coverage.md`.** That spec re-examined the four categories
+below and found the scanner already performs each detection; only the mapping was missing. ASI08, AST09, MCP04 and
+MCP10 are now claimed (SS-010, SS-024, SS-041 and SS-INFO-007 respectively - see that spec's section 1 table and
+`docs/owasp-ast-mapping.md`'s coverage statement). A fifth gap, AST10 (Cross-Platform Reuse), was found during that
+work and remains a documented exception because it cannot be closed by remapping.
+
 **Resulting form of words for the website**, replacing the "100% coverage across three OWASP frameworks" claim:
 
-> Every finding is mapped to the OWASP Agentic AI Top 10, the OWASP Agentic Skills Top 10 and the OWASP MCP Top 10.
-> The scanner covers every category in those frameworks that static and protocol-level analysis can assess. Four
-> categories are out of scope by design, because they describe runtime fault propagation, organisational process and
-> server-side logging, none of which a first-pass scanner can observe. They are listed, with reasons, in the rule
-> mapping documentation.
+> Every finding maps to the OWASP Agentic AI Top 10, the OWASP Agentic Skills Top 10 and the OWASP MCP Top 10. The
+> scanner claims every category in the Agentic AI and MCP frameworks, and nine of ten in Agentic Skills. The
+> remaining category, Cross-Platform Reuse, is named in the rule mapping documentation with the reason it is not yet
+> covered.
 
 This wording is supplied for the owner's approval. It is not published by this work.
