@@ -5,6 +5,31 @@ All notable changes to Signal Sentinel Scanner are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0](https://github.com/SignalCoding/signal-sentinel-scanner/compare/v3.0.4...v3.1.0) (2026-09-27)
+
+
+### Features
+
+* **rules:** claim every OWASP category the scanner can honestly detect ([#87](https://github.com/SignalCoding/signal-sentinel-scanner/issues/87)) ([8460eaf](https://github.com/SignalCoding/signal-sentinel-scanner/commit/8460eaf497c90f74c1c152527b0ebe717948c86d))
+* **rules:** SS-043 dangerous constructs in shipped skill metadata, and close AST04 ([#92](https://github.com/SignalCoding/signal-sentinel-scanner/issues/92)) ([99940f3](https://github.com/SignalCoding/signal-sentinel-scanner/commit/99940f356610929c579b22da4de9dea1d79dcf7b))
+
+
+### Bug Fixes
+
+* **mapping:** revert SS-024 to AST09; governance is not observable from a package ([#90](https://github.com/SignalCoding/signal-sentinel-scanner/issues/90)) ([5091e7a](https://github.com/SignalCoding/signal-sentinel-scanner/commit/5091e7a0c6b5b07e7638e1d680f55e0a77b34819))
+* **rules:** complete the rule registry across every surface and add a parity guard ([#86](https://github.com/SignalCoding/signal-sentinel-scanner/issues/86)) ([457567e](https://github.com/SignalCoding/signal-sentinel-scanner/commit/457567e631a3a1512066de8f9d059734d10183c8))
+* **rules:** SS-017 must not punish honest, scoped declarations ([#93](https://github.com/SignalCoding/signal-sentinel-scanner/issues/93)) ([11da7f8](https://github.com/SignalCoding/signal-sentinel-scanner/commit/11da7f894cb54a8f3a13331144711039f6c8975c))
+
+
+### Documentation
+
+* **findings:** accuracy measurement for 3.1.0 ([#94](https://github.com/SignalCoding/signal-sentinel-scanner/issues/94)) ([affbf30](https://github.com/SignalCoding/signal-sentinel-scanner/commit/affbf304fbc3353640a06217d4169d7803c50898))
+* **findings:** AST benchmark against a labelled corpus; supersede SS-043 ([#89](https://github.com/SignalCoding/signal-sentinel-scanner/issues/89)) ([f2e564e](https://github.com/SignalCoding/signal-sentinel-scanner/commit/f2e564e1f34de9a82988a21006dabde3ac915949))
+* **handover:** record that the upstream regex fix is .NET 11 only ([#85](https://github.com/SignalCoding/signal-sentinel-scanner/issues/85)) ([945be64](https://github.com/SignalCoding/signal-sentinel-scanner/commit/945be64b4577ac1b9b1d1402bce5d1e46c3e1229))
+* **handover:** release pipeline live, operating notes, 3.0.3 and 3.0.4 shipped ([#83](https://github.com/SignalCoding/signal-sentinel-scanner/issues/83)) ([e9bc264](https://github.com/SignalCoding/signal-sentinel-scanner/commit/e9bc2647f37eb9ca75e1fea697504c4176434e4b))
+* **spec:** AST04 insecure metadata - close the detection gap ([#91](https://github.com/SignalCoding/signal-sentinel-scanner/issues/91)) ([8ea0b50](https://github.com/SignalCoding/signal-sentinel-scanner/commit/8ea0b50552dc824df4d483d1bf5a143f80ca14a8))
+* **spec:** SS-043 unenforced cross-platform safety declaration ([#88](https://github.com/SignalCoding/signal-sentinel-scanner/issues/88)) ([de4f140](https://github.com/SignalCoding/signal-sentinel-scanner/commit/de4f14074c8ce4eb492adecd789f5dd07c2f175d))
+
 ## [3.0.4](https://github.com/SignalCoding/signal-sentinel-scanner/compare/v3.0.3...v3.0.4) (2026-09-25)
 
 
