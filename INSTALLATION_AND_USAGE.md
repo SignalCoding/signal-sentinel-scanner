@@ -549,7 +549,7 @@ Signal Sentinel auto-discovers MCP configurations and Agent Skills from:
 
 ## Security Rules
 
-Signal Sentinel scans for OWASP Agentic AI Top 10 + OWASP MCP Top 10 vulnerabilities with 48 rules. Every rule also carries an OWASP Agentic Skills Top 10 (AST) code where applicable - see [`docs/owasp-ast-mapping.md`](docs/owasp-ast-mapping.md) for the full dual mapping.
+Signal Sentinel scans for OWASP Agentic AI Top 10 + OWASP MCP Top 10 vulnerabilities with 49 rules. Every rule also carries an OWASP Agentic Skills Top 10 (AST) code where applicable - see [`docs/owasp-ast-mapping.md`](docs/owasp-ast-mapping.md) for the full dual mapping.
 
 ### MCP Rules
 
