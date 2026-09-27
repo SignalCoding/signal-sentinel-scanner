@@ -1524,8 +1524,8 @@ public static class Program
         Console.WriteLine("RuleId       | OWASP ASI | OWASP AST            | Name");
         Console.WriteLine(new string('-', 80));
 
-        var engine = new Rules.RuleEngine();
-        foreach (var rule in engine.Rules.OrderBy(r => r.Id, StringComparer.Ordinal))
+        var catalogue = Rules.RuleEngine.CatalogueRules();
+        foreach (var rule in catalogue.OrderBy(r => r.Id, StringComparer.Ordinal))
         {
             var astCodes = rule.AstCodes.Count > 0
                 ? string.Join(",", rule.AstCodes)

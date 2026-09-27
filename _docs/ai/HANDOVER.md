@@ -224,3 +224,40 @@ backport in `release/10.0` (checked every PR into that branch on 2026-09-25). We
 stay until this project moves to .NET 11, regardless of the upstream issue being closed as a duplicate. A comment
 asking whether the fix will be serviced into .NET 10 is on the issue; if the answer is yes, the guards can relax
 only once the servicing release is the minimum supported SDK.
+
+**Addendum 2026-09-27 (handover from the signalcoding website session; no scanner source changed):** the
+website's `/products/sentinel-scanner` pages were brought to v3.0.4 from the website update brief. Cross-checking
+them against this repo surfaced the items below. They are for this repo's own session; the website session does not
+commit here.
+
+1. **`--list-rules` prints 43 of 47 rules.** Root cause: `Program.cs:1020-1023` registers `RugPullDetectionRule`,
+   `ShadowToolInjectionRule`, `ExcessiveResponseRule` and `SkillIntegrityRule` (SS-022, SS-023, SS-025, SS-024) as
+   per-scan custom rules because they need runtime state, while `PrintRuleList()` (`Program.cs:1521`) enumerates a
+   bare `new RuleEngine()`, which never contains them. Proposed fix (~15 lines): add
+   `public static IReadOnlyList<IRule> CatalogueRules()` to `Rules/RuleEngine.cs` returning `engine.Rules` plus
+   `new RugPullDetectionRule(null)`, `new ShadowToolInjectionRule()`, `new ExcessiveResponseRule()`,
+   `new SkillIntegrityRule()`, and iterate that in `PrintRuleList`. A red test is already in the working tree,
+   untracked: `tests/SignalSentinel.Scanner.Tests/Rules/RuleCatalogueTests.cs` (asserts 47 distinct ids, 6 of them
+   `SS-INFO-*`, and that SS-022..SS-025 are present). Keep it or delete it; nothing else was touched.
+2. **"22 new rules" is wrong; the count is 15** (SS-030..SS-042 plus SS-INFO-005 and SS-INFO-006; 32 + 15 = 47,
+   matching `SECURITY.md`). Appears in `README.md:27` and the `CHANGELOG.md` 3.0.0 heading paragraph.
+3. **README rule tables are two releases stale.** `README.md:147` still says "32 security rules", and the tables at
+   `README.md:149-194` stop at SS-029 / SS-INFO-004. `INSTALLATION_AND_USAGE.md` (lines ~560-620) already has the
+   complete 47-rule tables and is the source to copy from. `docs/owasp-ast-mapping.md` ("Rule-to-AST map (v2.5.0)")
+   likewise lacks SS-030..SS-042 and SS-INFO-005/006; the rows are in `Models/RuleAstMapping.cs`. When updating,
+   state totals as "41 detection + 6 informational" rather than an MCP-vs-skill split: SS-026 and SS-036 apply to
+   both surfaces, so any split double-counts.
+4. **MCP Top 10 column.** The website's rules tables now follow `Models/OwaspMcpMapping.cs` exactly (SS-003 -> MCP07
+   Authentication Gaps, SS-004 -> MCP03, SS-005 -> MCP08, SS-006/SS-008 -> MCP05, SS-007 -> MCP09, SS-019/020 ->
+   MCP07, SS-021 -> MCP03, SS-030/032/040 -> MCP01, SS-031 -> MCP06, SS-033/036 -> MCP03, SS-INFO-005 -> MCP02; blank
+   for SS-022/023/025/026, which `GetCorrespondingMcpCode` returns null for). Worth confirming those four nulls are
+   intentional, and that the README's ASI-only tables are what you want given SARIF carries MCP codes.
+5. **Website release figures are now data.** `website/app/products/sentinel-scanner/release.json` holds version,
+   rule counts, test count and release date; the website build fails if its markdown mirrors drift. At the next
+   release, hand the website session: version, release date, rule totals (detection/informational), and the test
+   count from the release CI run.
+
+Verified from here on 2026-09-27: GHCR `:3.0.4` and `:latest` manifests fetch anonymously; the `:2.5.1` tag the old
+website advertised returns 404; NuGet lists 3.0.4 for Scanner and Core; `ConfigDiscovery.cs` discovers ten MCP
+platforms and `SkillDiscovery.cs` eight skill platforms plus generic dirs (the website names them rather than
+quoting a count).

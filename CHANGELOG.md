@@ -210,7 +210,7 @@ severity lowered.
 ## [3.0.0] - 2026-09-20
 
 v3.0.0 bundles the Review #1 hardening fixes, all fourteen items from the external
-research report (Tiers 1-3), and ROADMAP Theme 1 (accuracy). Twenty-two new rules
+research report (Tiers 1-3), and ROADMAP Theme 1 (accuracy). Fifteen new rules
 (SS-030..SS-042, SS-INFO-005, SS-INFO-006), five new scan flags, a versioned scoring
 rubric, and a markdown-aware segmentation pass that materially reduces false
 positives on skill documents.
@@ -334,6 +334,13 @@ Pre-tag smoke test against live MCP servers and the DVMCP lab
   `--allow-private`, supported-versions table corrected (3.0.x supported, 2.5.x
   security fixes only), `openclaw-*` scan artefacts and packed `*.nupkg` excluded
   from git.
+
+> **Correction (2026-09-27):** the new-rule count in the summary above was
+> originally overstated. The correct figure is **fifteen** (SS-030..SS-042 is 13
+> rules, plus SS-INFO-005 and SS-INFO-006): 32 pre-3.0.0 rules + 15 = 47. Found by
+> the rule-registry parity audit and corrected here, in place, with this footnote
+> as the record of the change, per this project's treatment of findings as
+> governance artefacts.
 
 ## [2.5.1] - 2026-08-11
 
