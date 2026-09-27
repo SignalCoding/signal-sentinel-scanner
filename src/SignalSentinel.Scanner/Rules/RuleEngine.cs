@@ -116,6 +116,29 @@ public sealed class RuleEngine
     public IReadOnlyList<IRule> Rules => _rules;
 
     /// <summary>
+    /// Returns the complete rule registry for reporting purposes (e.g. <c>--list-rules</c>),
+    /// including the four rules that Program.cs wires in per-scan rather than in this
+    /// constructor because they depend on runtime state (SS-022 baseline comparison; SS-023,
+    /// SS-024, SS-025 have no runtime dependency but were added alongside SS-022 in v2.2.0):
+    /// SS-022 (<see cref="RugPullDetectionRule"/>), SS-023 (<see cref="ShadowToolInjectionRule"/>),
+    /// SS-024 (<see cref="SkillIntegrityRule"/>) and SS-025 (<see cref="ExcessiveResponseRule"/>).
+    /// This does not change which rules execute during a scan; <see cref="Rules"/> (and the
+    /// per-scan <c>customRules</c> passed to the constructor) remains the source of truth for
+    /// that.
+    /// </summary>
+    public static IReadOnlyList<IRule> CatalogueRules()
+    {
+        var catalogue = new List<IRule>(new RuleEngine().Rules)
+        {
+            new RugPullDetectionRule(null),
+            new ShadowToolInjectionRule(),
+            new SkillIntegrityRule(),
+            new ExcessiveResponseRule(),
+        };
+        return catalogue;
+    }
+
+    /// <summary>
     /// Executes all rules against the scan context.
     /// </summary>
     /// <param name="context">The scan context containing server data.</param>

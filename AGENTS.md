@@ -181,9 +181,25 @@ dotnet run --project src/SignalSentinel.Scanner -- --list-rules
 
 ### Rule registry checklist
 
-A new rule is complete only when: constant in `RuleConstants`, `RuleAstMapping` entry,
-`RuleEngine` registration, `--help` and `--list-rules` lines, and a test class. See
-`CONTRIBUTING.md`.
+A 2026-09-27 audit (`_docs/ai/specs/rule-registry-parity.md`) found the five-surface
+version of this checklist incomplete: two cohorts of rules had reached some surfaces
+but not others, undetected because nothing checked all of them together. A new rule
+is complete only when it is present on all nine surfaces below. `RuleRegistryParityTests`
+(`tests/SignalSentinel.Scanner.Tests/Rules/RuleRegistryParityTests.cs`) is the
+mechanical check: it drives every registered rule against every surface and fails
+the build, naming the rule and the surface, if one is missed.
+
+1. Rule constant in `RuleConstants`.
+2. `RuleAstMapping` entry, or a documented allow-list exception (e.g. `SS-INFO-002`).
+3. MCP mapping in `OwaspMcpMapping.GetCorrespondingMcpCode` - nullable, but a null
+   must carry a one-line reason comment, not be a silent omission.
+4. `RuleEngine` registration (or, for the four per-scan rules, inclusion in
+   `RuleEngine.CatalogueRules()`).
+5. `--help` text and `--list-rules` (`RuleEngine.CatalogueRules()`) output in `Program.cs`.
+6. README.md "Security Rules" tables.
+7. `docs/owasp-ast-mapping.md`.
+8. `INSTALLATION_AND_USAGE.md`.
+9. A test class. See `CONTRIBUTING.md`.
 
 ---
 

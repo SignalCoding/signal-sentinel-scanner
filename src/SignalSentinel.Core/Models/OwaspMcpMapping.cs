@@ -58,6 +58,8 @@ public static class OwaspMcpCodes
         "SS-019" => MCP07,  // Credential Hygiene → MCP Authentication Gaps
         "SS-020" => MCP07,  // OAuth Compliance → MCP Authentication Gaps
         "SS-021" => MCP03,  // Package Provenance → MCP Insecure Tool Discovery
+        "SS-023" => MCP03,  // Shadow Tool Injection → MCP Insecure Tool Discovery (lookalike shadowing, same rationale as SS-036 below)
+        "SS-026" => MCP01,  // Instructional Description → MCP Tool Poisoning (description-channel abuse, same rationale as SS-009 above)
         "SS-030" => MCP01,  // Prompt Poisoning → MCP Tool Poisoning (same channel, different primitive)
         "SS-031" => MCP06,  // Resource Poisoning → MCP Insecure Resource Exposure
         "SS-032" => MCP01,  // Server Instructions Injection → MCP Tool Poisoning
@@ -65,6 +67,11 @@ public static class OwaspMcpCodes
         "SS-INFO-005" => MCP02,  // Capability Surface → MCP Excessive Permissions
         "SS-036" => MCP03,  // Confusable Identifier → MCP Insecure Tool Discovery (lookalike shadowing)
         "SS-040" => MCP01,  // Error/Result-Channel Injection → MCP Tool Poisoning (same payload, different channel)
+        // Deliberate nulls (spec rule-registry-parity.md section 8, D1): SS-022 (Rug
+        // Pull) and SS-025 (Excessive Response) are arguable but not clear corrections
+        // by the project's existing mapping logic, so they are left unmapped rather than
+        // guessed; SS-041 (Server Source Sink) is a new v3.0.0 surface with no settled
+        // MCP code yet; SS-042 (A2A Agent Card) describes A2A, not MCP, so null is correct.
         _ => null
     };
 }

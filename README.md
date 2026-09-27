@@ -24,7 +24,7 @@ The Scanner is a command-line tool that audits MCP server configurations and Age
 
 ### What's new in v3.0.0
 
-- **22 new rules** (47 total): prompt/resource/server-instructions injection (`SS-030`..`SS-032`), unsolicited server-initiated requests (`SS-033`), skill forensics (`SS-034` SHA256SUMS verification, `SS-035` file-artefact magic-byte analysis), homoglyph/confusable identifiers (`SS-036`), cross-skill description overlap (`SS-037`), fetch-to-exec pipeline taint (`SS-038`), OSV dependency vulnerabilities (`SS-039` + `--osv`), error-channel injection (`SS-040`), server-source dangerous sinks (`SS-041` + `--server-source`), and A2A Agent Card evaluation (`SS-042` + `--agent-card`).
+- **15 new rules** (47 total): prompt/resource/server-instructions injection (`SS-030`..`SS-032`), unsolicited server-initiated requests (`SS-033`), skill forensics (`SS-034` SHA256SUMS verification, `SS-035` file-artefact magic-byte analysis), homoglyph/confusable identifiers (`SS-036`), cross-skill description overlap (`SS-037`), fetch-to-exec pipeline taint (`SS-038`), OSV dependency vulnerabilities (`SS-039` + `--osv`), error-channel injection (`SS-040`), server-source dangerous sinks (`SS-041` + `--server-source`), and A2A Agent Card evaluation (`SS-042` + `--agent-card`).
 - **Markdown-aware segmentation**: skill rules now evaluate only the document segments where their signal is meaningful (frontmatter vs prose vs fenced code vs links), eliminating the v2.x false positives on code examples and inline code. See [docs/MIGRATION_V3.md](docs/MIGRATION_V3.md).
 - **Versioned scoring rubric** (`--rubric <path>`): deductions and grade thresholds live in an auditable embedded rubric (`v2.0.0`, emitted as `RubricVersion` in every report); weights unchanged, monotonicity proven by property tests.
 - **Policy presets** (`--policy default|strict|defence|file.json`): severity overrides, rule disabling, and gate thresholds as version-controlled JSON.
@@ -144,7 +144,7 @@ sentinel-scan --discover --skills --ci --format json
 
 ### Security Rules
 
-32 security rules across MCP and Agent Skill scanning, aligned with OWASP Agentic AI Top 10 and OWASP MCP Top 10. Every rule also carries an OWASP Agentic Skills Top 10 (AST) code where applicable - see [`docs/owasp-ast-mapping.md`](docs/owasp-ast-mapping.md) for the full dual mapping.
+47 security rules (41 detection + 6 informational) across MCP and Agent Skill scanning, aligned with OWASP Agentic AI Top 10 and OWASP MCP Top 10. Every rule also carries an OWASP Agentic Skills Top 10 (AST) code where applicable - see [`docs/owasp-ast-mapping.md`](docs/owasp-ast-mapping.md) for the full dual mapping.
 
 #### MCP Rules
 
@@ -167,6 +167,11 @@ sentinel-scan --discover --skills --ci --format json
 | SS-023 | ASI01 | Shadow Tool Injection (typosquat) |
 | SS-025 | ASI06 | Excessive Tool Response Size |
 | SS-026 | ASI01 | Instructional Tool/Skill Description (hidden agent-directed instructions in tool/skill metadata) |
+| SS-030 | ASI01 | MCP Prompt Poisoning *(v3.0)* |
+| SS-031 | ASI01 | MCP Resource Poisoning *(v3.0)* |
+| SS-032 | ASI01 | MCP Server Instructions Injection *(v3.0)* |
+| SS-033 | ASI07 | Unsolicited Server-to-Client Request *(v3.0)* |
+| SS-040 | ASI01 | Error-Channel / Result-Channel Injection *(v3.0)* |
 
 #### Skill Rules
 
@@ -183,6 +188,19 @@ sentinel-scan --discover --skills --ci --format json
 | SS-024 | ASI04 | Skill Integrity Verification (inline `signature`/`content_hash` frontmatter) |
 | SS-028 | ASI02 | Skill Identity/Memory File Write Access (ClawHavoc backdoor persistence pattern) |
 | SS-029 | ASI04 | Skill Unpinned Dependency Reference *(v2.5, "SkillJacking" account/branch hijacking)* |
+| SS-034 | ASI04 | Skill Integrity Mismatch *(v3.0; `SHA256SUMS` verification)* |
+| SS-035 | ASI04 | Skill Suspicious File Artefact *(v3.0; magic-byte forensics)* |
+| SS-036 | ASI01 | Unicode Confusable Identifier *(v3.0; also covers MCP tool/prompt/resource/server names)* |
+| SS-037 | ASI01 | Cross-Skill Description Overlap *(v3.0)* |
+| SS-038 | ASI05 | Skill Script Pipeline Taint *(v3.0; fetch-to-exec)* |
+| SS-039 | ASI04 | Skill Dependency Known Vulnerability *(v3.0; requires `--osv`)* |
+
+#### Static Surface Rules (v3.0)
+
+| Rule | OWASP | Description |
+|------|-------|-------------|
+| SS-041 | ASI05 | Server Source Dangerous Sink *(requires `--server-source <dir>`)* |
+| SS-042 | ASI01 | A2A Agent Card Findings *(requires `--agent-card <url|path>`)* |
 
 #### Informational Rules
 
@@ -192,6 +210,8 @@ sentinel-scan --discover --skills --ci --format json
 | SS-INFO-002 | ASI03 | Non-Public Scan Target |
 | SS-INFO-003 | ASI10 | Untrusted Server Certificate (TLS trust-chain failure distinct from generic connectivity errors) |
 | SS-INFO-004 | ASI04 | Legacy MCP Protocol / Transport *(v2.5, tracks the MCP 2026-07-28 specification's deprecation clock)* |
+| SS-INFO-005 | ASI02 | MCP Capability Surface *(v3.0; per-server `listChanged`/`experimental`/`completions` summary)* |
+| SS-INFO-006 | ASI04 | Skill Dependency Surface (Unchecked) *(v3.0; lists pinned deps when `--osv` is absent/offline/failed)* |
 
 ### Supported Platforms (Auto-Discovery)
 

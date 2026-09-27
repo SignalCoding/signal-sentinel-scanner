@@ -44,19 +44,37 @@ Breaking changes carry a `!` after the type/scope or a `BREAKING CHANGE:` footer
 
 ## Adding a detection rule
 
-Every rule needs all of the following or CI's rule-registry tests will fail:
+Every rule needs all of the following or CI's rule-registry tests will fail. A
+2026-09-27 audit found two whole cohorts of rules that had reached some of these
+surfaces but not others (`_docs/ai/specs/rule-registry-parity.md`); the checklist
+below is the corrected, complete version, and `RuleRegistryParityTests`
+(`tests/SignalSentinel.Scanner.Tests/Rules/RuleRegistryParityTests.cs`) is the
+mechanical check that fails the build, naming the rule and the surface, if any of
+1-9 is missed:
 
 1. A constant in `src/SignalSentinel.Core/RuleConstants.cs`.
-2. An entry in `src/SignalSentinel.Core/Models/RuleAstMapping.cs` (OWASP AST codes).
+2. An entry in `src/SignalSentinel.Core/Models/RuleAstMapping.cs` (OWASP AST codes),
+   or a documented allow-list exception (e.g. `SS-INFO-002`).
 3. An entry in `OwaspMapping` / `OwaspMcpMapping` where the rule has an MCP mapping.
-4. Registration in `src/SignalSentinel.Scanner/Rules/RuleEngine.cs`.
-5. A line in the `--help` text and the `--list-rules` output (`Program.cs`).
-6. A test class under `tests/SignalSentinel.Scanner.Tests/` with at least one
+   This mapping is nullable - not every rule has an MCP Top 10 code - but a null
+   must carry a one-line reason comment rather than be a silent omission.
+4. Registration in `src/SignalSentinel.Scanner/Rules/RuleEngine.cs` (or, for a rule
+   that must be wired in per-scan rather than in the constructor, inclusion in
+   `RuleEngine.CatalogueRules()` as well).
+5. A line in the `--help` text and the `--list-rules` (`RuleEngine.CatalogueRules()`)
+   output (`Program.cs`).
+6. An entry in the README.md "Security Rules" tables.
+7. An entry in `docs/owasp-ast-mapping.md`.
+8. An entry in `INSTALLATION_AND_USAGE.md`.
+9. A test class under `tests/SignalSentinel.Scanner.Tests/` with at least one
    positive, one negative, and one edge case.
-7. If the rule depends on MCP protocol exchange, add it to
-   `RuleConstants.Rules.McpProtocolRules` so SS-INFO-001 can suppress it correctly.
-8. An entry in `src/SignalSentinel.Scanner/DefaultRules.json` (the shipped rule
-   registry) with matching id, name, owaspCode and astCodes.
+
+Additionally:
+
+- If the rule depends on MCP protocol exchange, add it to
+  `RuleConstants.Rules.McpProtocolRules` so SS-INFO-001 can suppress it correctly.
+- Add an entry in `src/SignalSentinel.Scanner/DefaultRules.json` (the shipped rule
+  registry) with matching id, name, owaspCode and astCodes.
 
 Rule IDs are allocated sequentially (`SS-0NN`) or as `SS-INFO-0NN` for informational
 rules that do not affect the grade.

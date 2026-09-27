@@ -1,0 +1,514 @@
+Test run for C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\bin\Release\net10.0\SignalSentinel.Scanner.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:01.87]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-039") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-039") [78 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-039 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+[xUnit.net 00:00:01.89]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-038") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-038") [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-038 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.92]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-031") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-031") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-031 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.93]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-037") [FAIL]
+[xUnit.net 00:00:01.93]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-INFO-006") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-037") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-037 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-INFO-006") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-INFO-006 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.96]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-042") [FAIL]
+[xUnit.net 00:00:01.96]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-032") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-042") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-042 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-032") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-032 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.96]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-033") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-033") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-033 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.97]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-041") [FAIL]
+[xUnit.net 00:00:01.98]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-035") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-041") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-041 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-035") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-035 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.99]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-040") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-040") [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-040 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.00]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-INFO-005") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-INFO-005") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-INFO-005 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.04]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-030") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-030") [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-030 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.05]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-034") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-034") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-034 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.05]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-036") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(ruleId: "SS-036") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : doc.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-036 is missing from docs/owasp-ast-mapping.md.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 134
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInAstMappingDoc(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.27]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-INFO-006") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-INFO-006") [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-INFO-006 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.28]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-040") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-040") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-040 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.29]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-039") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-039") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-039 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.32]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-042") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-042") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-042 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.33]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-034") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-034") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-034 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.33]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-033") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-033") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-033 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.34]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-032") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-032") [9 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-032 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.34]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-INFO-005") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-INFO-005") [5 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-INFO-005 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.36]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-035") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-035") [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-035 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.38]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-038") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-038") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-038 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.38]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-041") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-041") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-041 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.40]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-031") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-031") [5 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-031 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.41]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-036") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-036") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-036 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.41]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-037") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-037") [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-037 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.43]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-030") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(ruleId: "SS-030") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : securityRulesSection.Contains(ruleId, StringComparison.Ordinal)
+    should be
+True
+    but was
+False
+
+Additional Info:
+    SS-030 is missing from the README.md "Security Rules" tables.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 124
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedInReadmeSecurityRulesSection(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.46]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(ruleId: "SS-023") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(ruleId: "SS-023") [4 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : catalogue
+    should contain
+"SS-023"
+    but was actually
+["SS-001", "SS-002", "SS-003", "SS-004", "SS-005", "SS-006", "SS-007", "SS-008", "SS-009", "SS-010", "SS-011", "SS-012", "SS-013", "SS-014", "SS-015", "SS-016", "SS-017", "SS-018", "SS-019", "SS-020", "SS-021", "SS-INFO-001", "SS-INFO-002", "SS-020", "SS-026", "SS-INFO-003", "SS-028", "SS-INFO-004", "SS-029", "SS-030", "SS-031", "SS-032", "SS-033", "SS-INFO-005", "SS-034", "SS-035", "SS-036", "SS-037", "SS-038", "SS-039", "SS-INFO-006", "SS-040", "SS-041", "SS-042"]
+
+Additional Info:
+    SS-023 is missing from the --list-rules catalogue (new RuleEngine().Rules).
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 101
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.46]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(ruleId: "SS-022") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(ruleId: "SS-022") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : catalogue
+    should contain
+"SS-022"
+    but was actually
+["SS-001", "SS-002", "SS-003", "SS-004", "SS-005", "SS-006", "SS-007", "SS-008", "SS-009", "SS-010", "SS-011", "SS-012", "SS-013", "SS-014", "SS-015", "SS-016", "SS-017", "SS-018", "SS-019", "SS-020", "SS-021", "SS-INFO-001", "SS-INFO-002", "SS-020", "SS-026", "SS-INFO-003", "SS-028", "SS-INFO-004", "SS-029", "SS-030", "SS-031", "SS-032", "SS-033", "SS-INFO-005", "SS-034", "SS-035", "SS-036", "SS-037", "SS-038", "SS-039", "SS-INFO-006", "SS-040", "SS-041", "SS-042"]
+
+Additional Info:
+    SS-022 is missing from the --list-rules catalogue (new RuleEngine().Rules).
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 101
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.47]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(ruleId: "SS-025") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(ruleId: "SS-025") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : catalogue
+    should contain
+"SS-025"
+    but was actually
+["SS-001", "SS-002", "SS-003", "SS-004", "SS-005", "SS-006", "SS-007", "SS-008", "SS-009", "SS-010", "SS-011", "SS-012", "SS-013", "SS-014", "SS-015", "SS-016", "SS-017", "SS-018", "SS-019", "SS-020", "SS-021", "SS-INFO-001", "SS-INFO-002", "SS-020", "SS-026", "SS-INFO-003", "SS-028", "SS-INFO-004", "SS-029", "SS-030", "SS-031", "SS-032", "SS-033", "SS-INFO-005", "SS-034", "SS-035", "SS-036", "SS-037", "SS-038", "SS-039", "SS-INFO-006", "SS-040", "SS-041", "SS-042"]
+
+Additional Info:
+    SS-025 is missing from the --list-rules catalogue (new RuleEngine().Rules).
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 101
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:02.48]     SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(ruleId: "SS-024") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(ruleId: "SS-024") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : catalogue
+    should contain
+"SS-024"
+    but was actually
+["SS-001", "SS-002", "SS-003", "SS-004", "SS-005", "SS-006", "SS-007", "SS-008", "SS-009", "SS-010", "SS-011", "SS-012", "SS-013", "SS-014", "SS-015", "SS-016", "SS-017", "SS-018", "SS-019", "SS-020", "SS-021", "SS-INFO-001", "SS-INFO-002", "SS-020", "SS-026", "SS-INFO-003", "SS-028", "SS-INFO-004", "SS-029", "SS-030", "SS-031", "SS-032", "SS-033", "SS-INFO-005", "SS-034", "SS-035", "SS-036", "SS-037", "SS-038", "SS-039", "SS-INFO-006", "SS-040", "SS-041", "SS-042"]
+
+Additional Info:
+    SS-024 is missing from the --list-rules catalogue (new RuleEngine().Rules).
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.Rules.RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(String ruleId) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\Rules\RuleRegistryParityTests.cs:line 101
+   at InvokeStub_RuleRegistryParityTests.Rule_IsListedByListRulesCatalogue(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+
+Failed!  - Failed:    34, Passed:  1730, Skipped:     0, Total:  1764, Duration: 3 s - SignalSentinel.Scanner.Tests.dll (net10.0)
