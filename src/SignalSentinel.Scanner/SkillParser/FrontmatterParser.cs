@@ -98,12 +98,28 @@ public static partial class FrontmatterParser
     }
 
     /// <summary>
+    /// v3.1.0 (A1/C3): caps recursion when a nested block mapping is deeper than this,
+    /// so hostile input cannot force unbounded descent. Real Universal Skill Format
+    /// permission blocks are 2-3 levels deep.
+    /// </summary>
+    private const int MaxNestedMappingDepth = 10;
+
+    /// <summary>
     /// v3.0.1 (F1): walks the frontmatter a line at a time so YAML block scalars
     /// (<c>key: &gt;</c>, <c>&gt;-</c>, <c>&gt;+</c>, <c>|</c>, <c>|-</c>, <c>|+</c>) collapse to their
     /// folded/literal value instead of parsing to the bare indicator character.
     /// Single-line, quoted, dotted and list-valued fields keep their previous
     /// behaviour: only lines whose key starts in column 0 become fields, and the
     /// 100-character key / 10,000-character value / 50-field caps still apply.
+    /// v3.1.0 (A1/C3): a column-0 key with no inline value whose following lines are
+    /// indented further and look like <c>key: value</c> siblings (not a <c>- item</c>
+    /// list, which keeps its pre-existing handling via <see cref="FrontmatterResult.GetListField"/>)
+    /// is now a nested block mapping. Its descendants are flattened into the same flat
+    /// dotted-key convention the codebase already understands (e.g. <c>permissions:
+    /// \n  shell: true</c> surfaces as <c>permissions.shell</c>), and - because SS-017's
+    /// existing checks read the bare/short form (<c>network</c>, <c>network.allow</c>) -
+    /// a second alias with a leading <c>permissions.</c> segment stripped is also set
+    /// when present, so both conventions resolve to the same value.
     /// </summary>
     private static void ParseFields(string rawFrontmatter, Dictionary<string, string> fields)
     {
@@ -121,19 +137,274 @@ public static partial class FrontmatterParser
             var rawValue = kvMatch.Groups[2].Value.Trim();
 
             var header = BlockScalarHeader().Match(rawValue);
-            var value = header.Success
-                ? ReadBlockScalar(lines, ref i, literal: rawValue[0] == '|', chomping: header.Groups[3].Value)
-                : rawValue.Trim('"', '\'');
-
-            if (key.Length <= 100 && value.Length <= 10_000)
+            string value;
+            if (header.Success)
             {
-                fields[key] = value;
+                value = ReadBlockScalar(lines, ref i, literal: rawValue[0] == '|', chomping: header.Groups[3].Value);
             }
+            else if (rawValue.Length == 0 &&
+                     TryGetNestedBlockStart(lines, i, 0, out var nestedStart, out var nestedIndent))
+            {
+                var index = nestedStart;
+                ParseNestedMapping(lines, ref index, nestedIndent, key, fields, depth: 1);
+                i = index - 1; // the for loop's i++ resumes exactly where the block ended
+                value = string.Empty;
+            }
+            else
+            {
+                value = rawValue.Trim('"', '\'');
+            }
+
+            SetFlatField(fields, key, value);
 
             if (fields.Count > 50)
             {
                 break;
             }
+        }
+    }
+
+    /// <summary>
+    /// v3.1.0 (A1/C3): flattens the children of a nested block mapping starting at
+    /// <paramref name="index"/> (all lines indented exactly <paramref name="levelIndent"/>)
+    /// into <paramref name="fields"/> under <paramref name="keyPrefix"/>-dotted keys.
+    /// Stops (without consuming) at the first line indented less than
+    /// <paramref name="levelIndent"/>, leaving <paramref name="index"/> there for the
+    /// caller to resume from.
+    /// </summary>
+    private static void ParseNestedMapping(
+        string[] lines,
+        ref int index,
+        int levelIndent,
+        string keyPrefix,
+        Dictionary<string, string> fields,
+        int depth)
+    {
+        while (index < lines.Length)
+        {
+            if (fields.Count > 50)
+            {
+                return;
+            }
+
+            var line = lines[index].TrimEnd('\r');
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                index++;
+                continue;
+            }
+
+            var indent = line.Length - line.TrimStart(' ').Length;
+            if (indent < levelIndent)
+            {
+                return;
+            }
+
+            if (indent != levelIndent)
+            {
+                // Irregular indentation (e.g. a malformed line) - skip defensively
+                // rather than misparse the block's shape.
+                index++;
+                continue;
+            }
+
+            var trimmed = line.TrimStart();
+            if (trimmed.StartsWith('-'))
+            {
+                // A list item at this level belongs to a parent key already consumed
+                // via TryGetNestedListStart/ReadFlatList; nothing to do here.
+                index++;
+                continue;
+            }
+
+            var kv = YamlKeyValue().Match(trimmed);
+            if (!kv.Success)
+            {
+                index++;
+                continue;
+            }
+
+            var key = kv.Groups[1].Value.Trim();
+            var rawValue = kv.Groups[2].Value.Trim();
+            var dottedKey = keyPrefix + "." + key;
+
+            if (rawValue.Length == 0 && TryGetNestedListStart(lines, index, indent, out var listStart))
+            {
+                index = listStart;
+                var items = ReadFlatList(lines, ref index, indent);
+                SetFlatFieldWithAlias(fields, dottedKey, "[" + string.Join(", ", items) + "]");
+                continue;
+            }
+
+            if (rawValue.Length == 0 &&
+                depth < MaxNestedMappingDepth &&
+                TryGetNestedBlockStart(lines, index, indent, out var nestedStart, out var nestedIndent))
+            {
+                index = nestedStart;
+                ParseNestedMapping(lines, ref index, nestedIndent, dottedKey, fields, depth + 1);
+                continue;
+            }
+
+            SetFlatFieldWithAlias(fields, dottedKey, rawValue.Trim('"', '\''));
+            index++;
+        }
+    }
+
+    /// <summary>
+    /// True when the next non-blank line after <paramref name="currentIndex"/> is
+    /// indented more than <paramref name="parentIndent"/> and looks like a
+    /// <c>key: value</c> sibling rather than a <c>- item</c> list entry.
+    /// </summary>
+    private static bool TryGetNestedBlockStart(
+        string[] lines, int currentIndex, int parentIndent, out int nestedStartIndex, out int nestedIndent)
+    {
+        nestedStartIndex = -1;
+        nestedIndent = 0;
+
+        var next = currentIndex + 1;
+        while (next < lines.Length && string.IsNullOrWhiteSpace(lines[next]))
+        {
+            next++;
+        }
+
+        if (next >= lines.Length)
+        {
+            return false;
+        }
+
+        var line = lines[next].TrimEnd('\r');
+        var indent = line.Length - line.TrimStart(' ').Length;
+        var trimmed = line.TrimStart();
+
+        if (indent <= parentIndent || trimmed.Length == 0 || trimmed[0] == '-' || !YamlKeyValue().IsMatch(trimmed))
+        {
+            return false;
+        }
+
+        nestedStartIndex = next;
+        nestedIndent = indent;
+        return true;
+    }
+
+    /// <summary>
+    /// True when the next non-blank line after <paramref name="currentIndex"/> is
+    /// indented more than <paramref name="parentIndent"/> and is a <c>- item</c> list entry.
+    /// </summary>
+    private static bool TryGetNestedListStart(
+        string[] lines, int currentIndex, int parentIndent, out int listStartIndex)
+    {
+        listStartIndex = -1;
+
+        var next = currentIndex + 1;
+        while (next < lines.Length && string.IsNullOrWhiteSpace(lines[next]))
+        {
+            next++;
+        }
+
+        if (next >= lines.Length)
+        {
+            return false;
+        }
+
+        var line = lines[next].TrimEnd('\r');
+        var indent = line.Length - line.TrimStart(' ').Length;
+        var trimmed = line.TrimStart();
+
+        if (indent <= parentIndent || !trimmed.StartsWith('-'))
+        {
+            return false;
+        }
+
+        listStartIndex = next;
+        return true;
+    }
+
+    /// <summary>
+    /// Reads consecutive <c>- item</c> lines at a single indentation level (the first
+    /// item's), returning their trimmed, unquoted values. Stops (without consuming) at
+    /// the first line indented at or below <paramref name="parentIndent"/>.
+    /// </summary>
+    private static List<string> ReadFlatList(string[] lines, ref int index, int parentIndent)
+    {
+        var items = new List<string>();
+        var listIndent = -1;
+
+        while (index < lines.Length)
+        {
+            var line = lines[index].TrimEnd('\r');
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                index++;
+                continue;
+            }
+
+            var indent = line.Length - line.TrimStart(' ').Length;
+            if (indent <= parentIndent)
+            {
+                break;
+            }
+
+            if (listIndent < 0)
+            {
+                listIndent = indent;
+            }
+
+            if (indent != listIndent)
+            {
+                break;
+            }
+
+            var trimmed = line.TrimStart();
+            if (!trimmed.StartsWith('-'))
+            {
+                break;
+            }
+
+            var item = trimmed[1..].Trim().Trim('"', '\'');
+            if (item.Length > 0 && items.Count <= 64)
+            {
+                items.Add(item);
+            }
+
+            index++;
+
+            if (items.Count > 64)
+            {
+                break;
+            }
+        }
+
+        return items;
+    }
+
+    private static void SetFlatField(Dictionary<string, string> fields, string key, string value)
+    {
+        if (fields.Count > 50)
+        {
+            return;
+        }
+
+        if (key.Length <= 100 && value.Length <= 10_000)
+        {
+            fields[key] = value;
+        }
+    }
+
+    /// <summary>
+    /// v3.1.0 (A1/C3): sets the fully dotted nested key, and - when its top-level
+    /// ancestor is literally <c>permissions</c> (the Universal Skill Format's
+    /// conventional grouping key) - also sets the alias with that leading segment
+    /// stripped, so SS-017's existing bare/short-form reads (<c>network</c>,
+    /// <c>network.allow</c>, <c>shell</c>) resolve against the nested form too.
+    /// </summary>
+    private static void SetFlatFieldWithAlias(Dictionary<string, string> fields, string dottedKey, string value)
+    {
+        SetFlatField(fields, dottedKey, value);
+
+        const string prefix = "permissions.";
+        if (dottedKey.Length > prefix.Length && dottedKey.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            SetFlatField(fields, dottedKey[prefix.Length..], value);
         }
     }
 

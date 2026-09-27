@@ -113,6 +113,9 @@ public static class RuleConstants
         // owasp-full-coverage (C4): MCP10 via the negotiated capability surface.
         public const string McpLoggingCapabilityAbsent = "SS-INFO-007";
 
+        // ast04-metadata-integrity: dangerous constructs in shipped skill metadata data files.
+        public const string SkillMetadataConstruct = "SS-043";
+
         /// <summary>
         /// Rules that depend on successful MCP JSON-RPC protocol exchange with the
         /// target server. When SS-INFO-001 fires on a server, these rules cannot

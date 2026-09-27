@@ -1,0 +1,8 @@
+name = "runner-config"
+
+[permissions]
+write = false
+shell = false
+
+[settings]
+timeout_seconds = 30

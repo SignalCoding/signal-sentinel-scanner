@@ -65,6 +65,11 @@ public sealed partial class SkillScopeViolationRule : IRule
             ]
         };
 
+    // v3.1.0 (D1): frontmatter `shell` values treated as a truthy grant, mirroring
+    // SkillExcessivePermRule's ShellTruthyValues (SS-017, A1) for the same field.
+    private static readonly HashSet<string> ShellTruthyValues =
+        new(StringComparer.OrdinalIgnoreCase) { "true", "yes", "1" };
+
     // v2.3.0 fix #22a: authoritative map from YAML `capabilities:` tokens to
     // lemma-table row keys. When a skill's frontmatter declares a capability
     // token present in this map, the corresponding capability is considered
@@ -254,6 +259,46 @@ public sealed partial class SkillScopeViolationRule : IRule
                 }
             }
 
+            // v3.1.0 (D1, spec ast04-metadata-integrity.md section 7): extend the
+            // YAML capabilities-block authority above to the Universal Skill
+            // Format's structured `permissions:` declarations, reachable via
+            // ExtraFrontmatter since FrontmatterParser's nested-mapping support
+            // (v3.1.0/A1). A non-empty declared `network.allow`, `files.write` or
+            // `files.read` scope, or a truthy `shell` declaration, is itself a
+            // declaration of that capability - reporting it as "undeclared" (the
+            // C8 false positive) is simply wrong.
+            //
+            // Reads the bare/short-form alias FrontmatterParser sets alongside the
+            // fully-qualified `permissions.*` key (e.g. `network.allow`, not
+            // `permissions.network.allow`), matching SkillExcessivePermRule's
+            // existing A1 read of the same fields (SS-017). The bare form is
+            // chosen over the `permissions.`-prefixed one because the Universal
+            // Skill Format also allows these as flat top-level dotted keys
+            // (`network.allow: [...]` with no `permissions:` wrapper) - only the
+            // bare alias resolves both authoring conventions to a single check.
+            var declaredNetworkAllow = skill.ExtraFrontmatter.FirstOrDefault(
+                kvp => string.Equals(kvp.Key, "network.allow", StringComparison.OrdinalIgnoreCase)).Value;
+            if (HasNonEmptyDeclaredScope(declaredNetworkAllow))
+            {
+                yamlDeclared.Add("network access");
+            }
+
+            var declaredFilesWrite = skill.ExtraFrontmatter.FirstOrDefault(
+                kvp => string.Equals(kvp.Key, "files.write", StringComparison.OrdinalIgnoreCase)).Value;
+            var declaredFilesRead = skill.ExtraFrontmatter.FirstOrDefault(
+                kvp => string.Equals(kvp.Key, "files.read", StringComparison.OrdinalIgnoreCase)).Value;
+            if (HasNonEmptyDeclaredScope(declaredFilesWrite) || HasNonEmptyDeclaredScope(declaredFilesRead))
+            {
+                yamlDeclared.Add("filesystem access");
+            }
+
+            var declaredShell = skill.ExtraFrontmatter.FirstOrDefault(
+                kvp => string.Equals(kvp.Key, "shell", StringComparison.OrdinalIgnoreCase)).Value?.Trim();
+            if (declaredShell is not null && ShellTruthyValues.Contains(declaredShell))
+            {
+                yamlDeclared.Add("shell/command execution");
+            }
+
             foreach (var (pattern, capability, severity) in DangerousCapabilities)
             {
                 // v2.3.0 fix #22a: YAML capabilities block is authoritative.
@@ -297,6 +342,21 @@ public sealed partial class SkillScopeViolationRule : IRule
         }
 
         return Task.FromResult<IEnumerable<Finding>>(findings);
+    }
+
+    /// <summary>
+    /// v3.1.0 (D1): a declared list-shaped permission scope (e.g. <c>files.write</c>,
+    /// <c>network.allow</c>) counts as a declaration only when it is genuinely
+    /// non-empty once its list punctuation is stripped - an explicitly empty
+    /// declared scope (<c>[]</c>) declares no egress/write access, which is the
+    /// opposite of a grant. Mirrors SkillExcessivePermRule's identically-named
+    /// helper (SS-017, A1) for the same field shape.
+    /// </summary>
+    private static bool HasNonEmptyDeclaredScope(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        var trimmed = value.Trim().TrimStart('[').TrimEnd(']').Trim();
+        return trimmed.Length > 0;
     }
 
     private static bool SafeIsMatch(Regex pattern, string? input)

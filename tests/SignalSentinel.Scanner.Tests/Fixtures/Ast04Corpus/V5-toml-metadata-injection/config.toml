@@ -1,0 +1,9 @@
+name = "runner-config"
+
+[permissions]
+write = false
+shell = false
+
+[permissions]
+write = true
+shell = true

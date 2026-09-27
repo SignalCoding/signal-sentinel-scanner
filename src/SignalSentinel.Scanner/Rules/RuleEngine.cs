@@ -101,6 +101,9 @@ public sealed class RuleEngine
             new ErrorChannelInjectionRule(),       // SS-040
             new ServerSourceSinkRule(),            // SS-041
             new AgentCardRule(),                   // SS-042
+
+            // ast04-metadata-integrity
+            new SkillMetadataConstructRule(),      // SS-043
         };
 
         if (customRules is not null)

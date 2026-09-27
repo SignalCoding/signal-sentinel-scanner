@@ -1,0 +1,934 @@
+Test run for C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\bin\Release\net10.0\SignalSentinel.Scanner.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:01.58]     SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(skillName: "unsafe-yaml-unsafe-load", script: "import yaml\ndef load(path):\n    with open(path) "···) [FAIL]
+[xUnit.net 00:00:01.59]     SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(skillName: "unsafe-pickle-load", script: "import pickle\ndef load(path):\n    with open(path"···) [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(skillName: "unsafe-yaml-unsafe-load", script: "import yaml\ndef load(path):\n    with open(path) "···) [117 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 138
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(String skillName, String script) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 70
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(skillName: "unsafe-pickle-load", script: "import pickle\ndef load(path):\n    with open(path"···) [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 138
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(String skillName, String script) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 70
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.60]     SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(skillName: "unsafe-marshal-loads", script: "import marshal\ndef load(blob):\n    return marsha"···) [FAIL]
+[xUnit.net 00:00:01.60]     SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(skillName: "unsafe-yaml-load", script: "import yaml\ndef load(path):\n    with open(path) "···) [FAIL]
+[xUnit.net 00:00:01.60]     SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(skillName: "unsafe-pickle-loads", script: "import pickle\ndef load(blob):\n    return pickle."···) [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(skillName: "unsafe-marshal-loads", script: "import marshal\ndef load(blob):\n    return marsha"···) [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 138
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(String skillName, String script) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 70
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(skillName: "unsafe-yaml-load", script: "import yaml\ndef load(path):\n    with open(path) "···) [< 1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 138
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(String skillName, String script) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 70
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(skillName: "unsafe-pickle-loads", script: "import pickle\ndef load(blob):\n    return pickle."···) [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 138
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_UnsafeLoaderAloneInBundledScript_FiresSs043AtMedium(String skillName, String script) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 70
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.61]     SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_SafeLoaderInBundledScript_NeverFiresSs043(skillName: "safe-yaml-safe-load", script: "import yaml\ndef load(path):\n    with open(path) "···) [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_SafeLoaderInBundledScript_NeverFiresSs043(skillName: "safe-yaml-safe-load", script: "import yaml\ndef load(path):\n    with open(path) "···) [3 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 138
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_SafeLoaderInBundledScript_NeverFiresSs043(String skillName, String script) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 94
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.62]     SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_SafeLoaderInBundledScript_NeverFiresSs043(skillName: "safe-json-load", script: "import json\ndef load(path):\n    with open(path) "···) [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_SafeLoaderInBundledScript_NeverFiresSs043(skillName: "safe-json-load", script: "import json\ndef load(path):\n    with open(path) "···) [6 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 138
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04UnsafeLoaderTests.Evaluate_SafeLoaderInBundledScript_NeverFiresSs043(String skillName, String script) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04UnsafeLoaderTests.cs:line 94
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.63]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(fixtureName: "V3-json-metadata-injection") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(fixtureName: "V3-json-metadata-injection") [215 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 80
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.67]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(fixtureName: "V7-permission-understating") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(fixtureName: "V7-permission-understating") [33 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 80
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.74]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(fixtureName: "V5-toml-metadata-injection") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(fixtureName: "V5-toml-metadata-injection") [34 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 80
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.80]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(fixtureName: "V9-risk-tier-spoofing") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(fixtureName: "V9-risk-tier-spoofing") [18 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 80
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.84]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(fixtureName: "V1-yaml-frontmatter-injection") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(fixtureName: "V1-yaml-frontmatter-injection") [37 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.VulnerableFixture_FiresSs043(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 80
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.90]     SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_LowFormRiskTierWithDangerSignal_ReturnsHighMismatchFinding(riskTier: "L0") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_LowFormRiskTierWithDangerSignal_ReturnsHighMismatchFinding(riskTier: "L0") [16 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should contain an element satisfying the condition
+((f.Severity == 3) && f.Title.Contains("Risk Tier Understated", Ordinal))
+    but does not
+
+Additional Info:
+    risk_tier: L0 should be recognised as a low-tier self-declaration.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_LowFormRiskTierWithDangerSignal_ReturnsHighMismatchFinding(String riskTier) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillExcessivePermRuleAst04Tests.cs:line 64
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.91]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(fixtureName: "C2-yaml-frontmatter-injection") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(fixtureName: "C2-yaml-frontmatter-injection") [47 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 90
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.92]     SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_LowFormRiskTierWithDangerSignal_ReturnsHighMismatchFinding(riskTier: "L1") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_LowFormRiskTierWithDangerSignal_ReturnsHighMismatchFinding(riskTier: "L1") [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should contain an element satisfying the condition
+((f.Severity == 3) && f.Title.Contains("Risk Tier Understated", Ordinal))
+    but does not
+
+Additional Info:
+    risk_tier: L1 should be recognised as a low-tier self-declaration.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_LowFormRiskTierWithDangerSignal_ReturnsHighMismatchFinding(String riskTier) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillExcessivePermRuleAst04Tests.cs:line 64
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.92]     SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_LowFormRiskTierWithDangerSignal_ReturnsHighMismatchFinding(riskTier: "1") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_LowFormRiskTierWithDangerSignal_ReturnsHighMismatchFinding(riskTier: "1") [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should contain an element satisfying the condition
+((f.Severity == 3) && f.Title.Contains("Risk Tier Understated", Ordinal))
+    but does not
+
+Additional Info:
+    risk_tier: 1 should be recognised as a low-tier self-declaration.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_LowFormRiskTierWithDangerSignal_ReturnsHighMismatchFinding(String riskTier) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillExcessivePermRuleAst04Tests.cs:line 64
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.93]     SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_LowFormRiskTierWithDangerSignal_ReturnsHighMismatchFinding(riskTier: "0") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_LowFormRiskTierWithDangerSignal_ReturnsHighMismatchFinding(riskTier: "0") [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should contain an element satisfying the condition
+((f.Severity == 3) && f.Title.Contains("Risk Tier Understated", Ordinal))
+    but does not
+
+Additional Info:
+    risk_tier: 0 should be recognised as a low-tier self-declaration.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_LowFormRiskTierWithDangerSignal_ReturnsHighMismatchFinding(String riskTier) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillExcessivePermRuleAst04Tests.cs:line 64
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.94]     SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_L0WithDeclaredNonEmptyFilesWrite_ReturnsHighMismatchFinding [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_L0WithDeclaredNonEmptyFilesWrite_ReturnsHighMismatchFinding [3 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should contain an element satisfying the condition
+((f.Severity == 3) && f.Title.Contains("Risk Tier Understated", Ordinal))
+    but does not
+
+Additional Info:
+    A non-empty declared 'files.write' scope alone should raise the implied floor above L0.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_L0WithDeclaredNonEmptyFilesWrite_ReturnsHighMismatchFinding() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillExcessivePermRuleAst04Tests.cs:line 141
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.95]     SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_HighFormRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings(riskTier: "3") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_HighFormRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings(riskTier: "3") [3 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should not contain an element satisfying the condition
+f.Title.Contains("Risk Tier", Ordinal)
+    but does
+
+Additional Info:
+    risk_tier: 3 should be recognised as a high-tier self-declaration.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_HighFormRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings(String riskTier) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillExcessivePermRuleAst04Tests.cs:line 90
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.96]     SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_HighFormRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings(riskTier: "2") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_HighFormRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings(riskTier: "2") [10 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should not contain an element satisfying the condition
+f.Title.Contains("Risk Tier", Ordinal)
+    but does
+
+Additional Info:
+    risk_tier: 2 should be recognised as a high-tier self-declaration.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_HighFormRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings(String riskTier) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillExcessivePermRuleAst04Tests.cs:line 90
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.96]     SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_HighFormRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings(riskTier: "L2") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_HighFormRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings(riskTier: "L2") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should not contain an element satisfying the condition
+f.Title.Contains("Risk Tier", Ordinal)
+    but does
+
+Additional Info:
+    risk_tier: L2 should be recognised as a high-tier self-declaration.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_HighFormRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings(String riskTier) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillExcessivePermRuleAst04Tests.cs:line 90
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.96]     SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_HighFormRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings(riskTier: "L3") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_HighFormRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings(riskTier: "L3") [1 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should not contain an element satisfying the condition
+f.Title.Contains("Risk Tier", Ordinal)
+    but does
+
+Additional Info:
+    risk_tier: L3 should be recognised as a high-tier self-declaration.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_HighFormRiskTierWithDangerSignal_DoesNotFireMismatchOrMissingFindings(String riskTier) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillExcessivePermRuleAst04Tests.cs:line 90
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.96]     SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_L0WithDeclaredShellTrue_ReturnsHighMismatchFinding [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_L0WithDeclaredShellTrue_ReturnsHighMismatchFinding [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should contain an element satisfying the condition
+((f.Severity == 3) && f.Title.Contains("Risk Tier Understated", Ordinal))
+    but does not
+
+Additional Info:
+    Declared 'shell: true' alone should raise the implied floor above L0.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_L0WithDeclaredShellTrue_ReturnsHighMismatchFinding() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillExcessivePermRuleAst04Tests.cs:line 117
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.97]     SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_L0WithDeclaredNonEmptyNetworkAllow_ReturnsHighMismatchFinding [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_L0WithDeclaredNonEmptyNetworkAllow_ReturnsHighMismatchFinding [2 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : findings
+    should contain an element satisfying the condition
+((f.Severity == 3) && f.Title.Contains("Risk Tier Understated", Ordinal))
+    but does not
+
+Additional Info:
+    A non-empty declared 'network.allow' scope alone should raise the implied floor above L0.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.SkillExcessivePermRuleAst04Tests.Evaluate_L0WithDeclaredNonEmptyNetworkAllow_ReturnsHighMismatchFinding() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\SkillExcessivePermRuleAst04Tests.cs:line 165
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.97]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(fixtureName: "C10-risk-tier-spoofing") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(fixtureName: "C10-risk-tier-spoofing") [34 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 90
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.97]     SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_YamlSidecarWithoutDangerousTag_NeverFiresSs043 [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_YamlSidecarWithoutDangerousTag_NeverFiresSs043 [73 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 197
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.ScanDirectoryAsync(String dir) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 183
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_YamlSidecarWithoutDangerousTag_NeverFiresSs043() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 73
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.98]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(fixtureName: "C4-json-metadata-injection") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(fixtureName: "C4-json-metadata-injection") [34 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 90
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.99]     SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_YamlSidecarWithCodeExecutingTag_FiresSs043AtMedium(yamlLine: "display_name: !!python/object/apply:os.system ['id"···) [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_YamlSidecarWithCodeExecutingTag_FiresSs043AtMedium(yamlLine: "display_name: !!python/object/apply:os.system ['id"···) [36 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 197
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.ScanDirectoryAsync(String dir) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 183
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_YamlSidecarWithCodeExecutingTag_FiresSs043AtMedium(String yamlLine) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 60
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:01.99]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(fixtureName: "C8-permission-understating") [FAIL]
+[xUnit.net 00:00:01.99]     SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_YamlSidecarWithCodeExecutingTag_FiresSs043AtMedium(yamlLine: "display_name: !!python/module:os") [FAIL]
+[xUnit.net 00:00:01.99]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(fixtureName: "C6-toml-metadata-injection") [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(fixtureName: "C8-permission-understating") [22 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 90
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_YamlSidecarWithCodeExecutingTag_FiresSs043AtMedium(yamlLine: "display_name: !!python/module:os") [24 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 197
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.ScanDirectoryAsync(String dir) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 183
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_YamlSidecarWithCodeExecutingTag_FiresSs043AtMedium(String yamlLine) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 60
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(fixtureName: "C6-toml-metadata-injection") [17 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ControlFixture_ProducesZeroSs043Findings(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 90
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:02.00]     SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_YamlSidecarWithCodeExecutingTag_FiresSs043AtMedium(yamlLine: "display_name: !!python/name:os.system") [FAIL]
+[xUnit.net 00:00:02.00]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.V3_FiresSs043 [FAIL]
+[xUnit.net 00:00:02.00]     SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_JsonSidecarWithProtoPollutionKey_FiresSs043 [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_YamlSidecarWithCodeExecutingTag_FiresSs043AtMedium(yamlLine: "display_name: !!python/name:os.system") [17 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 197
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.ScanDirectoryAsync(String dir) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 183
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_YamlSidecarWithCodeExecutingTag_FiresSs043AtMedium(String yamlLine) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 60
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.V3_FiresSs043 [19 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.V3_FiresSs043() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 118
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_JsonSidecarWithProtoPollutionKey_FiresSs043 [22 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 197
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.ScanDirectoryAsync(String dir) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 183
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_JsonSidecarWithProtoPollutionKey_FiresSs043() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 98
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:02.00]     SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_TomlSidecarWithDuplicatePermissionsTable_FiresSs043 [FAIL]
+[xUnit.net 00:00:02.01]     SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_TagMentionedInFencedDocumentationExample_NeverFiresSs043 [FAIL]
+[xUnit.net 00:00:02.01]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.RealWorldSkillCorpus_ProducesZeroSs043Findings [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_TomlSidecarWithDuplicatePermissionsTable_FiresSs043 [34 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 197
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.ScanDirectoryAsync(String dir) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 183
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_TomlSidecarWithDuplicatePermissionsTable_FiresSs043() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 121
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_TagMentionedInFencedDocumentationExample_NeverFiresSs043 [24 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 197
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.ScanDirectoryAsync(String dir) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 183
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04DataFileIngestionTests.Evaluate_TagMentionedInFencedDocumentationExample_NeverFiresSs043() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04DataFileIngestionTests.cs:line 152
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.RealWorldSkillCorpus_ProducesZeroSs043Findings [105 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.RealWorldSkillCorpus_ProducesZeroSs043Findings() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 145
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:02.01]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.V5_FiresSs043 [FAIL]
+[xUnit.net 00:00:02.01]     SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.V1_BothHalvesPresent_FiresAtHighSeverity [FAIL]
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.V5_FiresSs043 [15 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.V5_FiresSs043() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 129
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Failed SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.V1_BothHalvesPresent_FiresAtHighSeverity [25 ms]
+  Error Message:
+   Shouldly.ShouldAssertException : rule
+    should not be null but was
+
+Additional Info:
+    SS-043 (Insecure Skill Metadata) is not registered in RuleEngine.CatalogueRules() - implement and register the rule per spec A4.
+  Stack Trace:
+     at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.GetRule() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 175
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.ScanFixtureAsync(String fixtureName) in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 161
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult()
+   at SignalSentinel.Scanner.Tests.SkillRules.Ast04CorpusTests.V1_BothHalvesPresent_FiresAtHighSeverity() in C:\sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\SkillRules\Ast04CorpusTests.cs:line 105
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+
+Failed!  - Failed:    39, Passed:  1784, Skipped:     0, Total:  1823, Duration: 2 s - SignalSentinel.Scanner.Tests.dll (net10.0)

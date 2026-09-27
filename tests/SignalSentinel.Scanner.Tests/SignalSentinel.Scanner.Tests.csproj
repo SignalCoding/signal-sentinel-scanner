@@ -42,10 +42,17 @@
          real-world false-positive regression corpus. -->
     <!-- v3.0.1 (F14): the real-world skill corpus is markdown plus bundled scripts,
          so the fixture copy set covers *.md/*.py/*.js alongside the MCP captures. -->
+    <!-- ast04-metadata-integrity: the vendored AST04 corpus (Fixtures/Ast04Corpus)
+         ships metadata sidecars as *.yaml/*.yml/*.toml and a shell loader as
+         *.sh, none of which the prior glob set copied to the output directory. -->
     <None Include="Fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Fixtures\**\*.md" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Fixtures\**\*.py" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Fixtures\**\*.js" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\**\*.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\**\*.yml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\**\*.toml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\**\*.sh" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

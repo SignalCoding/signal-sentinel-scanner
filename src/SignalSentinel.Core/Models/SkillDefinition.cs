@@ -71,6 +71,13 @@ public sealed record SkillDefinition
     public IReadOnlyList<BundledScript> Scripts { get; init; } = [];
 
     /// <summary>
+    /// ast04-metadata-integrity: shipped metadata sidecar files (<c>.yaml</c>, <c>.yml</c>,
+    /// <c>.json</c>, <c>.toml</c>) found in the skill package directory, read as data rather
+    /// than as executable content. Feeds SS-043.
+    /// </summary>
+    public IReadOnlyList<BundledDataFile> DataFiles { get; init; } = [];
+
+    /// <summary>
     /// Additional files found in the skill package directory.
     /// </summary>
     public IReadOnlyList<string> AdditionalFiles { get; init; } = [];
@@ -153,6 +160,38 @@ public sealed record BundledScript
 
     /// <summary>
     /// Script content (loaded on demand, may be null for very large files).
+    /// </summary>
+    public string? Content { get; init; }
+
+    /// <summary>
+    /// File size in bytes.
+    /// </summary>
+    public long FileSize { get; init; }
+}
+
+/// <summary>
+/// ast04-metadata-integrity: a shipped metadata sidecar file (<c>.yaml</c>, <c>.yml</c>,
+/// <c>.json</c>, <c>.toml</c>) within a skill package, read as data.
+/// </summary>
+public sealed record BundledDataFile
+{
+    /// <summary>
+    /// File path relative to the skill directory.
+    /// </summary>
+    public required string RelativePath { get; init; }
+
+    /// <summary>
+    /// Absolute file path.
+    /// </summary>
+    public required string FullPath { get; init; }
+
+    /// <summary>
+    /// Lower-case extension including the dot (<c>.yaml</c>, <c>.yml</c>, <c>.json</c>, <c>.toml</c>).
+    /// </summary>
+    public required string Extension { get; init; }
+
+    /// <summary>
+    /// File content (loaded on demand, may be null for very large files).
     /// </summary>
     public string? Content { get; init; }
 

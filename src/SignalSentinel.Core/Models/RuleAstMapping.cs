@@ -123,7 +123,12 @@ public static class RuleAstMapping
             // owasp-full-coverage (C4): absence of the MCP logging capability is a
             // protocol-surface visibility gap, same rationale as the other AST08
             // informational rules above.
-            ["SS-INFO-007"] = [OwaspAstCodes.AST08]
+            ["SS-INFO-007"] = [OwaspAstCodes.AST08],
+
+            // ast04-metadata-integrity: code-executing tags, prototype-pollution keys and
+            // duplicate-key/table ambiguity in shipped skill metadata data files are the
+            // canonical "insecure metadata" shape.
+            ["SS-043"] = [OwaspAstCodes.AST04]
         };
 
     /// <summary>
