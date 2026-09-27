@@ -28,16 +28,26 @@ public sealed partial class SkillExcessivePermRule : IRule
     /// <summary>
     /// v2.5.0 (G15a): frontmatter <c>risk_tier</c> values treated as a low-risk
     /// self-declaration for the purposes of the mismatch check below.
+    /// v3.1.0 (A1): extended to the Universal Skill Format <c>L0</c>/<c>L1</c>
+    /// ladder and the bare numeric equivalents.
     /// </summary>
     private static readonly HashSet<string> LowRiskTierValues =
-        new(StringComparer.OrdinalIgnoreCase) { "low", "minimal", "none" };
+        new(StringComparer.OrdinalIgnoreCase) { "low", "minimal", "none", "l0", "l1", "0", "1" };
 
     /// <summary>
     /// v2.5.0 (G15a): frontmatter <c>risk_tier</c> values treated as a high-risk
     /// self-declaration for the undocumented-risk check below.
+    /// v3.1.0 (A1): extended to the Universal Skill Format <c>L2</c>/<c>L3</c>
+    /// ladder and the bare numeric equivalents.
     /// </summary>
     private static readonly HashSet<string> HighRiskTierValues =
-        new(StringComparer.OrdinalIgnoreCase) { "high", "critical" };
+        new(StringComparer.OrdinalIgnoreCase) { "high", "critical", "l2", "l3", "2", "3" };
+
+    /// <summary>
+    /// v3.1.0 (A1): frontmatter <c>shell</c> values treated as a truthy grant.
+    /// </summary>
+    private static readonly HashSet<string> ShellTruthyValues =
+        new(StringComparer.OrdinalIgnoreCase) { "true", "yes", "1" };
 
     public string Id => RuleConstants.Rules.SkillExcessivePermissions;
     public string Name => "Skill Excessive Permissions Detection";
@@ -213,6 +223,32 @@ public sealed partial class SkillExcessivePermRule : IRule
                 dangerSignals.Add("unrestricted shell access");
             }
 
+            // v3.1.0 (A1): derive the implied risk floor from declared permissions
+            // independently of observed (prose) capability. A skill that declares
+            // shell access or a non-empty write/network scope but says nothing
+            // dangerous in its body must still raise the floor - this is precisely
+            // the spoofing case the risk-tier check exists to catch.
+            var declaredShell = skill.ExtraFrontmatter.FirstOrDefault(
+                kvp => string.Equals(kvp.Key, "shell", StringComparison.OrdinalIgnoreCase)).Value?.Trim();
+            if (declaredShell is not null && ShellTruthyValues.Contains(declaredShell))
+            {
+                dangerSignals.Add("declared shell: true");
+            }
+
+            var declaredFilesWrite = skill.ExtraFrontmatter.FirstOrDefault(
+                kvp => string.Equals(kvp.Key, "files.write", StringComparison.OrdinalIgnoreCase)).Value;
+            if (HasNonEmptyDeclaredScope(declaredFilesWrite))
+            {
+                dangerSignals.Add("declared files.write scope");
+            }
+
+            var declaredNetworkAllow = skill.ExtraFrontmatter.FirstOrDefault(
+                kvp => string.Equals(kvp.Key, "network.allow", StringComparison.OrdinalIgnoreCase)).Value;
+            if (HasNonEmptyDeclaredScope(declaredNetworkAllow))
+            {
+                dangerSignals.Add("declared network.allow scope");
+            }
+
             // v2.5.0 (G15c): cross-check the skill's self-declared risk_tier
             // (Universal Skill Format) against what the rule actually observed.
             var riskTier = skill.ExtraFrontmatter.FirstOrDefault(
@@ -301,6 +337,19 @@ public sealed partial class SkillExcessivePermRule : IRule
         });
 
         return true;
+    }
+
+    /// <summary>
+    /// v3.1.0 (A1): a declared list-shaped scope (e.g. <c>files.write</c>,
+    /// <c>network.allow</c>) counts toward the implied risk floor only when it
+    /// is genuinely non-empty once its list punctuation is stripped - an empty
+    /// declared scope ("[]") is not a grant.
+    /// </summary>
+    private static bool HasNonEmptyDeclaredScope(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        var trimmed = value.Trim().TrimStart('[').TrimEnd(']').Trim();
+        return trimmed.Length > 0;
     }
 
     private static bool SafeIsMatch(Regex pattern, string? input)

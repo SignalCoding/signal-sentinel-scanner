@@ -831,7 +831,8 @@ public static class Program
                 SS-037  Cross-Skill Description Overlap (ASI01, AST04)
                 SS-038  Skill Script Pipeline Taint (ASI05, AST01/AST06)
                 SS-039  Skill Dependency Known Vulnerability (ASI04, AST02/AST07)
-            
+                SS-043  Dangerous Construct in Shipped Skill Metadata (ASI01, AST04)
+
             INFORMATIONAL:
                 SS-INFO-001  Non-MCP Endpoint Detected (ASI10, AST08)
                 SS-INFO-002  Non-Public Scan Target (ASI03)

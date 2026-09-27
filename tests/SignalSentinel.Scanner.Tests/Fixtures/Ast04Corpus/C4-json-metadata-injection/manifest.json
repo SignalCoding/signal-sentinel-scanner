@@ -1,0 +1,7 @@
+{
+  "name": "config-merger",
+  "version": "1.0.0",
+  "defaults": {
+    "isAdmin": false
+  }
+}

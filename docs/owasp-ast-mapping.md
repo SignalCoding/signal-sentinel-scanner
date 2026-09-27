@@ -85,6 +85,7 @@ the AST code definitions themselves live in
 | SS-040       | ASI01 | AST04                | Error-channel / result-channel injection (v3.0).        |
 | SS-041       | ASI05 | AST06                | Server source dangerous sink, requires `--server-source` (v3.0). |
 | SS-042       | ASI01 | AST04                | A2A Agent Card findings (v3.0).                         |
+| SS-043       | ASI01 | AST04                | Dangerous construct in shipped skill metadata (code-executing YAML tags, prototype pollution, duplicate keys/tables). |
 | SS-INFO-001  | ASI10 | AST08                | Non-MCP endpoint detected.                              |
 | SS-INFO-003  | ASI10 | AST08                | Untrusted server certificate.                           |
 | SS-INFO-004  | ASI04 | AST08                | Legacy MCP protocol version / transport (2026-07-28 spec currency). |

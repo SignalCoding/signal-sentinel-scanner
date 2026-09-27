@@ -103,3 +103,96 @@ The fixtures are Apache-2.0 and may be vendored, but the repository is itself a 
 the threat class this scanner assesses. Before any of it is committed as a fixture it gets a provenance review and a
 scan with Sentinel, per the project's third-party doctrine. Until then it stays a scratch-directory measurement set,
 and the corpus-derived numbers in acceptance item 2 are reproduced by re-cloning rather than from vendored copies.
+
+---
+
+## 6. Amendment after the red phase (2026-09-27)
+
+Three corrections. The first is the orchestrator's error and is the same failure pattern as the AST10 grep: one
+instance inspected, the class assumed.
+
+### C1 - V1, V3 and V5 are three different attacks, not one across three formats
+The spec described A2/A3 as unsafe deserialisation in YAML, JSON and TOML. Reading all five fixtures shows:
+
+| Fixture | Actual shape | Consuming operation |
+|---|---|---|
+| V1 | code-executing YAML tag `!!python/object/apply:os.system` in `metadata.yaml` | `yaml.load` without SafeLoader |
+| V3 | **prototype pollution**: a `__proto__` key in shipped JSON | a plain `deepMerge`, no `eval`, no unsafe loader |
+| V5 | **parser ambiguity**: a duplicate `[permissions]` TOML table | **no script at all** |
+
+So only V1 has the two-part shape A4 based its High band on. V3's consuming operation is an ordinary merge, and V5
+has no consumer: the attack is that different TOML parsers resolve a duplicate table differently, so the file means
+one thing to the validator and another to the loader.
+
+**Revised design.** SS-043 becomes **"Dangerous Construct in Shipped Skill Metadata"**, one rule over three construct
+families, which is coherent because all three are "the shipped metadata is not what it appears to be":
+- **code execution**: `!!python/object/apply`, `!!python/name`, `!!python/module` and equivalents
+- **prototype pollution**: `__proto__`, `constructor`, `prototype` as keys in shipped JSON or YAML
+- **parser ambiguity**: duplicate keys or duplicate tables in a shipped YAML, JSON or TOML file
+
+Severity: **High** when a consuming operation is also present in a bundled script (an unsafe loader for the first
+family, a recursive merge for the second). **Medium** for the construct alone, which is the correct band for V5,
+where no consumer ships and the danger is entirely in the ambiguity.
+
+### C2 - V7 and V9 belong to SS-017, not SS-043
+The spec assigned risk-tier closure to SS-017, but the test brief asked the corpus harness to assert SS-043 on all
+five vulnerable fixtures. The test-writer followed the brief and flagged the contradiction, which was the right call.
+**The harness is corrected:** V1, V3, V5 assert SS-043; V7 and V9 assert SS-017. The two-sided acceptance is
+unchanged, all five vulnerable fixtures detected by *some* rule and all five controls silent.
+
+### C3 - A1 is materially bigger than a vocabulary fix
+Probing the shipped binary directly, a skill declaring a shell permission with a low risk tier produces **no finding
+in any declaration form**:
+
+| Form | Result |
+|---|---|
+| nested `permissions:` block | no finding |
+| flat dotted `permissions.shell: true` | no finding |
+| `capabilities: [shell, network]` list | no finding |
+
+Two distinct causes, both needing work:
+1. **`FrontmatterParser` is line-based and column-0 only.** Nested block mappings never reach `ExtraFrontmatter`.
+   The 3.0.1 fix (F1) added block *scalars*, which is a different construct. The Universal Skill Format's nested
+   `permissions:` block is therefore invisible to every rule that consumes declared permissions, not only SS-017.
+2. **SS-017's cross-check requires an *observed* capability in the body.** A declaration alone never raises the
+   implied floor, which is precisely the spoofing case: a package that declares shell access and claims tier L0
+   while its body stays bland.
+
+A1 therefore covers: nested-mapping support in `FrontmatterParser`, the `L0`..`L3` and numeric tier vocabulary, and
+deriving the floor from declared permissions independently of observed capability. The parser change is the widest
+blast radius in this work and must not regress SS-012's YAML-capabilities authority or SS-028's deny_write
+escalation, both of which read the same frontmatter.
+
+## 7. Second amendment (2026-09-27, after implementation)
+
+Verified independently against the built binary: **4 of 5 vulnerable fixtures now detected on merit**, up from 0.
+V1/V3/V5 via SS-043 (High/High/Medium), V9 via SS-017 (High). Four of five controls silent.
+
+Two items remain, and they are the same fixture pair, which makes the result inverted for that theme: we fire on
+the benign twin and catch the vulnerable one only incidentally.
+
+**V7/C8 are "permission understating": the manifest's egress allowlist names one host and the bundled script calls
+a different, undeclared endpoint.** The control ships the identical allowlist and identical egress primitives, and
+every host it reaches is declared.
+
+### D1 - SS-012 must honour declared permissions *(closes the C8 false positive)*
+C8 draws `SS-012 Skill Scope Violation: Undeclared network access` while its manifest declares
+`permissions.network.allow` with a host. A declared egress allowlist is a declaration of network access; reporting
+it as undeclared is simply wrong. SS-012 already treats the YAML `capabilities:` block as authoritative (v2.3.0
+fix #22a); extend that to the nested permission declarations now reachable after Step 1:
+- non-empty `permissions.network.allow` declares network access
+- non-empty `permissions.files.write` (or `files.read`) declares filesystem access
+- `permissions.shell: true` declares shell/command execution
+
+### D2 - Egress allowlist versus actual destinations *(closes V7 on merit)* - **follow-up, not this branch**
+Detecting V7 properly means comparing the hosts a bundled script actually reaches against the manifest's
+allowlist, and reporting destinations that are not declared. That is a genuinely valuable control and a new
+detection rather than an extension, so it gets its own spec, fixtures and false-positive analysis. V7 continues to
+be caught incidentally by SS-014 in the meantime, which is recorded rather than counted as a merit detection.
+
+### D3 - Corpus harness assertion
+`Ast04CorpusTests.VulnerableFixture_FiresSs043` asserts SS-043 across all five `V*` fixtures, contradicting section
+6/C2 which assigns V7 and V9 to SS-017. The implementation is correct and the test is wrong. Split the assertion
+per fixture: V1/V3/V5 expect SS-043; V9 expects SS-017; V7 expects a finding from any rule, annotated as
+incidental pending D2. Widening SS-043 to cover permission mismatches was explicitly considered and rejected: it
+would duplicate SS-017 and conflate two different categories of defect.

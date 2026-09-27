@@ -63,10 +63,10 @@ public class RuleRegistryParityTests
         // This is the "rule constant exists" surface: the authoritative list itself
         // is derived from RuleConstants.Rules by reflection, so every id here already
         // has a constant. What this guards against is drift in the count (currently
-        // 48: 41 detection + 7 informational, after owasp-full-coverage.md C4/C6 added
-        // SS-INFO-007) and accidental duplicate values.
-        AllRuleIds.Count.ShouldBe(48);
-        AllRuleIds.Distinct(StringComparer.Ordinal).Count().ShouldBe(48);
+        // 49: 42 detection + 7 informational, after ast04-metadata-integrity added
+        // SS-043) and accidental duplicate values.
+        AllRuleIds.Count.ShouldBe(49);
+        AllRuleIds.Distinct(StringComparer.Ordinal).Count().ShouldBe(49);
         AllRuleIds.Count(id => id.StartsWith("SS-INFO-", StringComparison.Ordinal)).ShouldBe(7);
     }
 

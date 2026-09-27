@@ -60,6 +60,7 @@ public static class SkillReader
         var parsed = FrontmatterParser.Parse(content);
         var skillDir = Path.GetDirectoryName(fullPath) ?? fullPath;
         var scripts = await ScriptInventory.DiscoverAsync(skillDir, cancellationToken);
+        var dataFiles = await DataFileInventory.DiscoverAsync(skillDir, cancellationToken);
         var artefacts = await FileForensics.AnalyseAsync(skillDir, cancellationToken);
 
         var name = parsed.GetField("name")
@@ -116,6 +117,7 @@ public static class SkillReader
             SourcePlatform = sourcePlatform,
             IsProjectLevel = isProjectLevel,
             Scripts = scripts,
+            DataFiles = dataFiles,
             AdditionalFiles = additionalFiles,
             Artefacts = artefacts,
             // v3.0.0 (WP10): typed document segments for per-rule segment filtering.

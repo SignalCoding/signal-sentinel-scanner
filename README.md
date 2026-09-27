@@ -194,6 +194,7 @@ sentinel-scan --discover --skills --ci --format json
 | SS-037 | ASI01 | Cross-Skill Description Overlap *(v3.0)* |
 | SS-038 | ASI05 | Skill Script Pipeline Taint *(v3.0; fetch-to-exec)* |
 | SS-039 | ASI04 | Skill Dependency Known Vulnerability *(v3.0; requires `--osv`)* |
+| SS-043 | ASI01 | Dangerous Construct in Shipped Skill Metadata *(code-executing YAML tags, prototype-pollution keys, duplicate-key/table ambiguity)* |
 
 #### Static Surface Rules (v3.0)
 
