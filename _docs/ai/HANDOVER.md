@@ -261,3 +261,60 @@ Verified from here on 2026-09-27: GHCR `:3.0.4` and `:latest` manifests fetch an
 website advertised returns 404; NuGet lists 3.0.4 for Scanner and Core; `ConfigDiscovery.cs` discovers ten MCP
 platforms and `SkillDiscovery.cs` eight skill platforms plus generic dirs (the website names them rather than
 quoting a count).
+
+---
+
+## Addendum 2026-09-27 (end of session): v3.1.0 shipped, work paused to 2026-10-04
+
+**State:** `main` @ `567d015`. **v3.1.0 released** 2026-09-27 (tag on `900d6e1`, run `36337067860`), the first
+release to run end to end with no manual step. **49 rules** (42 detection + 7 informational), **1,834 tests**,
+build 0 warnings. Artefacts verified live: GitHub Release with both `.nupkg`, NuGet 3.1.0 for Scanner and Core,
+GHCR `:3.1.0` anonymously pullable, `dotnet tool update` lands on 3.1.0.
+
+### What shipped in 3.1.0
+| PR | Change |
+|---|---|
+| #86 | Registry parity across all nine surfaces + `RuleRegistryParityTests`; corrected the "22 new rules" error to 15 |
+| #87 | Claimed ASI08, AST09, MCP04, MCP10; new SS-INFO-007 (MCP logging capability absent); coverage guard |
+| #90 | Reverted SS-024 -> AST09: governance is not observable from a package |
+| #92 | **SS-043** dangerous constructs in shipped metadata; `FrontmatterParser` nested mappings; SS-017 floor from declared permissions; SS-012 honours declarations |
+| #93 | SS-017 must not punish honest, scoped declarations (regression from #92, found by re-measuring) |
+| #95 | Corrected stale rule totals; `RuleTotalsProseTests` guards them |
+
+### Measured accuracy (record: `_docs/ai/completed/2026-09-27_accuracy-measurement-3.1.0.md`)
+- Labelled adversarial corpus: **72% of vulnerable detected, 27% of benign twins firing** (SS-037 excluded and the
+  exclusion justified with numbers: it fires on 16 of 33 controls there but zero on real skills).
+- Clean real-world: Anthropic 19 skills D/29 with **zero false-positive classes**; all four Highs genuine.
+- Live MCP/A2A matrix: 13 of 14 unchanged; context7 improved C/55 -> C/65 as a false positive stopped firing.
+- **Never render 72% as "72% accurate".** One corpus, one author's judgement, controls adversarially close, 33 pairs.
+
+### Website is now correct and verified live
+signalcoding.co.uk/products/sentinel-scanner carries 3.1.0, 49 rules (42+7), SS-043 and SS-INFO-007, and the
+corrected coverage wording. The false "100% OWASP coverage" claim is gone from the page, compare page, schema,
+markdown mirrors and llms.txt. Verified by fetching the live page, not taken on trust. Coordinated via the
+"Signal Coding Web" peer session.
+
+### Picking up on 2026-10-04 (owner's plan), or sooner if Jon replies
+1. **Markdig #60** clears quarantine 2026-10-04. Take it alone; `RealWorldSkillCorpusTests` and
+   `SegmentationRegressionTests` are the net, since segmentation depends on it.
+2. **AST02 is the measured weak spot: 1 of 4 detected.** Themes are hook commands on session start, control-plane
+   environment override, folder-open tasks, MCP server spawn. These are **config-time execution paths, not document
+   content**, which is a surface the skill rules were never built for. Real design work, and the most interesting
+   thing outstanding. Labelled fixtures already exist (4 vulnerable + 4 controls); needs no external input.
+3. **D2** (spec `ast04-metadata-integrity.md` section 7): compare a manifest's egress allowlist against the hosts
+   bundled scripts actually reach. Closes the last AST04 fixture on merit; currently caught incidentally by SS-014.
+4. **Jon's 65-skill corpus** would harden the false-positive side and strengthen the accuracy claim. He is a
+   *negative* set, not positives, so he does not block AST02.
+5. Release PR for **3.1.1** is open carrying #95; no urgency.
+
+### Open, pre-existing, not defects of this work
+- `CatalogueRules()` returns 50 instances for 49 distinct ids: SS-020 is emitted by both `OAuthComplianceRule` and
+  `MissingAuthProbeRule` by design. Any future count from instances rather than distinct ids will be wrong by one.
+- dotnet/runtime#134655: the `(?:X){n,m}?` miscompile is fixed in .NET 11 only, **no backport to release/10.0**.
+  Do not revert the explicit-optional-group rewrites or `RegexEngineIntegrityTests` while we target net10.0.
+
+### Method note worth keeping
+Three times this week a confident answer was wrong and measurement caught it: a comment-polluted grep said AST10 was
+covered when it was not; the SS-017 regression appeared only on re-running the benchmark; the stale rule total
+surfaced only because a peer's question prompted a re-read. Guards now exist for all three classes. Prefer
+reflection over text search when asserting completeness, and re-measure after changing rules rather than assuming.
