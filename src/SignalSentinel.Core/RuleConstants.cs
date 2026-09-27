@@ -110,6 +110,9 @@ public static class RuleConstants
         public const string ServerSourceSink = "SS-041";
         public const string AgentCard = "SS-042";
 
+        // owasp-full-coverage (C4): MCP10 via the negotiated capability surface.
+        public const string McpLoggingCapabilityAbsent = "SS-INFO-007";
+
         /// <summary>
         /// Rules that depend on successful MCP JSON-RPC protocol exchange with the
         /// target server. When SS-INFO-001 fires on a server, these rules cannot
@@ -128,7 +131,8 @@ public static class RuleConstants
                 RugPullDetection, ShadowToolInjection, SkillIntegrityVerification,
                 ExcessiveToolResponse,
                 PromptPoisoning, ResourcePoisoning, ServerInstructionsInjection,
-                UnsolicitedServerRequest, CapabilitySurface, ErrorChannelInjection
+                UnsolicitedServerRequest, CapabilitySurface, ErrorChannelInjection,
+                McpLoggingCapabilityAbsent
             };
     }
 

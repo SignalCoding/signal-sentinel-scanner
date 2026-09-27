@@ -67,11 +67,17 @@ public static class OwaspMcpCodes
         "SS-INFO-005" => MCP02,  // Capability Surface → MCP Excessive Permissions
         "SS-036" => MCP03,  // Confusable Identifier → MCP Insecure Tool Discovery (lookalike shadowing)
         "SS-040" => MCP01,  // Error/Result-Channel Injection → MCP Tool Poisoning (same payload, different channel)
+        // MCP04 (Tool Argument Injection): a dangerous sink in server source reachable
+        // from a tool parameter is exactly manipulated parameters enabling unintended
+        // operations, per spec owasp-full-coverage.md C3.
+        "SS-041" => MCP04,  // Server Source Sink → MCP Tool Argument Injection
+        // MCP10 (Logging Failures): the server does not advertise the MCP logging
+        // capability, per spec owasp-full-coverage.md C4.
+        "SS-INFO-007" => MCP10,  // MCP Logging Capability Absent → MCP Logging Failures
         // Deliberate nulls (spec rule-registry-parity.md section 8, D1): SS-022 (Rug
         // Pull) and SS-025 (Excessive Response) are arguable but not clear corrections
         // by the project's existing mapping logic, so they are left unmapped rather than
-        // guessed; SS-041 (Server Source Sink) is a new v3.0.0 surface with no settled
-        // MCP code yet; SS-042 (A2A Agent Card) describes A2A, not MCP, so null is correct.
+        // guessed; SS-042 (A2A Agent Card) describes A2A, not MCP, so null is correct.
         _ => null
     };
 }

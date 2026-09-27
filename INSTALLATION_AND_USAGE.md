@@ -549,7 +549,7 @@ Signal Sentinel auto-discovers MCP configurations and Agent Skills from:
 
 ## Security Rules
 
-Signal Sentinel scans for OWASP Agentic AI Top 10 + OWASP MCP Top 10 vulnerabilities with 47 rules. Every rule also carries an OWASP Agentic Skills Top 10 (AST) code where applicable - see [`docs/owasp-ast-mapping.md`](docs/owasp-ast-mapping.md) for the full dual mapping.
+Signal Sentinel scans for OWASP Agentic AI Top 10 + OWASP MCP Top 10 vulnerabilities with 48 rules. Every rule also carries an OWASP Agentic Skills Top 10 (AST) code where applicable - see [`docs/owasp-ast-mapping.md`](docs/owasp-ast-mapping.md) for the full dual mapping.
 
 ### MCP Rules
 
@@ -617,6 +617,7 @@ Signal Sentinel scans for OWASP Agentic AI Top 10 + OWASP MCP Top 10 vulnerabili
 | SS-INFO-004 | ASI04 | Legacy MCP Protocol / Transport *(v2.5; tracks the MCP 2026-07-28 specification's deprecation clock)* |
 | SS-INFO-005 | ASI02 | MCP Capability Surface *(v3.0; per-server `listChanged`/`experimental`/`completions` summary)* |
 | SS-INFO-006 | ASI04 | Skill Dependency Surface (Unchecked) *(v3.0; lists pinned deps when `--osv` is absent/offline/failed)* |
+| SS-INFO-007 | ASI10 | MCP Logging Capability Absent *(server does not advertise the `logging` capability)* |
 
 ---
 

@@ -11,8 +11,10 @@ namespace SignalSentinel.Core.Models;
 /// Canonical mapping of Signal Sentinel rule identifiers (SS-001..SS-028,
 /// SS-INFO-001, SS-INFO-003) to OWASP Agentic Skills Top 10 codes. Published
 /// alongside the release; see <c>docs/owasp-ast-mapping.md</c>. Introduced in
-/// v2.3.0 (schema version 1.0); corrected in v2.4.1 (G12a) to align AST05 with
-/// its real OWASP AST10 definition ("Untrusted External Instructions").
+/// v2.3.0 (schema version 1.0); corrected in v2.4.1 (G12a) to align AST05's label
+/// with its real OWASP definition ("Untrusted External Instructions") - the earlier
+/// comment here wrongly attributed that correction to AST10; see spec
+/// owasp-full-coverage.md section 5.
 /// </summary>
 public static class RuleAstMapping
 {
@@ -57,7 +59,10 @@ public static class RuleAstMapping
             // v2.2.0 rules (SS-022 to SS-025)
             ["SS-022"] = [OwaspAstCodes.AST01, OwaspAstCodes.AST02],
             ["SS-023"] = [OwaspAstCodes.AST01],
-            ["SS-024"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07],
+            // AST09 (No Governance): a skill shipping with no signature/integrity artefact
+            // is the absence of change-management and review made observable, per spec
+            // owasp-full-coverage.md C2. Additive - AST02/AST07 stay.
+            ["SS-024"] = [OwaspAstCodes.AST02, OwaspAstCodes.AST07, OwaspAstCodes.AST09],
             ["SS-025"] = [OwaspAstCodes.AST03],
 
             // v2.4.0 rules
@@ -111,7 +116,12 @@ public static class RuleAstMapping
             // description-level injection; source sinks are unsafe execution.
             ["SS-040"] = [OwaspAstCodes.AST04],
             ["SS-041"] = [OwaspAstCodes.AST06],
-            ["SS-042"] = [OwaspAstCodes.AST04]
+            ["SS-042"] = [OwaspAstCodes.AST04],
+
+            // owasp-full-coverage (C4): absence of the MCP logging capability is a
+            // protocol-surface visibility gap, same rationale as the other AST08
+            // informational rules above.
+            ["SS-INFO-007"] = [OwaspAstCodes.AST08]
         };
 
     /// <summary>

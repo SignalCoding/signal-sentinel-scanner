@@ -144,7 +144,7 @@ sentinel-scan --discover --skills --ci --format json
 
 ### Security Rules
 
-47 security rules (41 detection + 6 informational) across MCP and Agent Skill scanning, aligned with OWASP Agentic AI Top 10 and OWASP MCP Top 10. Every rule also carries an OWASP Agentic Skills Top 10 (AST) code where applicable - see [`docs/owasp-ast-mapping.md`](docs/owasp-ast-mapping.md) for the full dual mapping.
+48 security rules (41 detection + 7 informational) across MCP and Agent Skill scanning, aligned with OWASP Agentic AI Top 10 and OWASP MCP Top 10. Every rule also carries an OWASP Agentic Skills Top 10 (AST) code where applicable - see [`docs/owasp-ast-mapping.md`](docs/owasp-ast-mapping.md) for the full dual mapping.
 
 #### MCP Rules
 
@@ -212,6 +212,7 @@ sentinel-scan --discover --skills --ci --format json
 | SS-INFO-004 | ASI04 | Legacy MCP Protocol / Transport *(v2.5, tracks the MCP 2026-07-28 specification's deprecation clock)* |
 | SS-INFO-005 | ASI02 | MCP Capability Surface *(v3.0; per-server `listChanged`/`experimental`/`completions` summary)* |
 | SS-INFO-006 | ASI04 | Skill Dependency Surface (Unchecked) *(v3.0; lists pinned deps when `--osv` is absent/offline/failed)* |
+| SS-INFO-007 | ASI10 | MCP Logging Capability Absent (server does not advertise the `logging` capability) |
 
 ### Supported Platforms (Auto-Discovery)
 
