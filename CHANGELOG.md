@@ -5,6 +5,18 @@ All notable changes to Signal Sentinel Scanner are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1](https://github.com/SignalCoding/signal-sentinel-scanner/compare/v3.1.0...v3.1.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* **docs:** correct stale rule totals and guard them against drift ([#95](https://github.com/SignalCoding/signal-sentinel-scanner/issues/95)) ([567d015](https://github.com/SignalCoding/signal-sentinel-scanner/commit/567d0159715b7d90866f1f4a7b7bec4923f7ef04))
+
+
+### Documentation
+
+* **handover:** v3.1.0 shipped, measured accuracy, pause to 2026-10-04 ([#97](https://github.com/SignalCoding/signal-sentinel-scanner/issues/97)) ([dfffe3d](https://github.com/SignalCoding/signal-sentinel-scanner/commit/dfffe3d57d5fc3f68bd14116f6ef1d761e03dc76))
+
 ## [3.1.0](https://github.com/SignalCoding/signal-sentinel-scanner/compare/v3.0.4...v3.1.0) (2026-09-27)
 
 
