@@ -87,12 +87,38 @@ four checks and have CI enforce two, with nothing reporting the discrepancy.
 
 ---
 
+## 3. The delivered gitleaks workflow cannot pass on an organisation-owned repository
+
+### What happened
+
+`bootstrap.sh` delivered `.github/workflows/gitleaks.yml` using `gitleaks/gitleaks-action@v2`. That
+action requires a paid `GITLEAKS_LICENSE` secret for any organisation-owned repository. The job fails
+in about five seconds with `[SignalCoding] is an organization. License key is required.` It had
+already failed on `main` before the adoption branch existed, so this is delivered-state, not drift.
+
+### Why it matters
+
+Gate 0.5 item 1.3 asks for evidence that gitleaks blocks a test secret on push. That evidence cannot
+be produced, so the item is unevidenceable by construction while the secret is absent - and the
+checklist offers no way to say "the tool shipped cannot run here", only PASS or BLOCKED SIGN-OFF.
+Worse, item 1.2 of the same checklist asks for GitHub-native secret scanning and push protection,
+which is **free on public repositories** and is currently disabled here. The library ships the paid
+dependency as the default and leaves the free equivalent as a separate, unticked line.
+
+### For the master library
+
+Default to the host's native secret scanning and push protection, and offer the gitleaks action as
+the option for repositories that need scanning the host does not provide. A delivered workflow that
+red-lights every organisation repo on first push teaches operators to ignore a failing check, which
+is the same failure mode as finding 1.
+
 ## Cost and the general shape
 
-Neither defect cost a release; both were found inside one adoption session, which is the cheap end.
+None of the three cost a release; all were found inside one adoption session, which is the cheap end.
 What they share is that the guard and the thing guarded were owned by different layers - the drift
 guard was authored against project files and met apparatus files; the format check was authored into a
-project script and never reached the project's CI. **When a library delivers both a rule and the
+project script and never reached the project's CI; the secret scanner was chosen without reference to
+what the host account can actually run. **When a library delivers both a rule and the
 machinery that enforces it, the seam between them is where the rule stops applying,** and that seam is
 invisible from inside either layer alone. It shows up on adoption, which is the only moment both layers
 move at once - so adoption is worth treating as a review opportunity, not just a migration chore.
