@@ -146,8 +146,15 @@ scan-results/
 openclaw-*
 
 
-# AGENTS.md section 8: _docs/ai/logs are governance artefacts and are version-controlled
+# CLAUDE.md: _docs/ai/logs and the evidence folder are governance artefacts and are
+# version-controlled. The blanket *.log rule above would otherwise swallow the evidence
+# the completion contract depends on (CHECK-*.log from scripts/check.sh).
 !_docs/ai/logs/
+!_docs/ai/verify/evidence/*.log
+# Gate artefacts are permanent evidence and are committed; the per-run check-*.log files
+# under _docs/ai/logs/ stay ignored (checks-state.json records their paths, and the committed
+# evidence is _docs/ai/verify/evidence/CHECK-*).
+!_docs/ai/logs/gate*.log
 
 # === Master library template additions (dotnet-blazor-azure) ===
 bin/

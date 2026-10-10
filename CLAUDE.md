@@ -1,9 +1,9 @@
-# CLAUDE.md - .NET 10 + Blazor + Azure Project
+# CLAUDE.md - Signal Sentinel Scanner
 
 @CONSTITUTION.md
 
-**Stack:** .NET 10 LTS + C# 14 + Blazor Server/Auto + Entity Framework Core 10 + Azure (App Service / SQL / Key Vault)
-**Last Updated:** [Set at bootstrap]
+**Stack:** .NET 10 LTS + C# 14 console CLI - MCP and Agent Skill security scanner
+**Last Updated:** 2026-10-10
 **Tool counterpart:** `AGENTS.md` is a pointer to this file - one manual per project.
 **Template Source:** master library `templates/dotnet-blazor-azure/` (version: `_docs/ai/.aiagent-library-version`)
 
@@ -16,61 +16,71 @@ the Core Doctrine. Everything else is read from its owner when needed: the compl
 ## Session Start
 
 1. `_docs/ai/configuration.md` - placeholders present -> walk the Configuration Gates (`startup-configuration`).
-2. `_docs/ai/_bootstrap-conflicts.md` - unresolved conflicts block feature work.
-3. `_docs/architecture-starter.md`, `_docs/ai/specs/` (active spec), `_docs/ai/lessons/`.
-4. Announce framework activation.
-5. `dotnet --version` shows 10.x and the local run boots and serves one request (CONSTITUTION #21).
+2. `_docs/architecture-starter.md`, `_docs/ai/specs/` (active spec), `_docs/ai/lessons/`.
+3. Announce framework activation.
+4. `dotnet --version` shows 10.x and `--list-rules` runs: this CLI's equivalent of serving one
+   request (CONSTITUTION #21).
 
 ## Project
 
 | | |
 |---|---|
-| Test | `dotnet test` (filtered form per the test host, see Stack; record the verified form here) |
-| Compile / Build | `dotnet build --no-restore` - exits zero before any completion claim |
+| Test | `dotnet test signal-sentinel.sln -c Release` (VSTest host - filter with `--filter "Category=X"`) |
+| Compile / Build | `dotnet build signal-sentinel.sln -c Release` - exits zero before any completion claim |
 | Lint / Format | `dotnet format --verify-no-changes` |
-| Architecture tests | `dotnet test --filter Category=Architecture` (VSTest) or `dotnet test -- --filter-trait "Category=Architecture"` (MTP) |
+| Rule inventory | `dotnet run --project src/SignalSentinel.Scanner -- --list-rules` |
 | Vulnerable packages | `dotnet list package --vulnerable` |
-| Migrations preview | `dotnet ef migrations script` |
+| Declared checks | `scripts/check.sh --all` - TEST, BUILD, LINT, DEPENDENCY_CHECK |
 | Evidence gate | `scripts/verify-gate.sh` |
-| Deploy | TODO(bootstrap): Bicep / `az webapp deploy` per `_docs/ai/configuration.md` |
+| Release | release-please on merge to `main`; NuGet global tool + GHCR image on tag |
 
 Posture, governance level, deployment, compliance scope and owner: `_docs/ai/configuration.md`
 (the only home; do not restate them here).
 
-All library skills apply; `dotnet-stack-enforcement` is active, `repo-standards` runs on every
-commit and PR. Optional: `geo-discoverability` (public content pages), `humanizer` (copy the
-client publishes).
+All library skills apply; `dotnet-stack-enforcement` and `release-management` are active,
+`repo-standards` runs on every commit and PR. `safe-database-operations` and `security-headers`
+do not apply: this repository has no database and no web surface.
 
 ### Project-Specific Rules
 
-TODO: integrations, domain constraints, brand voice, data-handling requirements.
+- Findings are governance artefacts: never weaken a rule's default severity without a CHANGELOG
+  entry and a migration note.
+- Scan output never carries secrets or raw untrusted content beyond
+  `RuleConstants.Limits.MaxEvidenceLength` characters of sanitised evidence.
+- Every outbound network feature is opt-in by flag and refused under `--offline`.
+- Rule IDs are never reused. `SS-027` is intentionally unallocated.
+- A new rule is complete only when all six exist: constant in `RuleConstants`, `RuleAstMapping`
+  entry, `RuleEngine` registration, `--help` line, `--list-rules` line, test class.
+  `RuleRegistryParityTests` guards the set and `RuleTotalsProseTests` the stated totals; a guard
+  over the parts does not guard the summary. See `CONTRIBUTING.md`.
+- Coverage claims name their gap rather than rounding up: AST10 Cross-Platform Reuse is unclaimed
+  and printed as an exception by the coverage guard. Never force a mapping to reach a round number.
 
 ## Stack
 
-- .NET 10 LTS and C# 14 only; .NET 8 LTS is the migration floor; .NET 9, 7 and 6 are prohibited.
-- Clean Architecture: Domain, Application, Infrastructure, Web; layering and the DbContext-factory
-  rule are CONSTITUTION #1-3 and #14, enforced by the analyzer pack and the Architecture tests.
-- Two test hosts, two filter syntaxes: VSTest `dotnet test --filter "Category=X"`;
-  Microsoft.Testing.Platform (xunit v3 with `UseMicrosoftTestingPlatformRunner`)
-  `dotnet test -- --filter-trait "Category=X"`. A filter that selects nothing exits zero. Verify the
-  host from the test `.csproj` before a filtered command enters a spec, script or report, and record
-  the form in the table above. CI runs the whole solution unfiltered; its `--` passthrough already
-  carries the coverage runsettings, so never append a trait filter to the CI command.
+- .NET 10 LTS and C# 14 only; SDK pinned in `global.json`. .NET 9, 7 and 6 are prohibited.
+- Projects: `src/SignalSentinel.Core` (models, patterns, protocol types),
+  `src/SignalSentinel.Scanner` (CLI, rules, MCP client, reports),
+  `tests/SignalSentinel.Scanner.Tests` (xUnit + Shouldly + NSubstitute + FsCheck).
+- `Directory.Build.props` sets `TreatWarningsAsErrors`, `AnalysisLevel=latest-all` and
+  `AnalysisMode=All`, and holds the one `<Version>` literal release-please rewrites. Any analyser
+  warning fails the build.
+- No web framework, no database, no EF Core, no Azure resource. CONSTITUTION clauses that
+  presuppose them are inert here, not waived; see `_docs/ai/decision-log.md`.
+- Network egress is a first-class security concern: every outbound call respects `--offline`
+  (`OfflineGuard`) and the SSRF policy in `Config/RemoteUrlPolicy.cs`.
+- Every regex is bounded by `RuleConstants.Limits.RegexTimeoutMs` (or `SafeIsMatch`); hostile
+  input is the normal case, not the edge case. `(?:X){n,m}?` is forbidden under Compiled and
+  GeneratedRegex on net10.0 (dotnet/runtime#134655, fixed in .NET 11 only, no backport) -
+  `RegexEngineIntegrityTests` guards it.
 - `.editorconfig` never sets `end_of_line` or `trim_trailing_whitespace`; `.gitattributes` owns
-  line endings. The SessionStart check warns on a conflicting pair: reconcile before any format gate.
-- Azure: App Service (default) or Container Apps (microservices); Azure SQL; Key Vault for every
-  secret; Application Insights; Managed Identity for every service-to-service call (CONSTITUTION
-  #9, #29; code and infrastructure rules in `.claude/rules/azure.md`).
-- Before any cloud CLI command whose output informs a claim or an evidence capture, confirm the
-  identity (`az account show`; `gcloud config list` / `aws sts get-caller-identity` elsewhere) and
-  state account and subscription in the evidence. "Not found" under the wrong subscription is
-  indistinguishable from "does not exist".
-- Container-backed tests (Testcontainers, SQL in a container): run `docker info` fresh immediately
-  before the step and report its timestamp; never trust a daemon status stated in a brief. When
-  local containers are down, CI is the confirming run and the evidence says so.
-- Specs add: affected `.csproj` files, EF migration SQL preview, the structured authorization block
-  (`gate-sequence` blocks a spec without it), Blazor hosting implications.
-- Security-sensitive paths and their standing `coding-agent-security` default: `.claude/rules/security.md`.
+  line endings.
+- Completeness and parity claims come from reflection, the compiler or a parser, never from a text
+  search over source: a grep matches comments and string literals and has twice reported a rule or
+  category as covered when it was not.
+- Specs add: the affected `.csproj` files, the rule-registry checklist above wherever a rule
+  changes, and for any detection change a two-sided acceptance criterion - vulnerable fixtures
+  detected AND matched benign controls silent, each measured.
 
 ## Working Discipline
 
