@@ -1,0 +1,28 @@
+# Gate 4 - Stack Verification + Local Boot
+# Captured 2026-10-10T14:59:40Z on branch chore/library-v3.3.0-adoption @ 05297df
+# This CLI's equivalent of 'serves one real request' is a rule-registry enumeration.
+
+$ dotnet --version
+10.0.401
+
+$ dotnet run --project src/SignalSentinel.Scanner -- --list-rules
+SS-031       | ASI01     | AST04                | MCP Resource Poisoning
+SS-032       | ASI01     | AST04,AST05          | MCP Server Instructions Injection
+SS-033       | ASI07     | AST08                | Unsolicited Server-to-Client Request
+SS-034       | ASI04     | AST02,AST07          | Skill Integrity Mismatch
+SS-035       | ASI04     | AST01,AST06          | Skill Suspicious File Artefact
+SS-036       | ASI01     | AST04                | Unicode Confusable Identifier
+SS-037       | ASI01     | AST04                | Cross-Skill Description Overlap
+SS-038       | ASI05     | AST01,AST06          | Skill Script Pipeline Taint
+SS-039       | ASI04     | AST02,AST07          | Skill Dependency Known Vulnerability
+SS-040       | ASI01     | AST04                | Error-Channel / Result-Channel Injection
+SS-041       | ASI05     | AST06                | Server Source Dangerous Sink
+SS-042       | ASI01     | AST04                | A2A Agent Card Findings
+SS-043       | ASI01     | AST04                | Dangerous Construct in Shipped Skill Metadata
+SS-INFO-001  | ASI10     | AST08                | Non-MCP Endpoint Detected
+SS-INFO-002  | ASI03     | -                    | Non-Public Scan Target
+SS-INFO-003  | ASI10     | AST08                | Untrusted Server Certificate
+SS-INFO-004  | ASI04     | AST08                | Legacy MCP Protocol / Transport
+SS-INFO-005  | ASI02     | AST03                | MCP Capability Surface
+SS-INFO-006  | ASI04     | AST02                | Skill Dependency Surface (Unchecked)
+SS-INFO-007  | ASI10     | AST08                | MCP Logging Capability Absent

@@ -1,0 +1,4 @@
+
+command: dotnet format --verify-no-changes
+commit: 05297df3e18e906f6f12a3ca37380de14a259608
+at: 2026-10-10T15:07:28Z

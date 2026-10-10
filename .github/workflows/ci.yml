@@ -58,6 +58,16 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+
+      # The evidence contract is checked in CI as well as at pre-commit: a local hook can be
+      # bypassed (--no-verify), the PR check cannot. The diff range is the PR against its base
+      # so the vacuous-gate guard sees the whole change set. Ubuntu only - one run is the gate,
+      # and the script is bash; the matrix exists to prove the product builds everywhere.
+      - name: Evidence gate (verify-results.json contract)
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          VERIFY_GATE_DIFF_RANGE: ${{ github.event_name == 'pull_request' && format('{0} {1}', github.event.pull_request.base.sha, github.sha) || 'HEAD^ HEAD' }}
+        run: bash scripts/verify-gate.sh
       
       - name: Setup .NET
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
