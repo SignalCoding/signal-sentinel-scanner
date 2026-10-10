@@ -1,0 +1,35 @@
+codecov:
+  require_ci_to_pass: true
+
+coverage:
+  precision: 1
+  round: down
+  range: "60...90"
+  status:
+    project:
+      default:
+        target: auto        # compare against base branch
+        threshold: 1%       # allow tiny drops from refactors
+        informational: true # flip to false once the baseline is trusted
+    patch:
+      default:
+        target: 80%
+        threshold: 0%
+
+comment:
+  layout: "condensed_header, diff, flags, files"
+  behavior: default
+  require_changes: true
+
+ignore:
+  - "**/Migrations/**"
+  - "**/*.Designer.cs"
+  - "**/Program.cs"
+  - "**/*.d.ts"
+  - "**/*.config.{js,ts,mjs,cjs}"
+  - "**/__mocks__/**"
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/*.test.{ts,tsx,js}"
+  - "**/*.spec.{ts,tsx,js}"
+  - "**/*.Tests/**"

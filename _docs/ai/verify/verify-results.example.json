@@ -1,0 +1,89 @@
+{
+  "spec": "example-project-phase-1.spec.md",
+  "taskGroups": [
+    {
+      "id": "TG-01",
+      "title": "Authentication shell (example)",
+      "startedAt": "2026-08-01T09:00:00Z",
+      "redBaseline": "TG-01.red.testresults.txt",
+      "criteria": [
+        {
+          "id": "AUTH-C1",
+          "text": "When an unauthenticated user requests a protected resource, the system shall deny access.",
+          "status": "FAIL",
+          "evidence": []
+        },
+        {
+          "id": "AUTH-C2",
+          "text": "When a user lacking the admin permission opens the admin surface, the system shall render the access-denied state.",
+          "status": "PASS",
+          "evidence": [
+            "AUTH-C2-access-denied.png",
+            "AUTH-C2-authz.testresults.txt"
+          ]
+        },
+        {
+          "id": "AUTH-C3",
+          "text": "When labelled sample data is available, the classifier shall reach the agreed accuracy threshold.",
+          "status": "BLOCKED",
+          "evidence": [],
+          "gate": "LABELLED-DATA",
+          "disposition": "Blocked on client-supplied labelled sample set (open item O8); fallback shipped and evidenced under AUTH-C2 pattern; revisit at phase exit."
+        }
+      ]
+    },
+    {
+      "id": "TG-02",
+      "title": "Conditional form fields (UI-behavioural example)",
+      "startedAt": "2026-08-02T09:00:00Z",
+      "ui": true,
+      "redBaseline": "TG-02.red.testresults.txt",
+      "criteria": [
+        {
+          "id": "FORM-C1",
+          "text": "When the record type changes, the system shall show only the fields relevant to that type (computed display, not merely a hidden attribute).",
+          "status": "PASS",
+          "evidence": [
+            "FORM-C1-conditional-fields.uatresults.txt",
+            "FORM-C1-form.png"
+          ]
+        },
+        {
+          "id": "FORM-C2",
+          "text": "When the form is posted with a missing prerequisite value, the system shall redirect to a friendly error state, never a raw 4xx/5xx.",
+          "status": "PASS",
+          "evidence": [
+            "FORM-C2-graceful-failure.uatresults.txt",
+            "FORM-C2.live.png"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TG-03",
+      "title": "External integration (split-criterion example)",
+      "startedAt": "2026-08-03T09:00:00Z",
+      "redBaseline": {
+        "exempt": "configuration-only group - no meaningful red phase (CONSTITUTION red-baseline exemption, printed loudly at every gate pass)"
+      },
+      "criteria": [
+        {
+          "id": "PAY-C1",
+          "text": "Integration logic verified on a faithful stub transport that still runs the security-critical verification.",
+          "status": "PASS",
+          "evidence": [
+            "PAY-C1-stub.testresults.txt"
+          ]
+        },
+        {
+          "id": "PAY-C1-EXTERNAL-SERVICE",
+          "text": "Live-provider round-trip of PAY-C1.",
+          "status": "BLOCKED",
+          "evidence": [],
+          "gate": "EXTERNAL-SERVICE",
+          "disposition": "Blocked on live provider account (owner: client finance; open item O12); activates when credentials arrive."
+        }
+      ]
+    }
+  ]
+}

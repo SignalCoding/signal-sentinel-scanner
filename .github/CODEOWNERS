@@ -1,0 +1,4 @@
+# Default owner for everything. Add narrower rules below (last match wins).
+*               @CHANGEME_GITHUB_HANDLE
+/.github/       @CHANGEME_GITHUB_HANDLE
+/docs/          @CHANGEME_GITHUB_HANDLE

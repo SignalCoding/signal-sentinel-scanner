@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Evaluator verdict",
+  "description": "The fresh-context evaluator's structured verdict for one task group. Produced through `claude -p --output-format json --json-schema` by scripts/run-evaluator.sh; the CLI validates it, the script renders <TG>-verdict.md from it and keeps the object as <TG>-verdict.json.",
+  "type": "object",
+  "required": ["verdict", "criteria", "findings"],
+  "additionalProperties": false,
+  "properties": {
+    "verdict": { "type": "string", "enum": ["PASS", "NEEDS_WORK"] },
+    "summary": { "type": "string", "maxLength": 600, "description": "Two or three sentences; file:line, never pasted logs." },
+    "criteria": {
+      "type": "array",
+      "description": "One entry per criterion ID in scope, every one of them.",
+      "items": {
+        "type": "object",
+        "required": ["id", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "type": "string", "enum": ["PASS", "NEEDS_WORK", "BLOCKED_OK", "UNVERIFIED"] },
+          "note": { "type": "string", "maxLength": 400 }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "description": "BLOCKING findings drive NEEDS_WORK; ADVISORY findings never do.",
+      "items": {
+        "type": "object",
+        "required": ["severity", "criterion", "file", "claim"],
+        "additionalProperties": false,
+        "properties": {
+          "severity": { "type": "string", "enum": ["BLOCKING", "ADVISORY"] },
+          "criterion": { "type": "string", "description": "The criterion ID, or '-' for a cross-cutting finding." },
+          "file": { "type": "string" },
+          "line": { "type": "integer" },
+          "claim": { "type": "string", "maxLength": 400 },
+          "evidence": { "type": "string", "maxLength": 300, "description": "What in the file or evidence shows it." },
+          "confirmation": { "type": "string", "enum": ["UNCHECKED", "CONFIRMED", "UNCONFIRMED"] },
+          "verifier_note": { "type": "string", "maxLength": 300 }
+        }
+      }
+    },
+    "images_opened": { "type": "array", "items": { "type": "string" }, "description": "Image evidence paths actually opened with Read." },
+    "evidence_not_opened": { "type": "array", "items": { "type": "string" } }
+  }
+}

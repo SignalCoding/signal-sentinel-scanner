@@ -1,0 +1,27 @@
+# Secret scanning on every push and PR (library v3.0.0, repo-standards canon).
+# GitHub's push protection is the platform backstop; this job is the repo-owned control that
+# also runs on forks and on self-hosted runners, and it scans the evidence folder too.
+# Pin the action to a commit SHA on first run (package-supply-chain-safety).
+name: gitleaks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: gitleaks secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional: set GITLEAKS_LICENSE for organisation accounts (free for personal/org-public).
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}

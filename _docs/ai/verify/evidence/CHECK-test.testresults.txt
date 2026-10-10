@@ -1,0 +1,13 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  SignalSentinel.Core -> C:\Sites\sentinel-scanner\src\SignalSentinel.Core\bin\Debug\net10.0\SignalSentinel.Core.dll
+  SignalSentinel.Scanner -> C:\Sites\sentinel-scanner\src\SignalSentinel.Scanner\bin\Debug\net10.0\SignalSentinel.Scanner.dll
+  SignalSentinel.Scanner.Tests -> C:\Sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\bin\Debug\net10.0\SignalSentinel.Scanner.Tests.dll
+Test run for C:\Sites\sentinel-scanner\tests\SignalSentinel.Scanner.Tests\bin\Debug\net10.0\SignalSentinel.Scanner.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:  1834, Skipped:     0, Total:  1834, Duration: 1 s - SignalSentinel.Scanner.Tests.dll (net10.0)
+
+command: dotnet test
+commit: e096f5f1fb7eb625ff345aaa95680286ca869c65
+at: 2026-10-10T14:30:30Z

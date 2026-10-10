@@ -231,8 +231,11 @@ public static partial class DependencyExtractor
                     var version = spec is not null && IsPlausibleVersion(spec) ? spec : null;
                     results.Add(new SkillDependency
                     {
-                        Name = dep.Name.ToLowerInvariant(), Version = version, Ecosystem = "npm",
-                        Source = source, SkillName = skillName
+                        Name = dep.Name.ToLowerInvariant(),
+                        Version = version,
+                        Ecosystem = "npm",
+                        Source = source,
+                        SkillName = skillName
                     });
                 }
             }
@@ -531,8 +534,11 @@ public static partial class DependencyExtractor
 
         results.Add(new SkillDependency
         {
-            Name = name.ToLowerInvariant(), Version = version, Ecosystem = ecosystem,
-            Source = source, SkillName = skillName
+            Name = name.ToLowerInvariant(),
+            Version = version,
+            Ecosystem = ecosystem,
+            Source = source,
+            SkillName = skillName
         });
     }
 
@@ -546,8 +552,11 @@ public static partial class DependencyExtractor
 
         results.Add(new SkillDependency
         {
-            Name = name.ToLowerInvariant(), Version = null, Ecosystem = ecosystem,
-            Source = source, SkillName = skillName
+            Name = name.ToLowerInvariant(),
+            Version = null,
+            Ecosystem = ecosystem,
+            Source = source,
+            SkillName = skillName
         });
     }
 

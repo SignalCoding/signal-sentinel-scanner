@@ -1,0 +1,39 @@
+{
+  "commit": "e096f5f1fb7eb625ff345aaa95680286ca869c65",
+  "at": "2026-10-10T14:31:17Z",
+  "atEpoch": 1791642677.7740045,
+  "results": {
+    "TEST": {
+      "status": "PASS",
+      "summary": "PASS: 1834 tests (dotnet)",
+      "log": "_docs/ai/logs/check-test-20261010T143024Z.log",
+      "evidence": "CHECK-test.testresults.txt",
+      "at": "2026-10-10T14:30:31Z",
+      "commit": "e096f5f1fb7eb625ff345aaa95680286ca869c65"
+    },
+    "BUILD": {
+      "status": "PASS",
+      "summary": "PASS: build",
+      "log": "_docs/ai/logs/check-build-20261010T143031Z.log",
+      "evidence": "CHECK-build.log",
+      "at": "2026-10-10T14:30:33Z",
+      "commit": "e096f5f1fb7eb625ff345aaa95680286ca869c65"
+    },
+    "LINT": {
+      "status": "PASS",
+      "summary": "PASS: lint",
+      "log": "_docs/ai/logs/check-lint-20261010T143033Z.log",
+      "evidence": "CHECK-lint.log",
+      "at": "2026-10-10T14:31:14Z",
+      "commit": "e096f5f1fb7eb625ff345aaa95680286ca869c65"
+    },
+    "DEPENDENCY_CHECK": {
+      "status": "PASS",
+      "summary": "PASS: dependency_check",
+      "log": "_docs/ai/logs/check-dependency_check-20261010T143114Z.log",
+      "evidence": "CHECK-dependency_check.log",
+      "at": "2026-10-10T14:31:17Z",
+      "commit": "e096f5f1fb7eb625ff345aaa95680286ca869c65"
+    }
+  }
+}

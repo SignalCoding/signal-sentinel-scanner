@@ -1,0 +1,18 @@
+{
+  "gates": [
+    { "id": "0",   "title": "Project Type Classification",  "status": "PASS", "artefact": "_docs/ai/configuration.md", "timestamp": "2026-08-01T09:00:00Z", "note": "" },
+    { "id": "0.5", "title": "Repository Standards",         "status": "PASS", "artefact": "_docs/ai/repo-standards-checklist.md", "timestamp": "2026-08-01T09:03:00Z", "note": "remote created, main protected, secret scanning on, CI green on first PR" },
+    { "id": "1",   "title": "Stack Enforcement",            "status": "PASS", "artefact": "_docs/ai/configuration.md", "timestamp": "2026-08-01T09:05:00Z", "note": "" },
+    { "id": "2",   "title": "LTS Version Currency",         "status": "PASS", "artefact": "_docs/ai/logs/gate2-versions.log", "timestamp": "2026-08-01T09:10:00Z", "note": "" },
+    { "id": "2.5", "title": "Technology Reality Checks",    "status": "PASS", "artefact": "_docs/ai/logs/gate2.5-reality-checks.md", "timestamp": "2026-08-01T09:20:00Z", "note": "" },
+    { "id": "3",   "title": "AI Code Assurance Framework",  "status": "NA",   "artefact": "", "timestamp": "2026-08-01T09:21:00Z", "note": "conditional gate - not applicable" },
+    { "id": "4",   "title": "Stack Verification + Local Boot", "status": "PASS", "artefact": "_docs/ai/logs/gate4-local-boot.log", "timestamp": "2026-08-01T09:30:00Z", "note": "local run served a real request end-to-end" },
+    { "id": "4.5", "title": "Riskiest-Integration Spike",   "status": "NA",   "artefact": "", "timestamp": "2026-08-01T09:31:00Z", "note": "no external API integration in scope" },
+    { "id": "5",   "title": "Architecture Foundation",      "status": "PASS", "artefact": "_docs/architecture-starter.md", "timestamp": "2026-08-01T09:45:00Z", "note": "" },
+    { "id": "6",   "title": "Security Deployment Assurance","status": "PASS", "artefact": "_docs/ai/logs/gate6-security.md", "timestamp": "2026-08-01T10:00:00Z", "note": "" },
+    { "id": "6.5", "title": "MCP Integration",              "status": "NA",   "artefact": "", "timestamp": "2026-08-01T10:01:00Z", "note": "no MCP surface in the product" },
+    { "id": "7",   "title": "Communication Cadence",        "status": "PASS", "artefact": "_docs/ai/configuration.md", "timestamp": "2026-08-01T10:05:00Z", "note": "" },
+    { "id": "7.5", "title": "Invariant Fingerprints",       "status": "NA",   "artefact": "", "timestamp": "2026-08-01T10:06:00Z", "note": "greenfield - no preservation surface yet" },
+    { "id": "8",   "title": "Implementation Readiness",     "status": "PASS", "artefact": "_docs/ai/readiness.md", "timestamp": "2026-08-01T10:15:00Z", "note": "human sign-off recorded" }
+  ]
+}

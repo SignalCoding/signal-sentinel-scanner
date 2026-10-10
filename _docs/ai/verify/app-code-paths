@@ -1,0 +1,11 @@
+# app-code-paths - directory prefixes the vacuous-gate guard treats as APPLICATION code
+# (verify-gate.sh, library v3.0.0). One prefix per line, relative to the repo root, trailing
+# slash optional. Test paths (tests/, __tests__/, *.test.*, *Tests.cs ...) are always excluded.
+# A change set touching any of these with ZERO recorded criteria fails the gate unless a dated
+# noTaskGroupsExemption (gate BOOTSTRAP) is present. Edit to match the project's layout.
+src/
+Components/
+Pages/
+Services/
+Data/
+Infrastructure/

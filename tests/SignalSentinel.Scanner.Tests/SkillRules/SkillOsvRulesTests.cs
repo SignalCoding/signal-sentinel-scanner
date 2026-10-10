@@ -23,8 +23,11 @@ public class SkillOsvRulesTests
         {
             Dependencies = Enumerable.Range(0, deps).Select(i => new SkillDependency
             {
-                Name = $"pkg-{i}", Version = "1.0.0", Ecosystem = "npm",
-                Source = "instructions", SkillName = "demo-skill"
+                Name = $"pkg-{i}",
+                Version = "1.0.0",
+                Ecosystem = "npm",
+                Source = "instructions",
+                SkillName = "demo-skill"
             }).ToList(),
             Status = status
         };

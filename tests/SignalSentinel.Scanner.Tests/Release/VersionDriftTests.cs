@@ -26,14 +26,16 @@ namespace SignalSentinel.Scanner.Tests.Release;
 
 public class VersionDriftTests
 {
+    // Library-owned apparatus (scripts/, .claude/, the manuals) is refreshed wholesale from the
+    // AI Agent library and carries that library's release tags, never the product's version.
     private static readonly string[] ExcludedDirectorySegments =
-        ["bin", "obj", ".git", "_docs", "docs", "tests"];
+        ["bin", "obj", ".git", "_docs", "docs", "tests", "scripts", ".claude"];
 
     // .release-please-manifest.json is the value release-please itself reads and
     // writes on every release PR (release-please-config.json's manifest-file) - it
     // is the source of truth, not a place that can drift, and has no marker syntax.
     private static readonly string[] ExcludedFileNames =
-        ["CHANGELOG.md", "SECURITY.md", ".release-please-manifest.json"];
+        ["CHANGELOG.md", "SECURITY.md", ".release-please-manifest.json", "CLAUDE.md", "CONSTITUTION.md"];
 
     private static readonly string[] ScannableExtensions =
         [".cs", ".json", ".md", ".yml", ".yaml", ".props", ".csproj", ".sln", ".txt", ".ps1", ".sh"];

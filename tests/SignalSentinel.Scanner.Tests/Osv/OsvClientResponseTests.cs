@@ -213,8 +213,14 @@ public class OsvClientResponseTests
         string id, string package, Severity severity, string summary, string[] aliases) =>
         new()
         {
-            Id = id, Summary = summary, Severity = severity, Aliases = aliases,
-            Ecosystem = "PyPI", PackageName = package, PackageVersion = "1.0",
-            SkillName = "skill", Source = "instructions"
+            Id = id,
+            Summary = summary,
+            Severity = severity,
+            Aliases = aliases,
+            Ecosystem = "PyPI",
+            PackageName = package,
+            PackageVersion = "1.0",
+            SkillName = "skill",
+            Source = "instructions"
         };
 }

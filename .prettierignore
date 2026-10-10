@@ -1,0 +1,18 @@
+# Governance and generated artefacts are never reformatted (library v3.0.0).
+# The scripts write _docs/ai/verify/*.json with a fixed serialiser; a formatter pass
+# produced 100-line noise diffs on the completion contract after every edit.
+_docs/ai/
+.claude/
+CLAUDE.md
+AGENTS.md
+CONSTITUTION.md
+CHANGELOG.md
+.release-please-manifest.json
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+coverage/
+dist/
+build/
+.next/
+out/

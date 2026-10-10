@@ -1,0 +1,9 @@
+{
+  "spec": "",
+  "noTaskGroupsExemption": {
+    "gate": "BOOTSTRAP",
+    "note": "bootstrapped 2026-10-10 from template dotnet-blazor-azure; no spec recorded yet - add the first task group before application code changes",
+    "reviewBy": "2026-10-24"
+  },
+  "taskGroups": []
+}

@@ -1,0 +1,17 @@
+# Line endings: normalise in repo, native on checkout; scripts must stay LF
+* text=auto
+*.sh text eol=lf
+*.bat text eol=crlf
+*.json text eol=lf
+# Agent economy (repo-standards Rule 5): generated/lock output is hidden from diffs, PR
+# views and AI-reviewer context, and excluded from language stats.
+package-lock.json  linguist-generated -diff
+pnpm-lock.yaml     linguist-generated -diff
+yarn.lock          linguist-generated -diff
+packages.lock.json linguist-generated -diff
+*.min.js           linguist-generated -diff
+*.min.css          linguist-generated -diff
+*.snap             linguist-generated -diff
+*.Designer.cs      linguist-generated
+**/Migrations/**   linguist-generated
+coverage/**        linguist-generated -diff

@@ -148,3 +148,21 @@ openclaw-*
 
 # AGENTS.md section 8: _docs/ai/logs are governance artefacts and are version-controlled
 !_docs/ai/logs/
+
+# === Master library template additions (dotnet-blazor-azure) ===
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+publish/
+
+.env
+.env.*
+*.local
+_scratch/
+_docs/ai/verify/evidence/*.tmp
+_docs/ai/logs/tool-audit.log
+_docs/ai/logs/.tool-audit-last-count
+
+_docs/ai/.apparatus-backup-*/
