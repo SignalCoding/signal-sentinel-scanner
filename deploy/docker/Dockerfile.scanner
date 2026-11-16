@@ -44,7 +44,7 @@ RUN dotnet publish src/SignalSentinel.Scanner/SignalSentinel.Scanner.csproj \
     -p:DebugSymbols=false
 
 # Runtime stage - minimal image without SDK
-FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine AS runtime
+FROM mcr.microsoft.com/dotnet/runtime-deps:11.0-alpine AS runtime
 
 # Security: Install only required packages, then clean up
 RUN apk --no-cache add \
