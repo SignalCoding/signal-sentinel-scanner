@@ -8,7 +8,7 @@
 
 # Build stage - uses full SDK
 # Note: Using 10.0-alpine (not 10.0.201-alpine) as Microsoft doesn't publish patch-specific Alpine tags
-FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0-alpine AS build
 
 # Security: Set non-interactive and reduce attack surface
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
